@@ -57,7 +57,7 @@ module.exports = {
                });
                return;
              }
-             //var branchidSplit=results[0].branch_access.split(',');
+            //  var branchidSplit=results[0].branch_access.split(',');
              var branchidSplit=''.split(',');
              var emIds='';
 
@@ -77,7 +77,7 @@ module.exports = {
 console.log(`  SELECT * FROM branch WHERE id IN(${results[0].branch_id})`)
          
                 connection.query(`
-                 SELECT * FROM branch WHERE id IN(${results[0].branch_id})
+                 SELECT * FROM branch WHERE code IN(${results[0].branch_access})
                  `, (err, results) => {
                   if (err) {
                     console.error('Error executing SELECT statement:', err);
