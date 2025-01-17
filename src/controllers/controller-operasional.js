@@ -14472,7 +14472,7 @@ a.typeid,
     var getbulan = req.body.bulan;
     var gettahun = req.body.tahun;
     var status = req.body.status;
-    var branchId = req.headers.branch_id;
+    var branchId = req.body.branch_id;
 
     var database = req.query.database;
 
@@ -15315,7 +15315,7 @@ a.typeid,
     console.log('-----load laporan pengajuan----------')
     var database = req.query.database;
     var emId=req.headers.em_id==undefined?"000000123":req.headers.em_id;
-    var branchId = req.headers.branch_id;
+    var branchId = req.body.branch_id;
     
 
 

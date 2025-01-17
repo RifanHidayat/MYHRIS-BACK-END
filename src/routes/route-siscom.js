@@ -84,6 +84,7 @@ router.post('/kirimPengajuanTMK', auth.isAuth,operasional.kirimTidakMasukKerja);
 
 router.post('/lembur',auth.isAuth,lembur.store);
 router.post('/atas-perintah',auth.isAuth,lembur.atasPerintah);
+router.post('/berhubungan-dengan', lembur.berhubunganDengan);
 router.post('/lembur/detail',auth.isAuth,lembur.detailTask);
 router.post('/tugas-luar',auth.isAuth,tugasLuar.store);
 router.post('/klaim',auth.isAuth,klaim.store);
