@@ -1856,4 +1856,91 @@ WHERE designation.level <= 3 AND department_group.id = ${depGroupId};`,
       });
     });
   },
+
+  async berhubunganDengan(req, res) {
+      console.log('-----------Berhubungan dengan----------')
+      var database = req.query.database;
+      const connection = await model.createConnection(database);
+      var dep_id = req.body.dep_id;
+      var branchId = req.headers.branch_id;
+  
+      var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE branch_id=${branchId} AND STATUS='ACTIVE'  `;
+      var query2 = `SELECT * FROM ${database}_hrm.employee WHERE dep_id='${dep_id}' AND branch_id=${branchId} AND status='ACTIVE'`;
+  
+      var url;
+      if (dep_id == "0" || dep_id == 0) {
+        url = query1;
+        console.log(query1);
+      } else {
+        url = query2;
+        console.log(query2);
+      }
+      //-----begin check koneksi----
+      connection.connect((err) => {
+        if (err) {
+          console.error('Error connecting to the database:', err);
+          return;
+        }
+        connection.beginTransaction((err) => {
+          if (err) {
+            console.error('Error beginning transaction:', err);
+            connection.end();
+            return;
+          }
+          //-------end check koneksi-----     
+  
+  
+          connection.query(url, (err, results) => {
+            if (err) {
+              console.error('Error executing SELECT statement:', err);
+              connection.rollback(() => {
+                connection.end();
+                return res.status(400).send({
+                  status: true,
+                  message: 'gagal ambil data',
+                  data: []
+  
+                });
+              });
+              return;
+            }
+            records = results;
+            if (records.length == 0) {
+              return res.status(400).send({
+                status: true,
+                message: "Kombinasi email & password Anda Salah",
+                data: []
+  
+              });
+            }
+            connection.commit((err) => {
+              if (err) {
+                console.error('Error committing transaction:', err);
+                connection.rollback(() => {
+                  connection.end();
+                  return res.status(400).send({
+                    status: true,
+                    message: "Kombinasi email & password Anda Salah",
+                    data: []
+  
+                  });
+                });
+                return;
+              }
+              connection.end();
+              console.log('Transaction completed successfully!');
+              return res.status(200).send({
+                status: true,
+                message: "Kombinasi email & password Anda Salah",
+                data: results
+  
+              });
+  
+  
+            });
+          });
+  
+        });
+      });
+    },
 };
