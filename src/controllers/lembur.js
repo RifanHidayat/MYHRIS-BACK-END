@@ -36,6 +36,7 @@ module.exports = {
     var createdBy = req.body.created_by;
 
     var bodyValue = req.body;
+    var branchId = req.headers.branch_id;
     var tasks = req.body.tasks;
     console.log("task  ", tasks[0]);
     delete bodyValue.menu_name;
@@ -1864,7 +1865,7 @@ WHERE designation.level <= 3 AND department_group.id = ${depGroupId};`,
       var dep_id = req.body.dep_id;
       var branchId = req.headers.branch_id;
   
-      var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE branch_id=${branchId} AND STATUS='ACTIVE'  `;
+      var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE STATUS='ACTIVE'  `;
       var query2 = `SELECT * FROM ${database}_hrm.employee WHERE dep_id='${dep_id}' AND branch_id=${branchId} AND status='ACTIVE'`;
   
       var url;
