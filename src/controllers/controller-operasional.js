@@ -10834,7 +10834,7 @@ async slip_gaji(req, res) {
   var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b  JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.status_transaksi=1`;
   
   var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  
-  WHERE a.em_id=b.em_id AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%')  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  WHERE a.em_id=b.em_id AND (a.em_delegation LIKE '${em_id}' OR a.em_ids LIKE '${em_id}%')  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
   AND a.status_transaksi=1 `;
   
   var query4 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.status IN ('Pending', 'Approve') AND a.ajuan='2'   AND a.status_transaksi=1`;
@@ -10947,7 +10947,7 @@ async slip_gaji(req, res) {
     var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
   }
 
-  console.log(query1)
+  console.log(query3)
 
     const configDynamic = {
       multipleStatements: true,
@@ -13375,7 +13375,7 @@ a.id,
 a.em_ids,
     
    
-     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%') ${conditionStatusLabor}AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
+     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND b.branch_id=${branchId} AND (a.em_delegation LIKE '${em_id}' OR a.em_ids LIKE '%${em_id}%') ${conditionStatusLabor}AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
      ${orderby1}
      `;
      var query4 = `SELECT
