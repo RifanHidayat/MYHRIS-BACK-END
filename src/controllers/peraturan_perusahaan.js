@@ -42,7 +42,9 @@ module.exports = {
     var branchId=req.headers.branch_id;
     console.log(req.headers)
 
-    var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' AND branch_id='${branchId}' `
+    var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' 
+    AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' )
+     `
       try{
           const connection=await model.createConnection(database);
           connection.connect((err) => {
@@ -260,7 +262,8 @@ module.exports = {
 
 
     var query=`SELECT ${table}.* FROM ${database}_hrm.${table} LEFT JOIN ${tableDetail} ON ${table}.id=${tableDetail}.peraturan_perusahaan_id  WHERE 
-     ${tableDetail}.em_id='${emId}' AND status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' AND branch_id='${branchId}' 
+     ${tableDetail}.em_id='${emId}' AND status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' 
+        AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' )
     AND ${tableDetail}.peraturan_perusahaan_id IS  NULL AND tipe!='Utama'  ORDER BY ${table}.id DESC LIMIT 1`
 
     console.log(query)
@@ -445,7 +448,9 @@ module.exports = {
                   });
 
                 }
-                var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  AND branch_id='${employee[0].branch_id}' ORDER BY id DESC LIMIT 1`
+                var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  
+                AND (   branch_id LIKE '%${employee[0].branch_id.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${employee[0].branch_id}%' )
+             ORDER BY id DESC LIMIT 1`
 
           
                   connection.query( query, (err, dataPerusahaan) => {
@@ -571,6 +576,7 @@ module.exports = {
  
 
     console.log(req.body)
+  
 
 
     var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids=''  ORDER BY id DESC LIMIT 1`
@@ -675,7 +681,7 @@ module.exports = {
                         
                         
                             }
-
+a;
                     connection.commit((err) => {
                       if (err) {
                         console.error('Error committing transaction:', err);
