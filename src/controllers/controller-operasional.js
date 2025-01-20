@@ -1918,7 +1918,13 @@ var finalList=[];
     var database = req.query.database;
     var query = "";
     console.log(req.query)
+
+    var startDate=req.query.start_periode;
+    var endDate=req.query.end_periode;
+    var array=endDate.split('-');
     const connection = await model.createConnection(database);
+    var databseDinamik=`${database}_hrm${array[0].substring(2,4)}${array[1].padStart(2,'0')}`
+   
 
     // pool.getConnection(function (err, connection) {
     //   if (err) console.log(err);
@@ -1951,12 +1957,16 @@ var finalList=[];
         query = `SELECT * FROM ${convert2} WHERE ${value}='${cari}' `;
 
         if (convert2 == 'assign_leave') {
-        query = `SELECT em_id,(total_day+adjust_cuti) as total_day,(terpakai) as terpakai FROM ${convert2} WHERE ${value}='${cari}'  ORDER BY dateyear DESC `;
-           
+       // query = `SELECT em_id,(total_day+adjust_cuti) as total_day,(terpakai) as terpakai FROM ${convert2} WHERE ${value}='${cari}'  ORDER BY dateyear DESC `;
+        query = `
+        SELECT 
+        em_id,
+        (saldo_cut_off+saldo_cuti_bulan_lalu+saldo_cuti_tahun_lalu+perolehan_cuti-expired_cuti) as total_day,IFNULL((terpakai+terpakai_cuti_tahun_lalu) ,0 ) as terpakai FROM ${databseDinamik}.${convert2} WHERE ${value}='${cari}'  ORDER BY em_id ASC `;
+      
       
         } 
 
-        console.log("query  new",convert2)
+        console.log("query  new",query)
          
       
         //-------end check koneksi-----     
@@ -16211,12 +16221,19 @@ GROUP BY TBL.full_name`
     });
   },
 
+  
   potong_cuti(req, res) {
     console.log('-----potong cuti----------')
     var database = req.query.database;
     var em_id = req.body.em_id;
     var terpakai = req.body.terpakai;
-    var query1 = `SELECT terpakai,dateyear FROM assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
+    var date=req.query.end_date.split('-');
+
+   
+    const databaseDynamic=`${database}_hrm${date[0].substring(2,4)}${date[1]}`
+    
+
+    var query1 = `SELECT terpakai FROM ${databaseDynamic}.assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
 
     const configDynamic = {
       multipleStatements: true,
@@ -16241,7 +16258,13 @@ GROUP BY TBL.full_name`
           var terpakaiUser = results[0].terpakai;
           var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
           connection.query(
-            `UPDATE assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
+            `UPDATE ${databaseDynamic}.assign_leave
+            
+            
+            
+            
+            
+              SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
             function (error, results1) {
               res.send({
                 status: true,
@@ -16255,6 +16278,52 @@ GROUP BY TBL.full_name`
       connection.release();
     });
   },
+
+
+  // potong_cuti(req, res) {
+  //   console.log('-----potong cuti----------')
+  //   var database = req.query.database;
+  //   var em_id = req.body.em_id;
+  //   var terpakai = req.body.terpakai;
+  //   var query1 = `SELECT terpakai,dateyear FROM assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
+
+  //   const configDynamic = {
+  //     multipleStatements: true,
+  //     host: ipServer,//myhris.siscom.id (ip local)
+  //     user: 'pro',
+  //     password: 'Siscom3519',
+  //     database: `${database}_hrm`,
+  //     connectionLimit: 1000,
+  //     connectTimeout: 60 * 60 * 1000,
+  //     acquireTimeout: 60 * 60 * 1000,
+  //     timeout: 60 * 60 * 1000,
+  //   };
+  //   const mysql = require("mysql");
+  //   const poolDynamic = mysql.createPool(configDynamic);
+  //   // var query2 = ``;
+  //   poolDynamic.getConnection(function (err, connection) {
+  //     if (err) console.log(err);
+  //     connection.query(
+  //       query1,
+  //       function (error, results) {
+  //         if (error != null) console.log(error)
+  //         var terpakaiUser = results[0].terpakai;
+  //         var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
+  //         connection.query(
+  //           `UPDATE assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
+  //           function (error, results1) {
+  //             res.send({
+  //               status: true,
+  //               message: "Berhasil Potong cuti!",
+  //               data: results1,
+  //             });
+  //           }
+  //         )
+  //       }
+  //     );
+  //     connection.release();
+  //   });
+  // },
 
   edit_last_login(req, res) {
     console.log("EDIT las login")
