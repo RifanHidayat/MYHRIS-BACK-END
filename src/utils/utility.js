@@ -808,152 +808,152 @@ pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx){
 
     
  async insertNotifikasiAbsensi(emIds,title,url,emIdPengajuan,idx,nomorAjuan,namaPegajuan,databasePeriode,databseMaster){
-  console.log("database master ",databseMaster)
-  console.log("database periode ",databasePeriode)
-  function   pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx,nomorAjuan){
-   if (token=='' || token==null ){
-   }else{
+  // console.log("database master ",databseMaster)
+  // console.log("database periode ",databasePeriode)
+  // function   pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx,nomorAjuan){
+  //  if (token=='' || token==null ){
+  //  }else{
 
-     var token = `${token}`;
-     var title = `${titile}`;
-     var message = message;
-     var nomorAjuan=nomorAjuan
-     var message = {
-       data: {
-         route: url,
-         em_id_pengajuan:"",
-         idx:idx.toString(),
+  //    var token = `${token}`;
+  //    var title = `${titile}`;
+  //    var message = message;
+  //    var nomorAjuan=nomorAjuan
+  //    var message = {
+  //      data: {
+  //        route: url,
+  //        em_id_pengajuan:"",
+  //        idx:idx.toString(),
         
-       },
+  //      },
  
 
-       notification: {
-         title: `${title}`,
-         body: `${message}`,
-       },
-       token: token
-     };
+  //      notification: {
+  //        title: `${title}`,
+  //        body: `${message}`,
+  //      },
+  //      token: token
+  //    };
  
-     console.log(message)
+  //    console.log(message)
    
-     FCM.send(message, function (err, response) {
-       if (err) {
-         console.log('error found notif', err);
-       } else {
-         console.log('response here notif', response);
+  //    FCM.send(message, function (err, response) {
+  //      if (err) {
+  //        console.log('error found notif', err);
+  //      } else {
+  //        console.log('response here notif', response);
         
-       }
-     })
+  //      }
+  //    })
  
  
-   }
+  //  }
  
-     }
-     var listData=emIds.toString().split(',')
-     try{
+  //    }
+  //    var listData=emIds.toString().split(',')
+  //    try{
 
-      console.log(listData)
+  //     console.log(listData)
 
-       const connection=await model.createConnection1(databseMaster);
-       connection.connect((err) => {
-         if (err) {
-           console.error('Error connecting to the database:', err);
-           return;
-         }
+  //      const connection=await model.createConnection1(databseMaster);
+  //      connection.connect((err) => {
+  //        if (err) {
+  //          console.error('Error connecting to the database:', err);
+  //          return;
+  //        }
        
-         connection.beginTransaction((err) => {
-           if (err) {
-             console.error('Error beginning transaction:', err);
-             connection.end();
-             return;
-           }
-           console.log("masuk sini new notifikasi absensi")
-           for (var i=0;i<listData.length;i++){
+  //        connection.beginTransaction((err) => {
+  //          if (err) {
+  //            console.error('Error beginning transaction:', err);
+  //            connection.end();
+  //            return;
+  //          }
+  //          console.log("masuk sini new notifikasi absensi")
+  //          for (var i=0;i<listData.length;i++){
  
-             if (listData[i]=='' || listData[i]==null){
+  //            if (listData[i]=='' || listData[i]==null){
  
-             }else{
-               console.log("masuk sini")
+  //            }else{
+  //              console.log("masuk sini")
  
-               var queryEmployee=`SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`
+  //              var queryEmployee=`SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`
  
-               connection.query(    queryEmployee, (err, e) => {
-                 if (err) {
-                   console.error('Error executing SELECT statement:', err);
-                   connection.rollback(() => {
-                     connection.end();
-                     // return res.status(400).send({
-                     //   status: true,
-                     //   message: 'Data gagal terkirim',
-                     //   data:results
+  //              connection.query(    queryEmployee, (err, e) => {
+  //                if (err) {
+  //                  console.error('Error executing SELECT statement:', err);
+  //                  connection.rollback(() => {
+  //                    connection.end();
+  //                    // return res.status(400).send({
+  //                    //   status: true,
+  //                    //   message: 'Data gagal terkirim',
+  //                    //   data:results
                      
-                     // });
-                   });
-                   return;
-                 }
-                 var deskripsi=`Hello ${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, Saya ${namaPegajuan} - ${emIdPengajuan}  ${url=="terlambat"?"Absen Datang terlambat":"Absen Pulang Cepat"} `                                                            
-                if (url=='terlambat'){
-                  deskripsi=`${e[0].full_name} absen terlambat`
-                }else{
-                  deskripsi=`${e[0].full_name} absen pulang cepat`
-                }
+  //                    // });
+  //                  });
+  //                  return;
+  //                }
+  //                var deskripsi=`Hello ${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, Saya ${namaPegajuan} - ${emIdPengajuan}  ${url=="terlambat"?"Absen Datang terlambat":"Absen Pulang Cepat"} `                                                            
+  //               if (url=='terlambat'){
+  //                 deskripsi=`${e[0].full_name} absen terlambat`
+  //               }else{
+  //                 deskripsi=`${e[0].full_name} absen pulang cepat`
+  //               }
                 
-                 var query=`INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-                  VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`
-                  console.log(query)
-                 connection.query(    query, (err, results) => {
-                   if (err) {
+  //                var query=`INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
+  //                 VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`
+  //                 console.log(query)
+  //                connection.query(    query, (err, results) => {
+  //                  if (err) {
                
-                     console.error('Error executing SELECT statement:', err);
-                     connection.rollback(() => {
-                       connection.end();
-                       // return res.status(400).send({
-                       //   status: true,
-                       //   message: 'Data gagal terkirim',
-                       //   data:results
+  //                    console.error('Error executing SELECT statement:', err);
+  //                    connection.rollback(() => {
+  //                      connection.end();
+  //                      // return res.status(400).send({
+  //                      //   status: true,
+  //                      //   message: 'Data gagal terkirim',
+  //                      //   data:results
                        
-                       // });
-                     });
-                     return;
-                   }
-                   pushNotifikasiApproval(e[0].token_notif,title,deskripsi,url,emIdPengajuan,idx);
-               });
-             });
-             }
+  //                      // });
+  //                    });
+  //                    return;
+  //                  }
+  //                  pushNotifikasiApproval(e[0].token_notif,title,deskripsi,url,emIdPengajuan,idx);
+  //              });
+  //            });
+  //            }
              
-           }
+  //          }
         
             
           
                     
                   
-                 connection.commit((err) => {
-                   if (err) {
-                     console.error('Error committing transaction:', err);
-                     connection.rollback(() => {
-                       connection.end();
-                       // return res.status(400).send({
-                       //   status: true,
-                       //   message: 'Data gagal terkirim',
-                       //   data:[]
+  //                connection.commit((err) => {
+  //                  if (err) {
+  //                    console.error('Error committing transaction:', err);
+  //                    connection.rollback(() => {
+  //                      connection.end();
+  //                      // return res.status(400).send({
+  //                      //   status: true,
+  //                      //   message: 'Data gagal terkirim',
+  //                      //   data:[]
                        
-                       // });
-                     });
-                     return;
-                   }
-                   connection.end();
-                   console.log('Transaction completed successfully!');
-                   // return res.status(200).send({
-                   //   status: true,
-                   //   message: 'data berhasil terkirm',
+  //                      // });
+  //                    });
+  //                    return;
+  //                  }
+  //                  connection.end();
+  //                  console.log('Transaction completed successfully!');
+  //                  // return res.status(200).send({
+  //                  //   status: true,
+  //                  //   message: 'data berhasil terkirm',
                  
                    
-                   // });
+  //                  // });
              
                
-                 });
-               });
-             });
+  //                });
+  //              });
+  //            });
          
  
        
@@ -961,10 +961,10 @@ pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx){
  
  
  
-   }catch(e){
+  //  }catch(e){
     
  
-   }
+  //  }
     
  
    
@@ -974,162 +974,162 @@ pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx){
 
     
      async insertNotifikasiAbsensiSp(emIds,title,url,emIdPengajuan,idx,nomorAjuan,namaPegajuan,databasePeriode,databseMaster,nameSp){
-      console.log("database master ",databseMaster)
-      console.log("database periode ",databasePeriode)
-      function   pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx,nomorAjuan){
-       if (token=='' || token==null ){
-       }else{
+      // console.log("database master ",databseMaster)
+      // console.log("database periode ",databasePeriode)
+      // function   pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx,nomorAjuan){
+      //  if (token=='' || token==null ){
+      //  }else{
     
-         var token = `${token}`;
-         var title = `${titile}`;
-         var message = message;
-         var nomorAjuan=nomorAjuan
-         var message = {
-           data: {
-             route: url,
-             em_id_pengajuan:"",
-             idx:idx.toString(),
+      //    var token = `${token}`;
+      //    var title = `${titile}`;
+      //    var message = message;
+      //    var nomorAjuan=nomorAjuan
+      //    var message = {
+      //      data: {
+      //        route: url,
+      //        em_id_pengajuan:"",
+      //        idx:idx.toString(),
             
-           },
+      //      },
      
     
-           notification: {
-             title: `${title}`,
-             body: `${message}`,
-           },
-           token: token
-         };
+      //      notification: {
+      //        title: `${title}`,
+      //        body: `${message}`,
+      //      },
+      //      token: token
+      //    };
      
-         console.log(message)
+      //    console.log(message)
        
-         FCM.send(message, function (err, response) {
-           if (err) {
-             console.log('error found notif', err);
-           } else {
-             console.log('response here notif', response);
+      //    FCM.send(message, function (err, response) {
+      //      if (err) {
+      //        console.log('error found notif', err);
+      //      } else {
+      //        console.log('response here notif', response);
             
-           }
-         })
+      //      }
+      //    })
      
      
-       }
+      //  }
      
-         }
-         var listData=emIds.toString().split(',')
-         try{
+      //    }
+      //    var listData=emIds.toString().split(',')
+      //    try{
     
-          console.log(listData)
+      //     console.log(listData)
     
-           const connection=await model.createConnection1(databseMaster);
-           connection.connect((err) => {
-             if (err) {
-               console.error('Error connecting to the database:', err);
-               return;
-             }
+      //      const connection=await model.createConnection1(databseMaster);
+      //      connection.connect((err) => {
+      //        if (err) {
+      //          console.error('Error connecting to the database:', err);
+      //          return;
+      //        }
            
-             connection.beginTransaction((err) => {
-               if (err) {
-                 console.error('Error beginning transaction:', err);
-                 connection.end();
-                 return;
-               }
-               console.log("masuk sini new notifikasi absensi")
-               for (var i=0;i<listData.length;i++){
+      //        connection.beginTransaction((err) => {
+      //          if (err) {
+      //            console.error('Error beginning transaction:', err);
+      //            connection.end();
+      //            return;
+      //          }
+      //          console.log("masuk sini new notifikasi absensi")
+      //          for (var i=0;i<listData.length;i++){
      
-                 if (listData[i]=='' || listData[i]==null){
+      //            if (listData[i]=='' || listData[i]==null){
      
-                 }else{
-                   console.log("masuk sini")
+      //            }else{
+      //              console.log("masuk sini")
      
-                   var queryEmployee=`SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`
+      //              var queryEmployee=`SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`
      
-                   connection.query(    queryEmployee, (err, e) => {
-                     if (err) {
-                       console.error('Error executing SELECT statement:', err);
-                       connection.rollback(() => {
-                         connection.end();
-                         // return res.status(400).send({
-                         //   status: true,
-                         //   message: 'Data gagal terkirim',
-                         //   data:results
+      //              connection.query(    queryEmployee, (err, e) => {
+      //                if (err) {
+      //                  console.error('Error executing SELECT statement:', err);
+      //                  connection.rollback(() => {
+      //                    connection.end();
+      //                    // return res.status(400).send({
+      //                    //   status: true,
+      //                    //   message: 'Data gagal terkirim',
+      //                    //   data:results
                          
-                         // });
-                       });
-                       return;
-                     }
-                     var deskripsi=`${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, karyawan dengan ${namaPegajuan} - ${emIdPengajuan}  ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleranssi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"} `                                                            
-                    if (url=='terlambat'){
-                    //  deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
-                      deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berik4an surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
+      //                    // });
+      //                  });
+      //                  return;
+      //                }
+      //                var deskripsi=`${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, karyawan dengan ${namaPegajuan} - ${emIdPengajuan}  ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleranssi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"} `                                                            
+      //               if (url=='terlambat'){
+      //               //  deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
+      //                 deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berik4an surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
                     
-                      deskripsi=`${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`
+      //                 deskripsi=`${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`
                     
-                      }else if (url=='tidak_masuk_kerja'){
-                      deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ,Akan diberikan surat peringatan tidak masuk kerja karna telah melebihi toleransi yang di berikan`
+      //                 }else if (url=='tidak_masuk_kerja'){
+      //                 deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ,Akan diberikan surat peringatan tidak masuk kerja karna telah melebihi toleransi yang di berikan`
                    
 
-                    }else{
-                      deskripsi=`${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`
+      //               }else{
+      //                 deskripsi=`${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`
                     
-                     // deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan}  ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
-                    }
+      //                // deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan}  ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
+      //               }
                     
-                     var query=`INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-                      VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`
-                      console.log(query)
-                     connection.query(    query, (err, results) => {
-                       if (err) {
+      //                var query=`INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
+      //                 VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`
+      //                 console.log(query)
+      //                connection.query(    query, (err, results) => {
+      //                  if (err) {
                    
-                         console.error('Error executing SELECT statement:', err);
-                         connection.rollback(() => {
-                           connection.end();
-                           // return res.status(400).send({
-                           //   status: true,
-                           //   message: 'Data gagal terkirim',
-                           //   data:results
+      //                    console.error('Error executing SELECT statement:', err);
+      //                    connection.rollback(() => {
+      //                      connection.end();
+      //                      // return res.status(400).send({
+      //                      //   status: true,
+      //                      //   message: 'Data gagal terkirim',
+      //                      //   data:results
                            
-                           // });
-                         });
-                         return;
-                       }
-                       pushNotifikasiApproval(e[0].token_notif,title,deskripsi,url,emIdPengajuan,idx);
-                   });
-                 });
-                 }
+      //                      // });
+      //                    });
+      //                    return;
+      //                  }
+      //                  pushNotifikasiApproval(e[0].token_notif,title,deskripsi,url,emIdPengajuan,idx);
+      //              });
+      //            });
+      //            }
                  
-               }
+      //          }
             
                 
               
                         
                       
-                     connection.commit((err) => {
-                       if (err) {
-                         console.error('Error committing transaction:', err);
-                         connection.rollback(() => {
-                           connection.end();
-                           // return res.status(400).send({
-                           //   status: true,
-                           //   message: 'Data gagal terkirim',
-                           //   data:[]
+      //                connection.commit((err) => {
+      //                  if (err) {
+      //                    console.error('Error committing transaction:', err);
+      //                    connection.rollback(() => {
+      //                      connection.end();
+      //                      // return res.status(400).send({
+      //                      //   status: true,
+      //                      //   message: 'Data gagal terkirim',
+      //                      //   data:[]
                            
-                           // });
-                         });
-                         return;
-                       }
-                       connection.end();
-                       console.log('Transaction completed successfully!');
-                       // return res.status(200).send({
-                       //   status: true,
-                       //   message: 'data berhasil terkirm',
+      //                      // });
+      //                    });
+      //                    return;
+      //                  }
+      //                  connection.end();
+      //                  console.log('Transaction completed successfully!');
+      //                  // return res.status(200).send({
+      //                  //   status: true,
+      //                  //   message: 'data berhasil terkirm',
                      
                        
-                       // });
+      //                  // });
                  
                    
-                     });
-                   });
-                 });
+      //                });
+      //              });
+      //            });
              
      
            
@@ -1137,10 +1137,10 @@ pushNotifikasiApproval(token,titile,message,url,emIdPengajuan,idx){
      
      
      
-       }catch(e){
+      //  }catch(e){
         
      
-       }
+      //  }
         
      
        
