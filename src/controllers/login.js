@@ -62,9 +62,16 @@ async loginUser(req,res){
                   (SELECT name FROM sysdata WHERE kode='012') AS is_view_tracking,
                   (SELECT name FROM sysdata WHERE kode='043') AS toleransi_pengembalian,
                   (SELECT name FROM sysdata WHERE kode='021') AS back_date,
+                  IFNULL(MAX(employee_history.end_date) ,'')AS tanggal_berakhir_kontrak,
                     (SELECT beginday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS begin_payroll,(SELECT name FROM sysdata WHERE id='18') as time_attendance,
                   (SELECT endday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS end_payroll, branch.name AS branch_name, em_id, full_name, em_email, des_id, dep_id, dep_group_id AS dep_group, em_mobile AS em_phone, em_birthday, em_blood_group, em_gender, em_image, em_joining_date, em_status, job_title AS posisi, em_hak_akses, last_login, STATUS AS status_aktif,
-                   em_control, em_controlaccess AS em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working AS emp_att_working FROM employee a LEFT JOIN designation b ON a.des_id=b.id LEFT JOIN department c ON a.dep_id=c.id LEFT  JOIN branch ON branch.id=a.branch_id where em_email='${req.body.email}' AND em_password='${password}'`, (err, results) => {
+                   em_control, em_controlaccess AS em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working AS emp_att_working 
+                   FROM employee a 
+                   LEFT JOIN designation b ON a.des_id=b.id
+                    LEFT JOIN department c ON a.dep_id=c.id 
+                    LEFT  JOIN branch ON branch.id=a.branch_id 
+                    LEFT JOIN employee_history ON a.em_id=employee_history.em_id
+                    where em_email='${req.body.email}' AND em_password='${password}'`, (err, results) => {
                     if (err) {
                       console.error('Error executing SELECT statement:', err);
                       connection.rollback(() => {
