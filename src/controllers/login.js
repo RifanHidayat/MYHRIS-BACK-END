@@ -90,7 +90,9 @@ async loginUser(req,res){
                       
                       });
                     }
-                  connection.query(`SELECT * FROM peraturan_perusahaan WHERE  status_transaksi='1' AND (tipe='utama' OR tipe='Utama') AND branch_id='${results[0].branch_id}'  ORDER BY id DESC LIMIT 1`, (err,dataPerusahaan) => {
+                  connection.query(`SELECT * FROM peraturan_perusahaan WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  
+                  AND (   branch_id LIKE '%${results[0].branch_id.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${results[0].branch_id}%' )
+               ORDER BY id DESC LIMIT 1`, (err,dataPerusahaan) => {
                 if (err) {
                   console.error('Error executing UPDATE statement:', err);
                   connection.rollback(() => {

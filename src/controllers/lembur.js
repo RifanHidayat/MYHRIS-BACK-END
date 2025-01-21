@@ -44,6 +44,8 @@ module.exports = {
     delete bodyValue.created_by;
     delete bodyValue.tasks;
 
+    bodyValue.branch_id=req.headers.branch_id;
+
     let now = new Date();
 
     console.log(bodyValue);
@@ -371,7 +373,8 @@ module.exports = {
                                           return;
                                           //proses notifikasi
                                         }
-
+                                        
+                                        bodyValue.branch_id=user[0].branch_id
                                         console.log(task);
 
                                         for (var i = 0; i < tasks.length; i++) {
@@ -1705,7 +1708,7 @@ module.exports = {
     let hours = now.getHours();
     let minutes = now.getMinutes();
     let seconds = now.getSeconds();
-
+    var emId=req.headers.em_id
     var dateNow = `${year}-${month
       .toString()
       .padStart(2, "0")}-${date} ${hours}:${minutes}:${seconds}`;
