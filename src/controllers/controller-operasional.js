@@ -12844,7 +12844,7 @@ a.approve_date,
 a.id,
     
     
-    o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND a.em_delegation LIKE '%${em_id}%' AND branch_id=${branchId}AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND a.ajuan='1'
+    o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND a.em_delegation LIKE '%${em_id}%' AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND a.ajuan='1'
     
     AND a.status_transaksi=1
     `;
@@ -13293,7 +13293,7 @@ a.typeid,
 c.input_time,
 a.time_plan_to,
      c.name as nama_penagjuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id 
-    AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  ${conditionStatus}  AND a.leave_status!='Cancel' AND a.ajuan IN ('2', '3')  AND a.status_transaksi=1 ${orderby1}`;
+    AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  ${conditionStatus}  AND a.leave_status!='Cancel' AND a.ajuan IN ('2', '3')  AND a.status_transaksi=1 ${orderby1}`;
    
 
   
@@ -13336,7 +13336,7 @@ c.input_time,
       d.name AS nama_divisi, a.nomor_ajuan, c.name as nama_penagjuan,  b.em_report_to as em_report_to,  
      b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category FROM ${namaDatabaseDynamic}.emp_leave a 
      INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b  JOIN ${database}_hrm.designation  d ON d.id=b.des_id 
-     WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') 
+     WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') 
  ${conditionStatus}   AND a.ajuan='1'  AND a.status_transaksi=1 ${orderby1}`;
      
      
@@ -13375,7 +13375,7 @@ a.id,
 a.em_ids,
     
    
-     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND b.branch_id=${branchId} AND (a.em_delegation LIKE '${em_id}' OR a.em_ids LIKE '%${em_id}%') ${conditionStatusLabor}AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
+     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND (a.em_delegation LIKE '${em_id}' OR a.em_ids LIKE '%${em_id}%') ${conditionStatusLabor}AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
      ${orderby1}
      `;
      var query4 = `SELECT
@@ -13410,7 +13410,7 @@ a.em_ids,
     a.approve_id,
     a.approve_date,
     a.id,
-      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 
+      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 
       ${orderby1} 
       `;
     
@@ -13448,7 +13448,7 @@ a.em_ids,
      
      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name  
      FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND  
-     a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  ${conditionStatus}  
+     (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  ${conditionStatus}  
      AND a.leave_status!='Cancel' AND a.ajuan='4'  AND a.status_transaksi=1 ${orderby1}`;
      
      var query6 = `SELECT 
@@ -13456,12 +13456,12 @@ a.em_ids,
      a.approve_by,
      a.approve2_by, (IFNULL(a.sisa_claim ,0)) as sisa_claim ,(IFNULL(a.saldo_claim ,0)) as saldo_claim , c.id as id_ajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, a.*
       FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b
-      WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.status!='Cancel' ${conditionStatusLabor} ${orderby1}`
+      WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.status!='Cancel' ${conditionStatusLabor} ${orderby1}`
      
        // var query7 = `SELECT b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'`;
      var query7 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
       b.full_name, a.*,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b
-      WHERE a.em_id=b.em_id  AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='3' AND a.status_transaksi=1
+      WHERE a.em_id=b.em_id  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='3' AND a.status_transaksi=1
       a.id ORDER BY DESC
       `;
   
@@ -13511,7 +13511,7 @@ a.place_out as place_out,
      
      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
      b.full_name,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a 
-     JOIN ${database}_hrm.employee b   WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND( a.ajuan='3' OR a.ajuan='5') AND a.status_transaksi=1
+     JOIN ${database}_hrm.employee b   WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND( a.ajuan='3' OR a.ajuan='5') AND a.status_transaksi=1
      ${orderby1}
      `;
    
@@ -13553,12 +13553,12 @@ a.place_out as place_out,
       
       b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
       b.full_name,a.status as status,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a 
-      JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND a.branch_id=${branchId} AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.ajuan='4' AND a.status_transaksi=1 ${orderby1}` ;
+      JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.ajuan='4' AND a.status_transaksi=1 ${orderby1}` ;
       
       var query10 = `SELECT emp_loan.approve_by, emp_loan.id, employee.full_name, emp_loan.status as  approve_status,emp_loan.approve_id,emp_loan.approve_date,emp_loan.tgl_ajuan as tanggal_ajuan ,
       emp_loan.periode_mulai_cicil as periode,
       emp_loan.nomor_ajuan,emp_loan.description,emp_loan.total_loan as total_pinjaman ,emp_loan.durasi_cicil 
-      FROM ${database}_hrm.sysdata JOIN ${database}_hrm.emp_loan ON sysdata.kode='019' JOIN ${database}_hrm.employee ON employee.em_id=emp_loan.em_id WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status  LIKE '%${stauts}%'   AND a.branch_id=${branchId} AND emp_loan.em_id!='${em_id}' ORDER BY id DESC`;
+      FROM ${database}_hrm.sysdata JOIN ${database}_hrm.emp_loan ON sysdata.kode='019' JOIN ${database}_hrm.employee ON employee.em_id=emp_loan.em_id WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status  LIKE '%${stauts}%'  AND emp_loan.em_id!='${em_id}' ORDER BY id DESC`;
  
 
       var query11 = `SELECT
@@ -13592,7 +13592,7 @@ a.place_out as place_out,
        b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
        b.full_name,a.status as leave_status ,a.status as status FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' LEFT JOIN
        ${database}_hrm.letter ON a.letter_id=letter.id
-       WHERE a.em_id=b.em_id  AND a.branch_id=${branchId} AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
+       WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
 
        if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
 
