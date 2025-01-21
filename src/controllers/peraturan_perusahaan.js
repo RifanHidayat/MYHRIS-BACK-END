@@ -681,7 +681,7 @@ module.exports = {
                         
                         
                             }
-a;
+
                     connection.commit((err) => {
                       if (err) {
                         console.error('Error committing transaction:', err);

@@ -373,7 +373,8 @@ module.exports = {
                                           return;
                                           //proses notifikasi
                                         }
-
+                                        
+                                        bodyValue.branch_id=user[0].branch_id
                                         console.log(task);
 
                                         for (var i = 0; i < tasks.length; i++) {
