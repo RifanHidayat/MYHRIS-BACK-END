@@ -267,6 +267,9 @@ router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
 router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
 router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
 router.get("/surat_peringatan/:id/alasan",suratPeringatan.detailAlasan);
+router.get('/surat-peringatan/:id',suratPeringatan.suratPeringatanPdf);
+router.get('/teguran_lisan',suratPeringatan.suratTeguran);
+router.get('/teguran_lisan/:id',suratPeringatan.teguranLisanPdf);
 
 //pinjaman asset
 router.get('/pinjaman/assets',pinjamanAsset.assets);
