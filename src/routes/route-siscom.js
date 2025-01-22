@@ -95,6 +95,8 @@ router.post('/insert-emp_labor',auth.isAuth,operasional.insertData);
 router.post('/insert-emp_leave',auth.isAuth, operasional.insertData);
 router.post('/cuti',auth.isAuth,cuti.store );
 router.get('/history-cuti',auth.isAuth,cuti.historyCuti );
+router.post('/cuti/type',auth.isAuth,cuti.tipeCuti );
+router.get('/izin-type',auth.isAuth,izin.tipeIzin );
 router.post('/insert-emp_claim', auth.isAuth,operasional.insertData);
 router.post('/insert-notifikasi',auth.isAuth, notifikasi.insertNotifikasi);
 router.post('/insert-candidate',auth.isAuth, operasional.insert_kandidat_baru);

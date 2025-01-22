@@ -1408,5 +1408,114 @@ module.exports = {
 
 
 
+           
+    async tipeIzin(req, res) {
+
+      console.log("tes")
+      var database=req.query.database;
+      var email=req.query.email;
+      var periode=req.body.periode;
+      var emId=req.query.em_id;
+      var durasi=req.body.durasi;
+  
+  
+      var dates=req.query.dates==undefined?'2024-08,2024-09':req.query.dates;
+  
+      console.log(req.query)
+  
+      var query=``
+  
+  
+      var datesplits=dates.split(',')
+  
+  
+  
+      
+  
+      query=`SELECT * FROM leave_types WHERE submissions_period='${durasi}' AND status='1'`
+        
+      
+    
+        try{
+          const connection = await model.createConnection(database);
+            connection.connect((err) => {
+              if (err) {
+                console.error('Error connecting to the database:', err);
+                return;
+              }
+            
+              connection.beginTransaction((err) => {
+                if (err) {
+                  console.error('Error beginning transaction:', err);
+                  connection.end();
+                  return;
+                }
+              
+             
+                        connection.query(`${durasi}`, (err, total) => {
+                          if (err) {
+                            console.error('Error executing SELECT statement:', err);
+                            connection.rollback(() => {
+                              connection.end();
+                              return res.status(400).send({
+                                status: true,
+                                message: 'gaga ambil data',
+                                data:[]
+                              
+                              });
+                            });
+                            return;
+                          }
+                      connection.commit((err) => {
+                        if (err) {
+                          console.error('Error committing transaction:', err);
+                          connection.rollback(() => {
+                            connection.end();
+                            return res.status(400).send({
+                              status: true,
+                              message: 'Gagal ambil data',
+                              data:[]
+                            
+                            });
+                          });
+                          return;
+                        }
+                    
+                        connection.end();
+                        console.log('Transaction completed successfully!');
+                        return res.status(200).send({
+                          status: true,
+                          message: 'Data berhasil di ambil',
+                          
+                
+                          sisa_cuti:total.length>0?total[0].sisa_cuti:0 ,
+                          data:pulangCepat,
+                          filter:"approve"
+                    
+                        
+                       
+                      });
+                  
+                    
+                      });
+                    });
+                  });
+                });
+               
+            
+          
+    
+        }catch(e){
+          return res.status(400).send({
+            status: true,
+            message: e,
+            data:[]
+          
+          });
+    
+        }
+       
+      },
+
 }
 

@@ -1404,6 +1404,278 @@ module.exports = {
              
             },
         
+
+
+            
+          async historyCuti(req, res) {
+
+            console.log("tes")
+            var database=req.query.database;
+            var email=req.query.email;
+            var periode=req.body.periode;
+            var emId=req.query.em_id;
+        
+        
+            var dates=req.query.dates==undefined?'2024-08,2024-09':req.query.dates;
+        
+            console.log(req.query)
+        
+            var query=``
+        
+        
+            var datesplits=dates.split(',')
+        
+            for (var i=0;i<datesplits.length;i++){
+        
+              var date=datesplits[i].split('-')
+             console.log(date)
+              var bulan=date[1];
+              var tahun=date[0]
+              var convertYear = tahun.toString().substring(2, 4);
+            
+        
+              var finalDatabase=`${database}_hrm${convertYear}${bulan}`
+
+              console.log(finalDatabase)
+        
+        
+
+           console.log(i)
+             
+          //  query= ` SELECT a.id as idd, a.*, b.name, b.id as id_type FROM ${finalDatabase}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${emId}'  
+          //  AND a.status_transaksi='1'    `
+              
+             if (i==0 || i=='0'){
+               query= ` SELECT a.id as idd, a.*, b.name, b.id as id_type FROM ${finalDatabase}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${emId}'  
+               AND a.status_transaksi='1' AND b.cut_leave='1'    `
+              
+             }else{
+              query=query +`UNION ALL SELECT a.id as idd, a.*, b.name, b.id as id_type FROM ${finalDatabase}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${emId}'  
+              AND a.status_transaksi='1'  AND b.cut_leave='1'  `
+        
+             }
+        
+        
+            } 
+        
+            if (datesplits.length>0){
+              query=query+" ORDER BY idd DESC"
+        
+            }
+
+      console.log(query)
+        var tahun=datesplits[0].split('-')[0];
+        
+          
+              try{
+                const connection = await model.createConnection(database);
+                  connection.connect((err) => {
+                    if (err) {
+                      console.error('Error connecting to the database:', err);
+                      return;
+                    }
+                  
+                    connection.beginTransaction((err) => {
+                      if (err) {
+                        console.error('Error beginning transaction:', err);
+                        connection.end();
+                        return;
+                      }
+                    
+                   
+                            connection.query(query, (err, pulangCepat) => {
+                              if (err) {
+                                console.error('Error executing SELECT statement:', err);
+                                connection.rollback(() => {
+                                  connection.end();
+                                  return res.status(400).send({
+                                    status: true,
+                                    message: 'gaga ambil data',
+                                    data:[]
+                                  
+                                  });
+                                });
+                                return;
+                              }
+
+                              connection.query(`SELECT (adjust_cuti+total_day-terpakai) as sisa_cuti,assign_leave.* FROM assign_leave WHERE dateyear='${tahun}' AND em_id='${emId}'`, (err, total) => {
+                                if (err) {
+                                  console.error('Error executing SELECT statement:', err);
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: 'gaga ambil data',
+                                      data:[]
+                                    
+                                    });
+                                  });
+                                  return;
+                                }
+                            connection.commit((err) => {
+                              if (err) {
+                                console.error('Error committing transaction:', err);
+                                connection.rollback(() => {
+                                  connection.end();
+                                  return res.status(400).send({
+                                    status: true,
+                                    message: 'Gagal ambil data',
+                                    data:[]
+                                  
+                                  });
+                                });
+                                return;
+                              }
+                            console.log(`SELECT (total_day-terpakai) as sisa_cuti FROM assign_leave WHERE dateyear='${tahun}' AND em_id='${emId}'`)
+                              connection.end();
+                              console.log('Transaction completed successfully!');
+                              return res.status(200).send({
+                                status: true,
+                                message: 'Data berhasil di ambil',
+                                
+                      
+                                sisa_cuti:total.length>0?total[0].sisa_cuti:0 ,
+                                data:pulangCepat,
+                                filter:"approve"
+                          
+                              
+                              });
+                            });
+                        
+                          
+                            });
+                          });
+                        });
+                      });
+                     
+                  
+                
+          
+              }catch(e){
+                return res.status(400).send({
+                  status: true,
+                  message: e,
+                  data:[]
+                
+                });
+          
+              }
+             
+            },
+
+
+
+            
+
+            
+          async tipeCuti(req, res) {
+
+            console.log("tes")
+            var database=req.query.database;
+            var email=req.query.email;
+            var periode=req.body.periode;
+            var emId=req.query.em_id;
+            var durasi=req.body.durasi;
+        
+        
+            var dates=req.query.dates==undefined?'2024-08,2024-09':req.query.dates;
+        
+            console.log(req.query)
+        
+            var query=``
+        
+        
+            var datesplits=dates.split(',')
+        
+        
+        
+            
+        
+            query=`SELECT * FROM leave_types WHERE submission_period>='${durasi}' AND  status IN (2,3) `
+            console.log(query)
+              
+            
+          
+              try{
+                const connection = await model.createConnection(database);
+                  connection.connect((err) => {
+                    if (err) {
+                      console.error('Error connecting to the database:', err);
+                      return;
+                    }
+                  
+                    connection.beginTransaction((err) => {
+                      if (err) {
+                        console.error('Error beginning transaction:', err);
+                        connection.end();
+                        return;
+                      }
+                    
+                   
+                              connection.query(query, (err, data) => {
+                                if (err) {
+                                  console.error('Error executing SELECT statement:', err);
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: 'gaga ambil data',
+                                      data:[]
+                                    
+                                    });
+                                  });
+                                  return;
+                                }
+                            connection.commit((err) => {
+                              if (err) {
+                                console.error('Error committing transaction:', err);
+                                connection.rollback(() => {
+                                  connection.end();
+                                  return res.status(400).send({
+                                    status: true,
+                                    message: 'Gagal ambil data',
+                                    data:[]
+                                  
+                                  });
+                                });
+                                return;
+                              }
+                          
+                              connection.end();
+                              console.log('Transaction completed successfully!');
+                              return res.status(200).send({
+                                status: true,
+                                message: 'Data berhasil di ambil',
+                                
+                      
+                                data:data
+                          
+                              
+                             
+                            });
+                        
+                          
+                            });
+                          });
+                        });
+                      });
+                     
+                  
+                
+          
+              }catch(e){
+                return res.status(400).send({
+                  status: true,
+                  message: e,
+                  data:[]
+                
+                });
+          
+              }
+             
+            },
+        
+        
     
 
   }
