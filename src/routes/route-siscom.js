@@ -132,7 +132,8 @@ router.post('/edit-employee', operasional.editData);
 router.post('/edit-emp_leave', operasional.editData);
 
 
-router.post('/edit-emp_labor-approval', operasional.approvalTransaksiNew);
+router.post('/edit-emp_labor-approval-task', operasional.approvalTransaksiNew);
+router.post('/edit-emp_labor-approval', operasional.approvalTransaksi);
 router.post('/edit-emp_leave-approval', operasional.approvalTransaksi);
 router.post('/edit-emp_claim', operasional.approvalTransaksi);
 
