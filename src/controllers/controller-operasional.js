@@ -5105,10 +5105,11 @@ console.log(bodyValue)
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
+    delete bodyValue.type;
 
     console.log(req.body)
 
-    var script = `UPDATE ${nameTable} SET ? WHERE ${nameWhere} = '${cariWhere}'`;
+  
 
     console.log(script)
     var dataInsertLog = {
@@ -5122,7 +5123,7 @@ console.log(bodyValue)
     // var array = atten_date.split("-");
     var array = []
     try {
-      array = atten_date.split("-");
+      array = utility.dateNow2().split("-");
     } catch (error) {
       array = req.body.start_date.split("-");
     }
@@ -5140,8 +5141,11 @@ console.log(bodyValue)
     }
 
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    // const namaDatabaseDynamic = `${database}_test2208`;
+    var script = `UPDATE ${namaDatabaseDynamic }.${nameTable} SET ? WHERE ${nameWhere} = '${cariWhere}'`;
 
+    console.log(script)
+    // const namaDatabaseDynamic = `${database}_test2208`;
+console.log(req.body)
     const configDynamic = {
       multipleStatements: true,
       host: ipServer,//my${database}.siscom.id (ip local)
@@ -5165,6 +5169,7 @@ console.log(bodyValue)
         script,
         [bodyValue],
         function (error, results) {
+          console.log(error)
           connection.release();
           if (error != null) 
           connection.query(
