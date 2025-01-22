@@ -4153,6 +4153,8 @@ console.log(bodyValue)
     // return;
     if (menu_name=="Lembur" || menu_name=="Tugas Luar"){
       nameTable='emp_labor'
+      delete bodyValue.tasks;
+      delete bodyValue.total_persentase;
     }
 
     if (menu_name=="Sakit" || menu_name.includes("LEAVE") || menu_name.includes("EARLY OUT PERMIT")  || menu_name=="Izin" || menu_name=="Cuti" || leaveTypes=='FULLDAY' || leaveTypes=='FULL DAY' || leaveTypes=='HALFDAY' || leaveTypes=='HALF'|| menu_name=='Dinas Luar' ) {
@@ -4270,48 +4272,48 @@ console.log(bodyValue)
 
                
                   if  (  (menu_name=="Lembur" && sysdata[0].name=="1" && bodyStatusFinal=="Approve" ) || (menu_name=="Lembur" && sysdata[0].name=="2" && (bodyStatusFinal=="Approve2"))  ){
-                    var tasks=req.body.task;
-                    var  persentase=req.body.persentase;
+                  //   var tasks=req.body.task;
+                  //   var  persentase=req.body.persentase;
                     
-                    for (var i=0;i=tasks.length;i++){
+                  //   for (var i=0;i=tasks.length;i++){
                       
-                       connection.query( `UPDATE ${namaDatabaseDynamic}.emp_labor_task SET persentase='${tasks[i]['persentase']}' WHERE id='${tasks[i]['persentase']}' `, (err, employeeApproved) => {
-                    if (err) {
-                      console.error('Error executing SELECT statement:', err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: 'gaga ambil data',
-                          data:[]
+                  //      connection.query( `UPDATE ${namaDatabaseDynamic}.emp_labor_task SET persentase='${tasks[i]['persentase']}' WHERE id='${tasks[i]['persentase']}' `, (err, employeeApproved) => {
+                  //   if (err) {
+                  //     console.error('Error executing SELECT statement:', err);
+                  //     connection.rollback(() => {
+                  //       connection.end();
+                  //       return res.status(400).send({
+                  //         status: true,
+                  //         message: 'gaga ambil data',
+                  //         data:[]
                         
-                        });
-                      });
-                      return;
-                    }
-                  });
+                  //       });
+                  //     });
+                  //     return;
+                  //   }
+                  // });
 
 
 
-                    }
+                  //   }
 
-                    if (tasks.length>0){
+                  //   if (tasks.length>0){
 
 
-                      if (parseFloat(persentase)< parseFloat(sysdata[3]>0)){
-                        bodyStatusFinal='Rejected'
+                  //     if (parseFloat(persentase)< parseFloat(sysdata[3]>0)){
+                  //       bodyStatusFinal='Rejected'
                         
-                      }else{
-                        if ( sysdata[0].name=="2"){
-                          bodyStatusFinal='Approve2'
+                  //     }else{
+                  //       if ( sysdata[0].name=="2"){
+                  //         bodyStatusFinal='Approve2'
 
-                        }else{
-                          bodyStatusFinal='Approve'
+                  //       }else{
+                  //         bodyStatusFinal='Approve'
 
-                        }
-                      }
+                  //       }
+                  //     }
 
-                    }
+                  //   }
 
 
 
