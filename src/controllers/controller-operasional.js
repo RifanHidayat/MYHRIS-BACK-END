@@ -11864,7 +11864,7 @@ queryCek=`SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_dat
                 var approve2Status=req.body.approve2_status;
                 var approveBy2=req.body.approve_by2;
                 
-                var approveDate2=req.body.approve_Date1
+                var approveDate2=req.body.approve_date2
                 var approveId2=req.body.approve_id2
             
   
@@ -11874,7 +11874,7 @@ queryCek=`SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_dat
                
 
                   }else{
-                    query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='Approve2', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
+                    query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
               
 
                   }
@@ -14121,7 +14121,7 @@ a.typeid,
             query9,
             function (error, dataAbsensi) {
               connection.release();
-              console.log(data)
+              console.log(dataAbsensi)
               
               res.send({
                 status: true,
@@ -14159,11 +14159,11 @@ a.typeid,
             query11,
             function (error, dataAbsensi) {
               connection.release();
-              console.log('data ',data)
+              console.log('data ',dataAbsensi)
               
               res.send({
                 status: true,
-                message: "Berhasil ambil data approve Klaim!",
+                message: "Berhasil ambil data approve Surat Peringatan!",
                 jenis: 'wfh',
                 data: dataAbsensi
               });
