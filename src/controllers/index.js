@@ -18,6 +18,7 @@ const pengadaanKerusakan = require('./pengaduan');
 const peraturanPerusahaan = require('./peraturan_perusahaan');
 const employee= require('./employee');
 const suratPeringatan= require('./surat_peringatan');
+const teguranLisan= require('./teguran_lisan');
 const pinjamanAsset= require('./peminjaman_asset');
 const cabang= require('./cabang');
 module.exports ={
@@ -30,5 +31,9 @@ module.exports ={
 	notifikasi,
 	claim,
 	tracking,
-	wfh,loan,chatting,lembur,cuti,tugasLuar,klaim,pengadaanKerusakan,employee,peraturanPerusahaan,suratPeringatan ,pinjamanAsset,cabang
+	wfh,loan
+	,chatting,lembur,cuti,tugasLuar,klaim,pengadaanKerusakan,employee,peraturanPerusahaan
+	,suratPeringatan 
+	,pinjamanAsset,cabang,
+	teguranLisan,
 };

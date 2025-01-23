@@ -10884,6 +10884,8 @@ async slip_gaji(req, res) {
   var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
   
   var query11 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
+  
+  var query12 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
 
   if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
     query1 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan IN ('2', '3')    AND a.status_transaksi=1 AND a.atten_date>='${startPeriode}' AND  a.atten_date<='${endPeriode}'
@@ -11009,7 +11011,7 @@ async slip_gaji(req, res) {
         });
       } else {
         connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11}`,
+          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
           function (error, results) {
             if (error != null) console.log(error)
             connection.release();
@@ -11027,6 +11029,7 @@ async slip_gaji(req, res) {
               jumlah_wfh: results[8].length,
               jumlah_kasbon: results[9].length,
               jumlah_surat_peringatan: results[10].length,
+              jumlah_teguran_lisan: results[11].length,
               data1: results[0],
               data2: results[1],
               data3: results[2],
@@ -11038,6 +11041,7 @@ async slip_gaji(req, res) {
               data9: results[8],
               data10: results[9],
               data11: results[10],
+              data12: results[11],
             });
           }
         );
