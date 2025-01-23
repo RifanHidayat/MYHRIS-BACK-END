@@ -13618,34 +13618,26 @@ a.place_out as place_out,
       var query11 = `SELECT
       letter.name as nama,
       CASE
-      WHEN ( a.approve_status  IS NULL  OR a.approve_status='Pending') AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
-      WHEN  (a.approve_status  IS NULL OR a.approve_status='Rejected')  AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-      ELSE "Approve"
+        WHEN (a.approve_status IS NULL OR a.approve_status = 'Pending') THEN "Pending"
+        WHEN (a.approve_status = 'Rejected') THEN "Rejected"
+        ELSE "Approve"
       END AS approve_status,
-      CASE
-      WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by='') THEN "Pending"
-      WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-      ELSE "Approve"
-      END AS approve2_status,
-      a.approve_by,
-      a.approve2_by,
-      a.eff_date as atten_date,
-      a.alasan as uraian,
-      a.nomor as nomor_ajuan,
-      a.em_id,
-      a.approve_id,
-      a.status,
-      a.approve_id, 
-      a.approve_date,
-      a.title as judul,
-      a.nomor As nomor_ajuan,
-      
-           
-      a.tgl_surat as tanggal_ajuan,
-      a.id,
-       b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
-       b.full_name,a.status as leave_status ,a.status as status FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' LEFT JOIN
-       ${database}_hrm.letter ON a.letter_id=letter.id
+    a.eff_date AS atten_date,
+    a.alasan AS uraian,
+    a.nomor AS nomor_ajuan,
+    a.em_id,
+    a.approve_id,
+    a.approve_date,
+    a.title AS judul,
+    a.tgl_surat AS tanggal_ajuan,
+    a.id,
+    b.em_report_to,
+    b.em_report2_to,
+    b.full_name,
+    a.status AS leave_status
+    FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b 
+    LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
+    LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
 
        if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
