@@ -1409,6 +1409,9 @@ module.exports = {
 
 
            
+
+
+            
     async tipeIzin(req, res) {
 
       console.log("tes")
@@ -1432,7 +1435,9 @@ module.exports = {
   
       
   
-      query=`SELECT * FROM leave_types WHERE submissions_period='${durasi}' AND status='1'`
+      query=`SELECT * FROM leave_types WHERE submission_period>='${durasi}' AND 
+       status IN (2,3) `
+      console.log(query)
         
       
     
@@ -1452,7 +1457,7 @@ module.exports = {
                 }
               
              
-                        connection.query(`${durasi}`, (err, total) => {
+                        connection.query(query, (err, data) => {
                           if (err) {
                             console.error('Error executing SELECT statement:', err);
                             connection.rollback(() => {
@@ -1488,9 +1493,7 @@ module.exports = {
                           message: 'Data berhasil di ambil',
                           
                 
-                          sisa_cuti:total.length>0?total[0].sisa_cuti:0 ,
-                          data:pulangCepat,
-                          filter:"approve"
+                          data:data
                     
                         
                        
@@ -1516,6 +1519,6 @@ module.exports = {
         }
        
       },
-
+  
 }
 

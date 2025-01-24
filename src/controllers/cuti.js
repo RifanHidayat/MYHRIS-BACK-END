@@ -497,16 +497,44 @@ module.exports = {
                           }
                           connection.end();
                           console.log('Transaction completed successfully!');
-                          return res.status(200).send({
-                            status: true,
-                            message: "Kombinasi email & password Anda Salah",
-                            tipe:sysdataCuti[0].name,
-                            sisa_cuti:(cutiData[0].adjust_cuti + cutiData[0].total_day - cutiData[0].terpakai) ,
-                            total_cuti:0,
-                            keterangan:"Anda memiliki beberapa pengajuan cuti"
+
+                          if (cutiData.length>0){
+
+                            return res.status(200).send({
+                              status: true,
+                              message: "Kombinasi email & password Anda Salah",
+                              tipe:sysdataCuti[0].name,
+                              sisa_cuti: ( (cutiData[0].saldo_cut_off+cutiData[0].saldo_cuti_bulan_lalu+cutiData[0].saldo_cuti_tahun_lalu+cutiData[0].perolehan_cuti-cutiData[0].expired_cuti-cuti_bersama)- cutiData[0].terpakai) ,
+                              total_cuti:0,
+                              keterangan:"Anda memiliki beberapa pengajuan cuti"
+    
+                             
+                            });
+                          }else{
+                            return res.status(200).send({
+                              status: true,
+                              message: "Kombinasi email & password Anda Salah",
+                              tipe:sysdataCuti[0].name,
+                              sisa_cuti: 0,
+                              total_cuti:0,
+                              keterangan:"Anda memiliki beberapa pengajuan cuti"
+    
+                             
+                            });
+
+
+                          }
+                      
+                          // return res.status(200).send({
+                          //   status: true,
+                          //   message: "Kombinasi email & password Anda Salah",
+                          //   tipe:sysdataCuti[0].name,
+                          //   sisa_cuti:(cutiData[0].adjust_cuti + cutiData[0].total_day - cutiData[0].terpakai) ,
+                          //   total_cuti:0,
+                          //   keterangan:"Anda memiliki beberapa pengajuan cuti"
   
                            
-                          });
+                          // });
     
                       
                   
@@ -1591,7 +1619,8 @@ module.exports = {
         
             
         
-            query=`SELECT * FROM leave_types WHERE submission_period>='${durasi}' AND  status IN (2,3) `
+            query=`SELECT * FROM leave_types WHERE submission_period>='${durasi}' AND 
+             status IN (1) `
             console.log(query)
               
             

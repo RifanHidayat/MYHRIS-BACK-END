@@ -3802,269 +3802,269 @@ console.log(bodyValue)
                     }
 
                     // alur 1  approval
-                    if (sysdata[0].name=="1" ||sysdata[0].name==1){
-                    //ketika approve
-                    if (bodyStatusFinal=='Approve' || bodyStatusFinal=='Approve'){
-                    var listData=sysdata[2].name.toString().split(',')
-                      for (var i=0;i<listData.length;i++){
-                        if (listData[i]!=''){
-                        var title='';
-                        var deskripsi='';
-                        title=`Approval ${namaTransaksi}`
-                        deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`
-                        connection.query(
-                          `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
+                    // if (sysdata[0].name=="1" ||sysdata[0].name==1){
+                    // //ketika approve
+                    // if (bodyStatusFinal=='Approve' || bodyStatusFinal=='Approve'){
+                    // var listData=sysdata[2].name.toString().split(',')
+                    //   for (var i=0;i<listData.length;i++){
+                    //     if (listData[i]!=''){
+                    //     var title='';
+                    //     var deskripsi='';
+                    //     title=`Approval ${namaTransaksi}`
+                    //     deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`
+                    //     connection.query(
+                    //       `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
                          
                          
-                          (err, employee) => {
-                          if (err) {
-                            console.error('Error executing SELECT statement:', err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message: 'gaga ambil data',
-                                data:[]
+                    //       (err, employee) => {
+                    //       if (err) {
+                    //         console.error('Error executing SELECT statement:', err);
+                    //         connection.rollback(() => {
+                    //           connection.end();
+                    //           return res.status(400).send({
+                    //             status: true,
+                    //             message: 'gaga ambil data',
+                    //             data:[]
                               
-                              });
-                            });
-                            return;
-                          } 
+                    //           });
+                    //         });
+                    //         return;
+                    //       } 
                         
-                        connection.query(
-                          `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),1,0,'${emId}','${transaksi[0].id}')`,
-                          (err, results) => {
-                          if (err) {
-                            console.error('Error executing SELECT statement:', err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message: 'gaga ambil data',
-                                data:[]
+                    //     connection.query(
+                    //       `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),1,0,'${emId}','${transaksi[0].id}')`,
+                    //       (err, results) => {
+                    //       if (err) {
+                    //         console.error('Error executing SELECT statement:', err);
+                    //         connection.rollback(() => {
+                    //           connection.end();
+                    //           return res.status(400).send({
+                    //             status: true,
+                    //             message: 'gaga ambil data',
+                    //             data:[]
                               
-                              });
-                            });
-                            return;
-                          } 
+                    //           });
+                    //         });
+                    //         return;
+                    //       } 
                          
-                            utility.notifikasi(employee[0].token_notif,title,message)
-                        });
-                      });
+                    //         utility.notifikasi(employee[0].token_notif,title,message)
+                    //     });
+                    //   });
 
                         
                               
-                    }
+                    // }
 
-                      }
+                    //   }
 
-                      //jika approve
-                    }
-                    //ketika rejected
-                    if (bodyStatusFinal=='Rejected' || bodyStatusFinal=='Rejected'){
-                      console.log("Masuk reject query")
-                      var listData=sysdata[1].name.toString().split(',')
+                    //   //jika approve
+                    // }
+                    // //ketika rejected
+                    // if (bodyStatusFinal=='Rejected' || bodyStatusFinal=='Rejected'){
+                    //   console.log("Masuk reject query")
+                    //   var listData=sysdata[1].name.toString().split(',')
                      
-                        for (var i=0;i<listData.length;i++){
-                          console.log("Masuk reject query 1")
-                          console.log(namaTransaksi)
+                    //     for (var i=0;i<listData.length;i++){
+                    //       console.log("Masuk reject query 1")
+                    //       console.log(namaTransaksi)
   
-                          if (listData[i]!=''){
-                          title=`Rejection ${namaTransaksi}`
-                          deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di Tolak oleh ${employeeApproved[0].full_name}`
+                    //       if (listData[i]!=''){
+                    //       title=`Rejection ${namaTransaksi}`
+                    //       deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di Tolak oleh ${employeeApproved[0].full_name}`
   
-                          connection.query(
-                            `SELECT  * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
+                    //       connection.query(
+                    //         `SELECT  * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
                            
                            
-                            (err, employee) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //         (err, employee) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            } 
-                          connection.query(
-                            `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),0 ,0,'${emId}','${transaksi[0].id}')`,
-                           (err, results) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //             });
+                    //           });
+                    //           return;
+                    //         } 
+                    //       connection.query(
+                    //         `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),0 ,0,'${emId}','${transaksi[0].id}')`,
+                    //        (err, results) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            }     });
+                    //             });
+                    //           });
+                    //           return;
+                    //         }     });
 
                            
-                              utility.notifikasi(employee[0].token_notif,title,message)
-                          });
+                    //           utility.notifikasi(employee[0].token_notif,title,message)
+                    //       });
                                 
   
   
-                        }
+                    //     }
 
-                      }
+                    //   }
   
                     
-                        //jika approve
+                    //     //jika approve
                   
-                      }
-                    }
+                    //   }
+                    // }
 
 
                     
 
 
                     // alur 2  approval
-                    console.log('sys data',sysdata)
-                    if (sysdata[0].name=="2" ||sysdata[0].name==2){
-                    //keti approve
-                    if (bodyStatusFinal=='Approve2' || bodyStatusFinal=='Approve2'){
-                    console.log('data  em id approve',sysdata[2].toString())
-                     var listData=sysdata[2].name.toString().split(',')
-                    console.log('data  em id approve',listData)
+                    // console.log('sys data',sysdata)
+                    // if (sysdata[0].name=="2" ||sysdata[0].name==2){
+                    // //keti approve
+                    // if (bodyStatusFinal=='Approve2' || bodyStatusFinal=='Approve2'){
+                    // console.log('data  em id approve',sysdata[2].toString())
+                    //  var listData=sysdata[2].name.toString().split(',')
+                    // console.log('data  em id approve',listData)
 
-                      for (var i=0;i<listData.length;i++){
-                        console.log('proses ',i,listData[i])
+                    //   for (var i=0;i<listData.length;i++){
+                    //     console.log('proses ',i,listData[i])
 
 
-                        if (listData[i]!=''){
+                    //     if (listData[i]!=''){
 
-                          var title='';
-                          var deskripsi='';
-                          console.log(listData[i])                      
-                          title=`Approval ${namaTransaksi}`
-                          deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`
-                          connection.query(
-                            `SELECT *  FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
+                    //       var title='';
+                    //       var deskripsi='';
+                    //       console.log(listData[i])                      
+                    //       title=`Approval ${namaTransaksi}`
+                    //       deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`
+                    //       connection.query(
+                    //         `SELECT *  FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
                            
                            
-                            (err, employee) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //         (err, employee) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            } 
+                    //             });
+                    //           });
+                    //           return;
+                    //         } 
                         
-                          connection.query(
-                            `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi
-                            }',CURDATE(),CURTIME(),1,0,'${emId}','${transaksi[0].id}')`,
+                    //       connection.query(
+                    //         `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi
+                    //         }',CURDATE(),CURTIME(),1,0,'${emId}','${transaksi[0].id}')`,
                            
                            
-                            (err, results) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //         (err, results) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            }
-                             console.log("employee id ",listData[i])
-                              utility.notifikasi(employee[0].token_notif,title,deskripsi)
-                          });    
+                    //             });
+                    //           });
+                    //           return;
+                    //         }
+                    //          console.log("employee id ",listData[i])
+                    //           utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                    //       });    
                           
                           
-                          });
+                    //       });
                                 
 
-                        }
+                    //     }
                  
 
 
-                      }
-                      //jika approve
+                    //   }
+                    //   //jika approve
                 
-                    }
+                    // }
 
-                    //keti approve
-                    if (bodyStatusFinal=='Rejected' || bodyStatusFinal=='Rejected'){
-                      var listData=sysdata[1].name.toString().split(',')
+                    // //keti approve
+                    // if (bodyStatusFinal=='Rejected' || bodyStatusFinal=='Rejected'){
+                    //   var listData=sysdata[1].name.toString().split(',')
   
-                        for (var i=0;i<listData.length;i++){
+                    //     for (var i=0;i<listData.length;i++){
                          
   
-                        if (listData[i]!=''){
+                    //     if (listData[i]!=''){
                          
-                          title=`Rejection ${namaTransaksi}`
-                          deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di Tolak oleh ${employeeApproved[0].full_name}`
+                    //       title=`Rejection ${namaTransaksi}`
+                    //       deskripsi=`Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan  telah di Tolak oleh ${employeeApproved[0].full_name}`
   
-                          connection.query(
-                            `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
+                    //       connection.query(
+                    //         `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${listData[i]}'`,
                            
                            
-                            (err, employee) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //         (err, employee) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            } 
-                          connection.query(
-                            `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),0,0,'${emId}','${transaksi[0].id}')`,
-                           (err, results) => {
-                            if (err) {
-                              console.error('Error executing SELECT statement:', err);
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: 'gaga ambil data',
-                                  data:[]
+                    //             });
+                    //           });
+                    //           return;
+                    //         } 
+                    //       connection.query(
+                    //         `INSERT INTO ${namaDatabaseDynamic }.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx) VALUES ('${employee[0].em_id}','${title}','${deskripsi}','${urlTransaksi}',CURDATE(),CURTIME(),0,0,'${emId}','${transaksi[0].id}')`,
+                    //        (err, results) => {
+                    //         if (err) {
+                    //           console.error('Error executing SELECT statement:', err);
+                    //           connection.rollback(() => {
+                    //             connection.end();
+                    //             return res.status(400).send({
+                    //               status: true,
+                    //               message: 'gaga ambil data',
+                    //               data:[]
                                 
-                                });
-                              });
-                              return;
-                            }   
+                    //             });
+                    //           });
+                    //           return;
+                    //         }   
                           
                            
-                              utility.notifikasi(employee[0].token_notif,title,deskripsi)
-                          });
+                    //           utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                    //       });
                           
-                          });
-                        }
+                    //       });
+                    //     }
                                 
   
   
-                        }
-                        //jika approve
+                    //     }
+                    //     //jika approve
                   
-                      }
+                    //   }
 
-                    }
+                    // }
 
 
                 connection.commit((err) => {
@@ -4117,7 +4117,8 @@ console.log(bodyValue)
 
   async approvalTransaksi(req, res) {
     try{
-
+      delete bodyValue.konsekuensi;
+      delete bodyValue.status_pengajuan;
     //aproval tugas luar,dinas luar,cuti,lembur,izin
     //console.log()
     console.log('-----approaval transaksi ----------')
@@ -4147,6 +4148,9 @@ console.log(bodyValue)
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
+    var jenisTrabsaksi=''
+    var statusPengajuan=req.body.status_pengajuan==undefined?"":req.body.status_pengajuan;
+    var konsekuensi=req.body.konsekuensi==undefined?[]:req.body.konsekuensi
 
 
     console.log(menu_name)
@@ -4165,6 +4169,8 @@ console.log(bodyValue)
       if (nameTable=='emp_claim'){
         delete bodyValue.atten_date
       }
+
+      var alasanReject=req.body.alasan_reject==undefined?"":req.body.alasan_reject;
 
     var script = `UPDATE ${nameTable} SET ? WHERE ${nameWhere} = '${cariWhere}'`;
 
@@ -4269,60 +4275,9 @@ console.log(bodyValue)
                       return;
                     }
 
-
-               
-                  if  (  (menu_name=="Lembur" && sysdata[0].name=="1" && bodyStatusFinal=="Approve" ) || (menu_name=="Lembur" && sysdata[0].name=="2" && (bodyStatusFinal=="Approve2"))  ){
-                  //   var tasks=req.body.task;
-                  //   var  persentase=req.body.persentase;
                     
-                  //   for (var i=0;i=tasks.length;i++){
-                      
-                  //      connection.query( `UPDATE ${namaDatabaseDynamic}.emp_labor_task SET persentase='${tasks[i]['persentase']}' WHERE id='${tasks[i]['persentase']}' `, (err, employeeApproved) => {
-                  //   if (err) {
-                  //     console.error('Error executing SELECT statement:', err);
-                  //     connection.rollback(() => {
-                  //       connection.end();
-                  //       return res.status(400).send({
-                  //         status: true,
-                  //         message: 'gaga ambil data',
-                  //         data:[]
-                        
-                  //       });
-                  //     });
-                  //     return;
-                  //   }
-                  // });
-
-
-
-                  //   }
-
-                  //   if (tasks.length>0){
-
-
-                  //     if (parseFloat(persentase)< parseFloat(sysdata[3]>0)){
-                  //       bodyStatusFinal='Rejected'
-                        
-                  //     }else{
-                  //       if ( sysdata[0].name=="2"){
-                  //         bodyStatusFinal='Approve2'
-
-                  //       }else{
-                  //         bodyStatusFinal='Approve'
-
-                  //       }
-                  //     }
-
-                  //   }
-
-
-
-                  
-              
-
-                  
-                  
-                  }
+               
+                
 
                   connection.query(script,
                     [bodyValue], (err, results) => {
@@ -4395,9 +4350,199 @@ console.log(bodyValue)
                     kode 013 singgle atau multi
                     kode 022 peneriama notifikasi reject
                     kode 023 peneriaman notifikasi approve
+
+
+
                     
                     */
 
+                    if (menu_name=="Izin" || menu_name=='Sakit' || menu_name=='Cuti'){
+                      delete bodyValue.konsekuensi;
+                      delete bodyValue.status_pengajuan;
+                      
+                      if (statusPengajuan=="teguran_lisan"){
+
+                        connection.query( `    SELECT * FROM teguran_lisan
+                        WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE)
+                        AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`, (err, teguranLisan) => {
+                          if (err) {
+                            console.error('Error executing SELECT statement:', err);
+                            connection.rollback(() => {
+                              connection.end();
+                              return res.status(400).send({
+                                status: true,
+                                message: 'gaga ambil data',
+                                data:[]
+                              
+                              });
+                            });
+                            return;
+                          }
+                          var nomorLb=`LI20${convertYear}${convertBulan}`;
+                          if (teguranLisan.length > 0) {
+                            var text = teguranLisan[0]['nomor'];
+                            var nomor = parseInt(text.substring(8, 13)) + 1;
+                            var nomorStr = String(nomor).padStart(4, '0')
+                            nomorLb = nomorLb + nomorStr
+                          } else {
+                            var nomor = 1;
+                            var nomorStr = String(nomor).padStart(4, '0')
+                            nomorLb = nomorLb+ nomorStr;
+                          }
+
+
+                          connection.query( `INSERT INTO teguran_lisan (nomor,tgl_surat,em_id,letter_id,eff_date,pelanggaran,status) VALUE('${nomorLb}','${utility.dateNow2()}','${emId}','9','${utility.dateNow2()}','${alasanReject}','Pending')`, (err, teguranLisan) => {
+                            if (err) {
+                              console.error('Error executing SELECT statement:', err);
+                              connection.rollback(() => {
+                                connection.end();
+                                return res.status(400).send({
+                                  status: true,
+                                  message: 'gaga ambil data',
+                                  data:[]
+                                
+                                });
+                              });
+                              return;
+                            }
+
+                            for(var i=0;i<konsekuensi.length;i++){
+                              var data=teguranLisan[i]
+                              connection.query( `INSERT INTO teguran_lisan_detail (teguran_lisan_id,name) VALUE('${teguranLisan.insertId}','${data}')`, (err, teguranLisanDetail) => {
+                                if (err) {
+                                  console.error('Error executing SELECT statement:', err);
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: 'gaga ambil data',
+                                      data:[]
+                                    
+                                    });
+                                  });
+                                  return;
+                                }
+                              });
+
+                            }
+
+
+
+                        });
+
+                      });
+
+                      }
+
+
+                      if (statusPengajuan=="surat_peringatan"){
+
+                        connection.query( `SELECT * FROM employee_letter WHERR exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`, (err, suratPeringatan) => {
+                          if (err) {
+                            console.error('Error executing SELECT statement:', err);
+                            connection.rollback(() => {
+                              connection.end();
+                              return res.status(400).send({
+                                status: true,
+                                message: 'gaga ambil data',
+                                data:[]
+                              
+                              });
+                            });
+                            return;
+                          }
+                          var letterId='2';
+
+                          if (suratPeringatan.length>0){
+                            var letterIdTemp=suratPeringatan[0]['letter_id']
+                            if (letterIdTemp=='2' || letterIdTemp==2  ){
+                              letterId='3';
+                            }
+                            if (letterIdTemp=='3' || letterIdTemp==3  ){
+                              letterId='4';
+                            }
+
+
+                          }
+
+                        connection.query( `SELECT * FROM employee_letter
+                        WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE)
+                        AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`, (err, teguranLisan) => {
+                          if (err) {
+                            console.error('Error executing SELECT statement:', err);
+                            connection.rollback(() => {
+                              connection.end();
+                              return res.status(400).send({
+                                status: true,
+                                message: 'gaga ambil data',
+                                data:[]
+                              
+                              });
+                            });
+                            return;
+                          }
+                          var nomorLb=`SP20${convertYear}${convertBulan}`;
+                          if (teguranLisan.length > 0) {
+                            var text = teguranLisan[0]['nomor'];
+                            var nomor = parseInt(text.substring(8, 13)) + 1;
+                            var nomorStr = String(nomor).padStart(4, '0')
+                            nomorLb = nomorLb + nomorStr
+                          } else {
+                            var nomor = 1;
+                            var nomorStr = String(nomor).padStart(4, '0')
+                            nomorLb = nomorLb+ nomorStr;
+                          }
+
+
+                          connection.query( `INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,alasan,status) 
+                          VALUE('${nomorLb}','${utility.dateNow2()}','${emId}','2','${utility.dateNow2()}','${alasanReject}','Pending')`, (err, teguranLisan) => {
+                            if (err) {
+                              console.error('Error executing SELECT statement:', err);
+                              connection.rollback(() => {
+                                connection.end();
+                                return res.status(400).send({
+                                  status: true,
+                                  message: 'gaga ambil data',
+                                  data:[]
+                                
+                                });
+                              });
+                              return;
+                            }
+
+                            for(var i=0;i<konsekuensi.length;i++){
+                              var data=teguranLisan[i]
+                              connection.query( `INSERT INTO employee_letter_reason (employee_letter_id_id,name) VALUE('${teguranLisan.insertId}','${data}')`, (err, teguranLisanDetail) => {
+                                if (err) {
+                                  console.error('Error executing SELECT statement:', err);
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: 'gaga ambil data',
+                                      data:[]
+                                    
+                                    });
+                                  });
+                                  return;
+                                }
+                              });
+
+                            }
+
+
+
+                        });
+
+                      });
+                    });
+
+                      }
+                    }
+
+
+
+                    
                     
                     if (menu_name=="Lembur"){
                       namaTransaksi='Lembur'
@@ -4499,7 +4644,7 @@ console.log(bodyValue)
                             return;
                           } 
                          
-                            utility.notifikasi(employee[0].token_notif,title,message)
+                           // utility.notifikasi(employee[0].token_notif,title,message)
                         });
                       });
 
@@ -4560,7 +4705,7 @@ console.log(bodyValue)
                             }     });
 
                            
-                              utility.notifikasi(employee[0].token_notif,title,message)
+                             // utility.notifikasi(employee[0].token_notif,title,message)
                           });
                                 
   
@@ -4638,7 +4783,7 @@ console.log(bodyValue)
                               return;
                             }
                              console.log("employee id ",listData[i])
-                              utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                             // utility.notifikasi(employee[0].token_notif,title,deskripsi)
                           });    
                           
                           
@@ -4702,7 +4847,7 @@ console.log(bodyValue)
                             }   
                           
                            
-                              utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                          //    utility.notifikasi(employee[0].token_notif,title,deskripsi)
                           });
                           
                           });

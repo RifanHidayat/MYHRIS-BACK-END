@@ -62,7 +62,7 @@ async loginUser(req,res){
                   (SELECT name FROM sysdata WHERE kode='012') AS is_view_tracking,
                   (SELECT name FROM sysdata WHERE kode='043') AS toleransi_pengembalian,
                   (SELECT name FROM sysdata WHERE kode='021') AS back_date,
-                  IFNULL(MAX(employee_history.end_date) ,'')AS tanggal_berakhir_kontrak,
+                  IFNULL(MAX(employee_history.end_date) ,'') AS tanggal_berakhir_kontrak,
                     (SELECT beginday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS begin_payroll,(SELECT name FROM sysdata WHERE id='18') as time_attendance,
                   (SELECT endday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS end_payroll, branch.name AS branch_name, a.em_id, full_name, em_email, des_id, dep_id, dep_group_id AS dep_group, em_mobile AS em_phone, em_birthday, em_blood_group, em_gender, em_image, em_joining_date, em_status, job_title AS posisi, em_hak_akses, last_login, a.status AS status_aktif,
                    em_control, em_controlaccess AS em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working AS emp_att_working 
