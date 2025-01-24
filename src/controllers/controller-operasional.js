@@ -10758,14 +10758,9 @@ async slip_gaji(req, res) {
     const convertYear = tahun.substring(2, 4);
     var convert1 = parseInt(getbulan);
     var convertBulan = convert1 <= 9 ? `0${convert1}` : convert1;
-  
-
-  
-
 
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    
     var startPeriode=req.query.start_periode==undefined?"2024-02-03":req.query.start_periode;
     var endPeriode=req.query.end_periode==undefined?"2024-02-03":req.query.end_periode;
     var array1=startPeriode.split('-')
@@ -10779,38 +10774,14 @@ async slip_gaji(req, res) {
     
     const montStart = date1.getMonth() +1; 
     const monthEnd = date2.getMonth() +1; 
-    // a.em_id,
-   
-    // var query1 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan IN ('2', '3') AND  `;
-    // var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='1'`;
-    // var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='1'`;
-    // var query4 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='2'`;
-    // var query5 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='4'`;
-    // var query6 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'`;
-   
-    // //  var query7 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_mobile_approval a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (a.approved_id IS NULL OR  a.approved_id ='') `;
-   
-    // var query7=`SELECT designation.payroll_approval, a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_mobile_approval a 
-    // JOIN ${database}_hrm.employee b JOIN ${database}_hrm.designation ON designation.id=b.des_id WHERE a.em_id=b.em_id 
-    // AND (a.approved_id IS NULL OR  a.approved_id ='') AND designation.payroll_approval  IN (?)`
-    // // var query8="SELECT * FROM emp_labor WHERE ajuan='3'  AND status_transaksi=1 AND (status='Pending' OR status='pending')"
-   
-   
-    // var query8 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND (a.status='Pending' OR a.status='pending') AND a.ajuan='3'`;
-     
-
 
     var query1 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan IN ('2', '3')   AND a.status_transaksi=1`;
     var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='1'   AND a.status_transaksi=1`;
-    //var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='1' `;
     var query3 = `SELECT o.name as category_pengajuan,   a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='1'  AND a.status_transaksi=1 `;
    
     var query4 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='2'  AND a.status_transaksi=1`;
     var query5 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='4'   AND a.status_transaksi=1`;
     var query6 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'  AND a.status_transaksi=1`;
-   
-    //  var query7 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_mobile_approval a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (a.approved_id IS NULL OR  a.approved_id ='') `;
-   
     var query7=`SELECT designation.payroll_approval, a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_mobile_approval a 
     JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id JOIN ${database}_hrm.designation ON designation.id=b.des_id WHERE a.em_id=b.em_id 
     AND (a.approved_id IS NULL OR  a.approved_id ='') AND designation.payroll_approval  LIKE '%${em_id}%'  AND a.created_date=CURDATE()`
@@ -13794,6 +13765,31 @@ a.place_out as place_out,
     LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
 
+       var query12 = `SELECT
+       letter.name as nama,
+       CASE
+         WHEN (a.approve_status IS NULL OR a.approve_status = 'Pending') THEN "Pending"
+         WHEN (a.approve_status = 'Rejected') THEN "Rejected"
+         ELSE "Approve"
+       END AS approve_status,
+     a.eff_date AS atten_date,
+     a.pelanggaran AS pelangaran,
+     a.nomor AS nomor_ajuan,
+     a.em_id,
+     a.approve_id,
+     a.approve_date,
+     a.hal AS judul,
+     a.tgl_surat AS tanggal_ajuan,
+     a.id,
+     b.em_report_to,
+     b.em_report2_to,
+     b.full_name,
+     a.status AS leave_status
+     FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b 
+     LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
+     LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
+        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
+ 
        if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
 
         
@@ -14316,7 +14312,26 @@ a.typeid,
             }
           );
 
-          }
+          }else if (url_data == "teguran_lisan") {
+            console.log(query12)
+  
+            
+            connection.query(
+              query12,
+              function (error, dataAbsensi) {
+                connection.release();
+                console.log('data ',dataAbsensi)
+                
+                res.send({
+                  status: true,
+                  message: "Berhasil ambil data approve Teguran Lisan!",
+                  jenis: 'teguran lisan',
+                  data: dataAbsensi
+                });
+              }
+            );
+  
+            }
       }
 
     })
