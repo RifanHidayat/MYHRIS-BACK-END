@@ -11034,6 +11034,8 @@ async slip_gaji(req, res) {
   var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
   
   var query11 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
+  
+  var query12 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
 
   if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
     query1 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan IN ('2', '3')    AND a.status_transaksi=1 AND a.atten_date>='${startPeriode}' AND  a.atten_date<='${endPeriode}'
@@ -11159,7 +11161,7 @@ async slip_gaji(req, res) {
         });
       } else {
         connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11}`,
+          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
           function (error, results) {
             if (error != null) console.log(error)
             connection.release();
@@ -11177,6 +11179,7 @@ async slip_gaji(req, res) {
               jumlah_wfh: results[8].length,
               jumlah_kasbon: results[9].length,
               jumlah_surat_peringatan: results[10].length,
+              jumlah_teguran_lisan: results[11].length,
               data1: results[0],
               data2: results[1],
               data3: results[2],
@@ -11188,6 +11191,7 @@ async slip_gaji(req, res) {
               data9: results[8],
               data10: results[9],
               data11: results[10],
+              data12: results[11],
             });
           }
         );
@@ -12014,7 +12018,7 @@ queryCek=`SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_dat
                 var approve2Status=req.body.approve2_status;
                 var approveBy2=req.body.approve_by2;
                 
-                var approveDate2=req.body.approve_Date1
+                var approveDate2=req.body.approve_date2
                 var approveId2=req.body.approve_id2
             
   
@@ -12024,7 +12028,7 @@ queryCek=`SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_dat
                
 
                   }else{
-                    query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='Approve2', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
+                    query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
               
 
                   }
@@ -13768,34 +13772,26 @@ a.place_out as place_out,
       var query11 = `SELECT
       letter.name as nama,
       CASE
-      WHEN ( a.approve_status  IS NULL  OR a.approve_status='Pending') AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
-      WHEN  (a.approve_status  IS NULL OR a.approve_status='Rejected')  AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-      ELSE "Approve"
+        WHEN (a.approve_status IS NULL OR a.approve_status = 'Pending') THEN "Pending"
+        WHEN (a.approve_status = 'Rejected') THEN "Rejected"
+        ELSE "Approve"
       END AS approve_status,
-      CASE
-      WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by='') THEN "Pending"
-      WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-      ELSE "Approve"
-      END AS approve2_status,
-      a.approve_by,
-      a.approve2_by,
-      a.eff_date as atten_date,
-      a.alasan as uraian,
-      a.nomor as nomor_ajuan,
-      a.em_id,
-      a.approve_id,
-      a.status,
-      a.approve_id, 
-      a.approve_date,
-      a.title as judul,
-      a.nomor As nomor_ajuan,
-      
-           
-      a.tgl_surat as tanggal_ajuan,
-      a.id,
-       b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
-       b.full_name,a.status as leave_status ,a.status as status FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' LEFT JOIN
-       ${database}_hrm.letter ON a.letter_id=letter.id
+    a.eff_date AS atten_date,
+    a.alasan AS uraian,
+    a.nomor AS nomor_ajuan,
+    a.em_id,
+    a.approve_id,
+    a.approve_date,
+    a.title AS judul,
+    a.tgl_surat AS tanggal_ajuan,
+    a.id,
+    b.em_report_to,
+    b.em_report2_to,
+    b.full_name,
+    a.status AS leave_status
+    FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b 
+    LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
+    LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
 
        if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
@@ -14271,7 +14267,7 @@ a.typeid,
             query9,
             function (error, dataAbsensi) {
               connection.release();
-              console.log(data)
+              console.log(dataAbsensi)
               
               res.send({
                 status: true,
@@ -14309,11 +14305,11 @@ a.typeid,
             query11,
             function (error, dataAbsensi) {
               connection.release();
-              console.log('data ',data)
+              console.log('data ',dataAbsensi)
               
               res.send({
                 status: true,
-                message: "Berhasil ambil data approve Klaim!",
+                message: "Berhasil ambil data approve Surat Peringatan!",
                 jenis: 'wfh',
                 data: dataAbsensi
               });

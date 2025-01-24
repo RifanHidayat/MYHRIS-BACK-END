@@ -4,7 +4,7 @@ const { operasional,login, dashboard ,absensi,payroll,izin,notifikasi,
     tracking,
     wfh,
     loan,
-    chatting,lembur,cuti,tugasLuar, klaim,pengadaanKerusakan, peraturanPerusahaan,employee,suratPeringatan,pinjamanAsset,cabang} = require("../controllers");
+    chatting,lembur,cuti,tugasLuar, klaim,pengadaanKerusakan, peraturanPerusahaan,employee,suratPeringatan,pinjamanAsset,cabang, teguranLisan} = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
 const auth = require('../middleware/auth');
@@ -267,6 +267,9 @@ router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
 router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
 router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
 router.get("/surat_peringatan/:id/alasan",suratPeringatan.detailAlasan);
+router.get('/surat-peringatan/:id',suratPeringatan.suratPeringatanPdf);
+router.get('/teguran_lisan',teguranLisan.suratTeguran);
+router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 
 //pinjaman asset
 router.get('/pinjaman/assets',pinjamanAsset.assets);
