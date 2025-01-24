@@ -270,6 +270,7 @@ router.get("/surat_peringatan/:id/alasan",suratPeringatan.detailAlasan);
 router.get('/surat-peringatan/:id',suratPeringatan.suratPeringatanPdf);
 router.get('/teguran_lisan',teguranLisan.suratTeguran);
 router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
+router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
 
 //pinjaman asset
 router.get('/pinjaman/assets',pinjamanAsset.assets);
