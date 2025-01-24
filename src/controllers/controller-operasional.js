@@ -4117,8 +4117,8 @@ console.log(bodyValue)
 
   async approvalTransaksi(req, res) {
     try{
-      delete bodyValue.konsekuensi;
-      delete bodyValue.status_pengajuan;
+      // delete bodyValue.konsekuensi;
+      // delete bodyValue.status_pengajuan;
     //aproval tugas luar,dinas luar,cuti,lembur,izin
     //console.log()
     console.log('-----approaval transaksi ----------')
@@ -4905,6 +4905,7 @@ console.log(bodyValue)
 
     }catch(e){
 
+      console.log('ini error yah');
     }
 
     
@@ -13750,6 +13751,7 @@ a.place_out as place_out,
     a.eff_date AS atten_date,
     a.alasan AS uraian,
     a.nomor AS nomor_ajuan,
+    e2.full_name AS approve_by,
     a.em_id,
     a.approve_id,
     a.approve_date,
@@ -13763,6 +13765,8 @@ a.place_out as place_out,
     FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b 
     LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
     LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
+    LEFT JOIN 
+       ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
 
        var query12 = `SELECT
@@ -13778,6 +13782,7 @@ a.place_out as place_out,
      a.em_id,
      a.approve_id,
      a.approve_date,
+     e2.full_name AS approve_by,
      a.hal AS judul,
      a.tgl_surat AS tanggal_ajuan,
      a.id,
@@ -13788,6 +13793,8 @@ a.place_out as place_out,
      FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b 
      LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
      LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
+     LEFT JOIN 
+       ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
         WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
  
        if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
