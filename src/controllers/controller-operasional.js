@@ -4211,7 +4211,7 @@ console.log(bodyValue)
     console.log(namaDatabaseDynamic)
     const databaseMaster=`${database}_hrm`
     var script = `UPDATE ${namaDatabaseDynamic }.${nameTable} SET ? WHERE ${nameWhere} = '${cariWhere}'`;
-    var getDataTransaksi = `SELECT * FROM  ${namaDatabaseDynamic }. ${nameTable}  WHERE ${nameWhere} = '${cariWhere}'`;
+    var getDataTransaksi = `SELECT * FROM  ${namaDatabaseDynamic }.${nameTable}  WHERE ${nameWhere} = '${cariWhere}'`;
   
     const connection=await model.createConnection(database);
       connection.connect((err) => {
@@ -4228,7 +4228,7 @@ console.log(bodyValue)
           }
           
               connection.query(
-                `INSERT INTO ${namaDatabaseDynamic }.logs_actvity SET ?;`,
+                `INSERT INTO ${namaDatabaseDynamic }.logs_actvity SET ?`,
               [dataInsertLog], (err, results) => {
                 if (err) {
                   console.error('Error executing SELECT statement:', err);
