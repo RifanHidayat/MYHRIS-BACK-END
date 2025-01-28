@@ -504,7 +504,7 @@ module.exports = {
                               status: true,
                               message: "Kombinasi email & password Anda Salah",
                               tipe:sysdataCuti[0].name,
-                              sisa_cuti: ( (cutiData[0].saldo_cut_off+cutiData[0].saldo_cuti_bulan_lalu+cutiData[0].saldo_cuti_tahun_lalu+cutiData[0].perolehan_cuti-cutiData[0].expired_cuti-cuti_bersama)- cutiData[0].terpakai) ,
+                              sisa_cuti: ( (cutiData[0].saldo_cut_off+cutiData[0].saldo_cuti_bulan_lalu+cutiData[0].saldo_cuti_tahun_lalu+cutiData[0].perolehan_cuti-cutiData[0].expired_cuti-cutiData[0].cuti_bersama)- cutiData[0].terpakai) ,
                               total_cuti:0,
                               keterangan:"Anda memiliki beberapa pengajuan cuti"
     
