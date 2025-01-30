@@ -3840,10 +3840,6 @@ module.exports = {
 
   async approvalTransaksi(req, res) {
     try {
-      // delete bodyValue.konsekuensi;
-      // delete bodyValue.status_pengajuan;
-      //aproval tugas luar,dinas luar,cuti,lembur,izin
-      //console.log()
       console.log("-----approaval transaksi ----------");
       var database = req.query.database;
       let name_url = req.originalUrl;
@@ -4093,8 +4089,11 @@ module.exports = {
                                     "--------Surat Teguran || Surat Peringatan-----------"
                                   );
                                   if (tipeSurat == "teguran_lisan") {
+                                    console.log(
+                                      `    SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`
+                                    );
                                     connection.query(
-                                      `    SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`,
+                                      `    SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`,
                                       (err, teguranLisan) => {
                                         if (err) {
                                           console.error(
@@ -4112,23 +4111,38 @@ module.exports = {
                                           return;
                                         }
                                         var nomorLb = `LI20${convertYear}${convertBulan}`;
+                                        var nomorStr ='';
                                         if (teguranLisan.length > 0) {
-                                          var text = teguranLisan[0]["nomor"];
-                                          var nomor =
-                                            parseInt(text.substring(8, 13)) + 1;
-                                          var nomorStr = String(nomor).padStart(
-                                            4,
-                                            "0"
-                                          );
+                                          const lastNomor =
+                                          teguranLisan[0]["nomor"]; // Ambil nomor dari data terakhir
+                                          console.log(lastNomor);
+
+                                          const sequenceStartIndex = 8;
+                                          const sequenceEndIndex = 13;
+                                          const lastSequence =
+                                            parseInt(
+                                              lastNomor.substring(
+                                                sequenceStartIndex,
+                                                sequenceEndIndex
+                                              )
+                                            ) + 1;
+
+                                          nomorStr = String(
+                                            lastSequence
+                                          ).padStart(4, "0");
+
                                           nomorLb = nomorLb + nomorStr;
                                         } else {
                                           var nomor = 1;
-                                          var nomorStr = String(nomor).padStart(
+                                          nomorStr = String(nomor).padStart(
                                             4,
                                             "0"
                                           );
                                           nomorLb = nomorLb + nomorStr;
                                         }
+                                        console.log(nomorLb);
+                                        console.log(nomorStr);
+                                        
 
                                         connection.query(
                                           `INSERT INTO teguran_lisan (
@@ -4168,12 +4182,6 @@ module.exports = {
                                               });
                                               return;
                                             }
-                                            // console.log(
-                                            //   `SELECT * FROM ${namaDatabaseDynamic}.${nameTable} WHERE ${nameWhere} = '${cariWhere}'`
-                                            // );
-                                            // connection.query(
-                                            //   `SELECT * FROM ${namaDatabaseDynamic}.${nameTable} WHERE ${nameWhere} = '${cariWhere}'`
-                                            // )
 
                                             var konsekuensiArray =
                                               konsekuensi.split(",");
@@ -4199,7 +4207,7 @@ module.exports = {
                                                       "Error executing detail query:",
                                                       err
                                                     );
-                                                    return connection.rollback(
+                                                    connection.rollback(
                                                       () => {
                                                         connection.end();
                                                         return res
@@ -4211,37 +4219,8 @@ module.exports = {
                                                           });
                                                       }
                                                     );
+                                                    return;
                                                   }
-
-                                                  connection.commit((err) => {
-                                                    if (err) {
-                                                      console.error(
-                                                        "Commit failed:",
-                                                        err
-                                                      );
-                                                      return connection.rollback(
-                                                        () => {
-                                                          connection.end();
-                                                          return res
-                                                            .status(400)
-                                                            .json({
-                                                              status: false,
-                                                              message:
-                                                                "Gagal menyimpan data",
-                                                            });
-                                                        }
-                                                      );
-                                                    }
-
-                                                    connection.end();
-                                                    return res
-                                                      .status(200)
-                                                      .json({
-                                                        status: true,
-                                                        message:
-                                                          "Data berhasil disimpan",
-                                                      });
-                                                  });
                                                 }
                                               );
                                             }
@@ -4252,6 +4231,7 @@ module.exports = {
                                   }
 
                                   if (tipeSurat == "surat_peringatan") {
+                                    console.log(`SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`);
                                     connection.query(
                                       `SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`,
                                       (err, suratPeringatan) => {
@@ -4270,7 +4250,7 @@ module.exports = {
                                           });
                                           return;
                                         }
-                                        var letterId = "2";
+                                        var letterId = "";
 
                                         if (suratPeringatan.length > 0) {
                                           var letterIdTemp =
@@ -4287,10 +4267,12 @@ module.exports = {
                                           ) {
                                             letterId = "4";
                                           }
+                                        } else {
+                                          letterId ='2'
                                         }
 
                                         connection.query(
-                                          `SELECT * FROM employee_letter WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`,
+                                          `SELECT * FROM employee_letter WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`,
                                           (err, teguranLisan) => {
                                             if (err) {
                                               console.error(
@@ -4308,6 +4290,7 @@ module.exports = {
                                               return;
                                             }
                                             var nomorLb = `SP20${convertYear}${convertBulan}`;
+                                            var nomorStr = '';
                                             if (teguranLisan.length > 0) {
                                               var text =
                                                 teguranLisan[0]["nomor"];
@@ -4315,20 +4298,44 @@ module.exports = {
                                                 parseInt(
                                                   text.substring(8, 13)
                                                 ) + 1;
-                                              var nomorStr = String(
+                                              nomorStr = String(
                                                 nomor
                                               ).padStart(4, "0");
                                               nomorLb = nomorLb + nomorStr;
                                             } else {
                                               var nomor = 1;
-                                              var nomorStr = String(
+                                              nomorStr = String(
                                                 nomor
                                               ).padStart(4, "0");
                                               nomorLb = nomorLb + nomorStr;
                                             }
+                                            console.log(nomorLb);
+                                            console.log(letterId);
+                                            console.log(nomorStr);
+                                            console.log(utility.mounthNow());
+
 
                                             connection.query(
-                                              `INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,alasan,status) VALUE('${nomorLb}','${utility.dateNow2()}','${emId}','2','${utility.dateNow2()}','${alasanReject}','Pending')`,
+                                              `INSERT INTO employee_letter (
+                                              nomor,
+                                              nomor_surat,
+                                              tgl_surat,
+                                              em_id,
+                                              letter_id,
+                                              eff_date,
+                                              alasan,
+                                              status,
+                                              diterbitkan_oleh) 
+                                              VALUE(
+                                              '${nomorLb}',
+                                              '00${letterId}/HRD/${utility.mounthNow()}/${nomorStr}',
+                                              '${utility.dateNow2()}',
+                                              '${emId}',
+                                              '${letterId}',
+                                              '${utility.dateNow2()}',
+                                              '${alasanReject}',
+                                              'Pending',
+                                              '${approveId}')`,
                                               (err, teguranLisan) => {
                                                 if (err) {
                                                   console.error(
@@ -4350,15 +4357,17 @@ module.exports = {
                                                 }
 
                                                 var konsekuensiArray =
-                                              konsekuensi.split(",");
+                                                  konsekuensi.split(",");
                                                 for (
                                                   var i = 0;
                                                   i < konsekuensiArray.length;
                                                   i++
                                                 ) {
-                                                  var data = konsekuensiArray[i].trim();
+                                                  var data =
+                                                    konsekuensiArray[i].trim();
+                                                  console.log(data);
                                                   connection.query(
-                                                    `INSERT INTO employee_letter_reason (employee_letter_id_id,name) VALUE('${teguranLisan.insertId}','${data}')`,
+                                                    `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUE('${teguranLisan.insertId}','${data}')`,
                                                     (
                                                       err,
                                                       teguranLisanDetail
@@ -4776,14 +4785,13 @@ module.exports = {
                                     }
 
                                     // connection.end();
-                                    // console.log(
-                                    //   "Transaction completed successfully!"
-                                    // );
-                                    // return res.status(200).send({
-                                    //   status: true,
-                                    //   message: "Data berhasil di ambil",
-                                    //   // data:records
-                                    // });
+                                    console.log(
+                                      "Transaction completed successfully!"
+                                    );
+                                    return res.status(200).send({
+                                      status: true,
+                                      message: "Data berhasil di ambil",
+                                    });
                                   });
                                 }
                               );

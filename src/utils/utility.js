@@ -50,6 +50,15 @@ module.exports = {
   return tanggal;
   },
 
+  mounthNow() {
+    let ts = Date.now();
+    let date_ob = new Date(ts);
+    let month = date_ob.getMonth() + 1;
+    let convertBulan =  month < 9 ? '0'+month : month;
+    const tanggal = `${convertBulan}`;
+    return tanggal;
+  },
+
 
 
 
