@@ -2459,7 +2459,7 @@ module.exports = {
     // const startPeriodeDynamic=`${database}_hrm${array1[0].substring(2,4)}${array1[1]}`
     // const endPeriodeDynamic=`${database}_hrm${array2[1].substring(2,4)}${array1[1]}`
     var queryCuti = ` SELECT a.*, b.name, b.id as id_type FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${em_id}'  
-    AND a.status_transaksi='1'  AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}' AND cut_leave='1' ORDER BY a.id DESC `;
+    AND a.status_transaksi='1'  AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}' AND a.ajuan='1' ORDER BY a.id DESC `;
 
     // let date1 = new Date(startPeriode);
     // let date2 = new Date(endPeriode);
@@ -2511,18 +2511,18 @@ module.exports = {
     const monthEnd = date2.getMonth() + 1;
 
     var queryCuti = ` SELECT a.*, b.name, b.id as id_type FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${em_id}' 
-     AND a.status_transaksi='1'  AND  b.cut_leave='1'
+     AND a.status_transaksi='1' AND a.ajuan='1'
     AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'
     ORDER BY a.id DESC`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       queryCuti = `
-      SELECT a.id as idd,a.*, b.name, b.id as id_type FROM ${startPeriodeDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${em_id}'  AND a.status_transaksi='1'
-      AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}' AND b.cut_leave='1'
+      SELECT a.id as idd,a.*, b.name, b.id as id_type FROM ${startPeriodeDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${em_id}'  AND a.status_transaksi='1'AND a.ajuan='1'
+      AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}' 
   
       UNION ALL
       SELECT a.id as idd,a.*, b.name, b.id as id_type FROM ${endPeriodeDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types as b ON a.typeid=b.id WHERE a.em_id='${em_id}'  AND a.status_transaksi='1' 
-      AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'  AND b.cut_leave='1'
+      AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'  AND a.ajuan='1'
 
       `;
     }
