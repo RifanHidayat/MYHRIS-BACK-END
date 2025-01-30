@@ -4256,12 +4256,6 @@ module.exports = {
                                           var letterIdTemp =
                                             suratPeringatan[0]["letter_id"];
                                           if (
-                                            letterIdTemp == "1" ||
-                                            letterIdTemp == 1
-                                          ) {
-                                            letterId = "2";
-                                          }
-                                          if (
                                             letterIdTemp == "2" ||
                                             letterIdTemp == 2
                                           ) {
