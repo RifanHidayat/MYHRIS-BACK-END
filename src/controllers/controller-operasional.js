@@ -3866,7 +3866,7 @@ module.exports = {
       var bodyValue = req.body;
       var emId = req.body.em_id;
       var approveId =
-        req.body.apply2_id == undefined
+        req.body.apply2_id == null || req.body.apply2_id == undefined || req.body.apply2_id == ''
           ? req.body.apply_id
           : req.body.apply2_id;
       var leaveTypes =
@@ -4142,6 +4142,9 @@ module.exports = {
                                         }
                                         console.log(nomorLb);
                                         console.log(nomorStr);
+                                        console.log(req.body.apply_id);
+                                        console.log(req.body.apply2_id);
+                                        console.log(`ini id yang ngasih teguran ${approveId}`);
                                         
 
                                         connection.query(
