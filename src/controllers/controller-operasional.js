@@ -3866,9 +3866,9 @@ module.exports = {
       var bodyValue = req.body;
       var emId = req.body.em_id;
       var approveId =
-        req.body.approve_id == undefined
+        req.body.apply2_id == undefined
           ? req.body.apply_id
-          : req.body.approve_id;
+          : req.body.apply2_id;
       var leaveTypes =
         req.body.leave_type == undefined ? "" : req.body.leave_type;
       var typeId = req.body.typeid == undefined ? "" : req.body.typeid;
@@ -4182,6 +4182,28 @@ module.exports = {
                                               });
                                               return;
                                             }
+                                            var queryInsertTeguranLisanId = `UPDATE ${namaDatabaseDynamic}.${nameTable} SET id_surat=${teguranLisan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+                                            console.log(queryInsertTeguranLisanId);
+                                            connection.query(
+                                              queryInsertTeguranLisanId,
+                                              (err, mantap) => {
+                                                if (err) {
+                                                  console.error(
+                                                    "Error executing SELECT statement:",
+                                                    err
+                                                  );
+                                                  connection.rollback(() => {
+                                                    connection.end();
+                                                    return res.status(400).send({
+                                                      status: true,
+                                                      message: "gaga ambil data",
+                                                      data: [],
+                                                    });
+                                                  });
+                                                  return;
+                                                } 
+                                              }
+                                            )
 
                                             var konsekuensiArray =
                                               konsekuensi.split(",");
@@ -4355,6 +4377,29 @@ module.exports = {
                                                   });
                                                   return;
                                                 }
+
+                                                var queryInsertTeguranLisanId = `UPDATE ${namaDatabaseDynamic}.${nameTable} SET id_surat=${teguranLisan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+                                            console.log(queryInsertTeguranLisanId);
+                                            connection.query(
+                                              queryInsertTeguranLisanId,
+                                              (err, mantap) => {
+                                                if (err) {
+                                                  console.error(
+                                                    "Error executing SELECT statement:",
+                                                    err
+                                                  );
+                                                  connection.rollback(() => {
+                                                    connection.end();
+                                                    return res.status(400).send({
+                                                      status: true,
+                                                      message: "gaga ambil data",
+                                                      data: [],
+                                                    });
+                                                  });
+                                                  return;
+                                                } 
+                                              }
+                                            )
 
                                                 var konsekuensiArray =
                                                   konsekuensi.split(",");
@@ -13568,7 +13613,7 @@ a.place_out as place_out,
     LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
     LEFT JOIN 
        ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
-       WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
+       WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%' ORDER BY a.id DESC`;
 
     var query12 = `SELECT
        letter.name as nama,
@@ -13596,7 +13641,7 @@ a.place_out as place_out,
      LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
      LEFT JOIN 
        ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
-        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%'`;
+        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%' ORDER BY a.id DESC`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 =
