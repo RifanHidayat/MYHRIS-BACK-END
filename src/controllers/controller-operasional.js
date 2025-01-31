@@ -16071,7 +16071,7 @@ GROUP BY TBL.full_name`;
     }`;
 
     var query1 = `SELECT terpakai FROM ${databaseDynamic}.assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
-
+    console.log(query1);
     const configDynamic = {
       multipleStatements: true,
       host: ipServer, //myhris.siscom.id (ip local)
@@ -16093,13 +16093,7 @@ GROUP BY TBL.full_name`;
         var terpakaiUser = results[0].terpakai;
         var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
         connection.query(
-          `UPDATE ${databaseDynamic}.assign_leave
-            
-            
-            
-            
-            
-              SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
+          `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
           function (error, results1) {
             res.send({
               status: true,
