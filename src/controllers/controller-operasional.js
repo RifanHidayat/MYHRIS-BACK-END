@@ -13575,8 +13575,6 @@ a.place_out as place_out,
     a.approve_id,
  a.approve_date,
  a.id,
- a.title as judul,
- "Surat Peringatan 1"as nama,
       
       b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
       b.full_name,a.status as status,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a 
@@ -14071,16 +14069,15 @@ a.typeid,
             });
           });
         } else if (url_data == "wfh") {
-          console.log(stauts);
-          connection.query(query9, function (error, dataAbsensi) {
+          console.log(query9);
+          connection.query(query9, function (error, dataWfh) {
             connection.release();
-            console.log(dataAbsensi);
-
+            console.log(dataWfh);
             res.send({
               status: true,
               message: "Berhasil ambil data approve Klaim!",
               jenis: "wfh",
-              data: dataAbsensi,
+              data: dataWfh,
             });
           });
         } else if (url_data == "kasbon") {
