@@ -4147,7 +4147,6 @@ module.exports = {
                                         connection.query(
                                           `INSERT INTO teguran_lisan (
                                             nomor,
-                                            nomor_surat,
                                             hal,
                                             tgl_surat,
                                             em_id,
@@ -4157,7 +4156,6 @@ module.exports = {
                                             status,
                                             diterbitkan_oleh) VALUE(
                                             '${nomorLb}',
-                                            '009/HRD/TeguranLisan/${nomorStr}',
                                             'Teguran Lisan',
                                             '${utility.dateNow2()}',
                                             '${emId}',
@@ -4340,7 +4338,6 @@ module.exports = {
                                             connection.query(
                                               `INSERT INTO employee_letter (
                                               nomor,
-                                              nomor_surat,
                                               tgl_surat,
                                               em_id,
                                               letter_id,
@@ -4350,7 +4347,6 @@ module.exports = {
                                               diterbitkan_oleh) 
                                               VALUE(
                                               '${nomorLb}',
-                                              '00${letterId}/HRD/${utility.mounthNow()}/${nomorStr}',
                                               '${utility.dateNow2()}',
                                               '${emId}',
                                               '${letterId}',

@@ -35,9 +35,10 @@ module.exports = {
             connection.end();
             return;
           }
-
+          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' ORDER BY id DESC`;
+          console.log(querySuratPeringatan);
           connection.query(
-            `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve'`,
+            querySuratPeringatan,
             (err, employee) => {
               if (err) {
                 console.error("Error executing SELECT statement:", err);
@@ -52,9 +53,6 @@ module.exports = {
                 });
                 return;
               }
-              console.log(
-                `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve'`
-              );
 
               connection.commit((err) => {
                 if (err) {
