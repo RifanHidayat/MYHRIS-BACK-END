@@ -33,9 +33,11 @@ module.exports = {
                 connection.end();
                 return;
               }
-    
+
+              var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%' AND approve_status='Approve' ORDER BY id DESC`;
+              console.log(queryTeguranLisan);
               connection.query(
-                `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%'`,
+                queryTeguranLisan,
                 (err, employee) => {
                   if (err) {
                     console.error("Error executing SELECT statement:", err);
@@ -50,9 +52,6 @@ module.exports = {
                     });
                     return;
                   }
-                  console.log(
-                    `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%SIS202408061%'`
-                  );
     
                   connection.commit((err) => {
                     if (err) {
