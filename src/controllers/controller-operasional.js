@@ -2326,9 +2326,9 @@ module.exports = {
         });
       } else {
         connection.query(
-          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.leave_types ON leave_types.id=emp_labor.typeId WHERE em_id='${em_id}' AND emp_labor.typeId='${typeId}'
+          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.leave_types ON leave_types.id=emp_labor.typeId WHERE em_id='${em_id}' AND emp_labor.typeId='${typeId}' AND (emp_labor.status='Approve' OR 'Approve2')
           UNION ALL
-          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}'
+          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}' AND (emp_leave.leave_status='Approve' OR 'Approve2')
           `,
           function (error, results) {
             connection.release();
@@ -11962,6 +11962,8 @@ module.exports = {
               query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
             }
 
+            console.log(query1);
+
             // if (status=='Approve'){
 
             //   query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}',approve_date='${approvedDate}' , approve_by='${approvedBy}' ,approve_id='${approveId}' WHERE id='${id}' `;
@@ -12154,7 +12156,7 @@ module.exports = {
                           data: records,
                         });
                       }
-                      var listData = sysdata[2].name.toString().split(",");
+                      // var listData = sysdata[2].name.toString().split(",");
 
                       // connection.query(`SELECT * FROM ${namaDatabaseDynamic}.attendance  WHERE  atten_date='${date}' AND em_id='${emId}'`, (err,results) => {
                       // if (err) {
