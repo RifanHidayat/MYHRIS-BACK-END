@@ -35,7 +35,7 @@ module.exports = {
             connection.end();
             return;
           }
-          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' ORDER BY id DESC`;
+          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
           console.log(querySuratPeringatan);
           connection.query(
             querySuratPeringatan,
@@ -210,7 +210,7 @@ module.exports = {
                 return;
               }
               connection.query(
-                `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),approve_id='${emId}' WHERE id='${id}'`,
+                `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),approve_id='${emId}',exp_date = DATE_ADD(CURDATE(), INTERVAL 3 MONTH)  WHERE id='${id}'`,
                 (err, employeqqe) => {
                   if (err) {
                     console.error("Error executing SELECT statement:", err);

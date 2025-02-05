@@ -2326,9 +2326,9 @@ module.exports = {
         });
       } else {
         connection.query(
-          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.leave_types ON leave_types.id=emp_labor.typeId WHERE em_id='${em_id}' AND emp_labor.typeId='${typeId}'
+          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.leave_types ON leave_types.id=emp_labor.typeId WHERE em_id='${em_id}' AND emp_labor.typeId='${typeId}' AND (emp_labor.status='Approve' OR 'Approve2')
           UNION ALL
-          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}'
+          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}' AND (emp_leave.leave_status='Approve' OR 'Approve2')
           `,
           function (error, results) {
             connection.release();
@@ -3866,7 +3866,7 @@ module.exports = {
       var bodyValue = req.body;
       var emId = req.body.em_id;
       var approveId =
-        req.body.apply2_id == undefined
+        req.body.apply2_id == null || req.body.apply2_id == undefined || req.body.apply2_id == ''
           ? req.body.apply_id
           : req.body.apply2_id;
       var leaveTypes =
@@ -4142,6 +4142,9 @@ module.exports = {
                                         }
                                         console.log(nomorLb);
                                         console.log(nomorStr);
+                                        console.log(req.body.apply_id);
+                                        console.log(req.body.apply2_id);
+                                        console.log(`ini id yang ngasih teguran ${approveId}`);
                                         
 
                                         connection.query(
@@ -11959,6 +11962,8 @@ module.exports = {
               query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}', alasan_reject='${alasanRejected}',approve_date='${approveDate1}' , approve_by='${approveBy1}',approve_id='${approveId1}',approve2_date='${approveDate2}' , approve2_by='${approveBy2}',approve2_id='${approveId2}'  ,approve2_status='${approve2Status}' WHERE id='${id}'`;
             }
 
+            console.log(query1);
+
             // if (status=='Approve'){
 
             //   query1 = `UPDATE ${namaDatabaseDynamic}.emp_labor SET status='${status}',approve_date='${approvedDate}' , approve_by='${approvedBy}' ,approve_id='${approveId}' WHERE id='${id}' `;
@@ -12151,7 +12156,7 @@ module.exports = {
                           data: records,
                         });
                       }
-                      var listData = sysdata[2].name.toString().split(",");
+                      // var listData = sysdata[2].name.toString().split(",");
 
                       // connection.query(`SELECT * FROM ${namaDatabaseDynamic}.attendance  WHERE  atten_date='${date}' AND em_id='${emId}'`, (err,results) => {
                       // if (err) {
@@ -16068,7 +16073,7 @@ GROUP BY TBL.full_name`;
     }`;
 
     var query1 = `SELECT terpakai FROM ${databaseDynamic}.assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
-
+    console.log(query1);
     const configDynamic = {
       multipleStatements: true,
       host: ipServer, //myhris.siscom.id (ip local)
@@ -16090,13 +16095,7 @@ GROUP BY TBL.full_name`;
         var terpakaiUser = results[0].terpakai;
         var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
         connection.query(
-          `UPDATE ${databaseDynamic}.assign_leave
-            
-            
-            
-            
-            
-              SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
+          `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
           function (error, results1) {
             res.send({
               status: true,
