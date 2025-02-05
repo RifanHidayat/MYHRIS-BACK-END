@@ -1796,6 +1796,8 @@ module.exports = {
 
         //-------end check koneksi-----
 
+        console.log(query);
+
         connection.query(query, (err, results) => {
           if (err) {
             console.error("Error executing SELECT statement:", err);
@@ -16066,7 +16068,8 @@ GROUP BY TBL.full_name`;
     var database = req.query.database;
     var em_id = req.body.em_id;
     var terpakai = req.body.terpakai;
-    var date = req.query.end_date.split("-");
+    console.log('ini apa',req.query);
+    var date = req.query.end_periode.split("-");
 
     const databaseDynamic = `${database}_hrm${date[0].substring(2, 4)}${
       date[1]
@@ -16087,15 +16090,19 @@ GROUP BY TBL.full_name`;
     };
     const mysql = require("mysql");
     const poolDynamic = mysql.createPool(configDynamic);
-    // var query2 = ``;
+    
     poolDynamic.getConnection(function (err, connection) {
+      
       if (err) console.log(err);
       connection.query(query1, function (error, results) {
         if (error != null) console.log(error);
+        console.log(results);
         var terpakaiUser = results[0].terpakai;
         var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
+        var query2 = `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}'`;
+        console.log(query2);
         connection.query(
-          `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}' AND  dateyear='${results[0].dateyear}' `,
+          query2,
           function (error, results1) {
             res.send({
               status: true,

@@ -90,6 +90,78 @@ module.exports = {
     }
   },
 
+  async searchSuratPeringatan(req, res) {
+    var database = req.query.database;
+    var emId = req.body.em_id;
+    var branchId = req.headers.branch_id;
+    try {
+      const connection = await model.createConnection(database);
+      connection.connect((err) => {
+        if (err) {
+          console.error("Error connecting to the database:", err);
+          return;
+        }
+        connection.beginTransaction((err) => {
+          if (err) {
+            console.error("Error beginning transaction:", err);
+            connection.end();
+            return;
+          }
+          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+          console.log(querySuratPeringatan);
+          connection.query(
+            querySuratPeringatan,
+            (err, employee) => {
+              if (err) {
+                console.error("Error executing SELECT statement:", err);
+                connection.rollback(() => {
+                  connection.end();
+
+                  return res.status(400).send({
+                    status: false,
+                    message: "gagal ambil data",
+                    data: [],
+                  });
+                });
+                return;
+              }
+
+              connection.commit((err) => {
+                if (err) {
+                  console.error("Error committing transaction:", err);
+                  connection.rollback(() => {
+                    connection.end();
+                    return res.status(400).send({
+                      status: true,
+                      message: "data tidak tersedia",
+                      data: [],
+                    });
+                  });
+                  return;
+                }
+                console;
+
+                connection.end();
+                console.log("Transaction completed successfully!");
+                return res.status(200).send({
+                  status: true,
+                  message: "data tersedia",
+                  data: employee,
+                });
+              });
+            }
+          );
+        });
+      });
+    } catch (e) {
+      return res.status(400).send({
+        status: true,
+        message: "Gagal ambil data",
+        data: [],
+      });
+    }
+  },
+
   async detailAlasan(req, res) {
     var database = req.query.database;
     var emId = req.headers.em_id;
@@ -167,6 +239,7 @@ module.exports = {
     var emId = req.body.em_id;
     var id = req.body.id;
     var status = req.body.status;
+    var konsekuensi = req.body.konsekuesi;
     console.log(req.body);
 
     var branchId = req.body.branch_id;
@@ -210,7 +283,7 @@ module.exports = {
                 return;
               }
               connection.query(
-                `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),approve_id='${emId}',exp_date = DATE_ADD(CURDATE(), INTERVAL 3 MONTH)  WHERE id='${id}'`,
+                `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),approve_id='${emId}',tipe_konsekuensi='${konsekuensi}',exp_date = DATE_ADD(CURDATE(), INTERVAL 3 MONTH)  WHERE id='${id}'`,
                 (err, employeqqe) => {
                   if (err) {
                     console.error("Error executing SELECT statement:", err);

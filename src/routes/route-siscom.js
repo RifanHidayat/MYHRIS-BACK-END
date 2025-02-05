@@ -265,10 +265,12 @@ router.get("/attendance-terlambat-pulangcepat",absensi.absenPulangCepatDanTerlam
 router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
 
 router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
+router.post("/surat_peringatan_search",suratPeringatan.searchSuratPeringatan);
 router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
 router.get("/surat_peringatan/:id/alasan",suratPeringatan.detailAlasan);
 router.get('/surat-peringatan/:id',suratPeringatan.suratPeringatanPdf);
 router.get('/teguran_lisan',teguranLisan.suratTeguran);
+router.post('/teguran_lisan_search',teguranLisan.searchSuratTeguran);
 router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
 
