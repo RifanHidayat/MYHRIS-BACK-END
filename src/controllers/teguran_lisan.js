@@ -89,6 +89,78 @@ module.exports = {
         }
       },
     
+      async searchSuratTeguran(req, res) {
+        var database = req.query.database;
+        var emId = req.body.em_id;
+        var branchId = req.headers.branch_id;
+        try {
+          const connection = await model.createConnection(database);
+          connection.connect((err) => {
+            if (err) {
+              console.error("Error connecting to the database:", err);
+              return;
+            }
+            connection.beginTransaction((err) => {
+              if (err) {
+                console.error("Error beginning transaction:", err);
+                connection.end();
+                return;
+              }
+
+              var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%' AND approve_status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+              console.log(queryTeguranLisan);
+              connection.query(
+                queryTeguranLisan,
+                (err, employee) => {
+                  if (err) {
+                    console.error("Error executing SELECT statement:", err);
+                    connection.rollback(() => {
+                      connection.end();
+    
+                      return res.status(400).send({
+                        status: false,
+                        message: "gagal ambil data",
+                        data: [],
+                      });
+                    });
+                    return;
+                  }
+    
+                  connection.commit((err) => {
+                    if (err) {
+                      console.error("Error committing transaction:", err);
+                      connection.rollback(() => {
+                        connection.end();
+                        return res.status(400).send({
+                          status: true,
+                          message: "data tidak tersedia",
+                          data: [],
+                        });
+                      });
+                      return;
+                    }
+                    console;
+    
+                    connection.end();
+                    console.log("Transaction completed successfully!");
+                    return res.status(200).send({
+                      status: true,
+                      message: "data tersedia",
+                      data: employee,
+                    });
+                  });
+                }
+              );
+            });
+          });
+        } catch (e) {
+          return res.status(400).send({
+            status: true,
+            message: "Gagal ambil data",
+            data: [],
+          });
+        }
+      },
       
       async teguranLisanPdf(req, res) {
         console.log("----detail teguran---------");
