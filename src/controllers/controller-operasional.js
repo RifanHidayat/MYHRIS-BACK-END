@@ -8951,7 +8951,7 @@ module.exports = {
                           statusAbsen,
                           employee[0].emId,
                           "",
-                          "",
+                          sysdataSP[0].nomor,
                           employee[0].full_name,
                           namaDatabaseDynamic,
                           namaDatabasMaster,
@@ -8965,7 +8965,7 @@ module.exports = {
                           statusAbsen,
                           employee[0].emId,
                           "",
-                          "",
+                          sysdataSP[0].nomor,
                           employee[0].full_name,
                           namaDatabaseDynamic,
                           namaDatabasMaster,
@@ -9026,7 +9026,7 @@ module.exports = {
                       statusAbsen,
                       employee[0].emId,
                       "",
-                      "",
+                      sysdataSP[0].nomor,
                       employee[0].full_name,
                       namaDatabaseDynamic,
                       namaDatabasMaster,
@@ -9415,8 +9415,8 @@ module.exports = {
                             "Absensi Pulang Cepat",
                             statusAbsen,
                             employee[0].emId,
-                            "",
-                            "",
+                            nomorSp,
+                            nomorSp,
                             employee[0].full_name,
                             namaDatabaseDynamic,
                             namaDatabasMaster,
@@ -9429,8 +9429,8 @@ module.exports = {
                             "Absensi Pulang Cepat",
                             statusAbsen,
                             employee[0].emId,
-                            "",
-                            "",
+                            nomorSp,
+                            nomorSp,
                             employee[0].full_name,
                             namaDatabaseDynamic,
                             namaDatabasMaster,
@@ -9483,8 +9483,8 @@ module.exports = {
                             "Absensi Pulang Cepat",
                             statusAbsen,
                             employee[0].emId,
-                            "",
-                            "",
+                            nomorSp,
+                            nomorSp,
                             employee[0].full_name,
                             namaDatabaseDynamic,
                             namaDatabasMaster,
@@ -9497,8 +9497,8 @@ module.exports = {
                             "Absensi Pulang Cepat",
                             statusAbsen,
                             employee[0].emId,
-                            "",
-                            "",
+                            nomorSp,
+                            nomorSp,
                             employee[0].full_name,
                             namaDatabaseDynamic,
                             namaDatabasMaster,
@@ -9507,7 +9507,7 @@ module.exports = {
                         }
                       }
                     } else {
-                      deskription = `Anda sudah absensin pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                      deskription = `Anda sudah absensi pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
                         `;
                     }
                   }
@@ -9569,8 +9569,8 @@ module.exports = {
                         "Absensi Pulang Cepat",
                         statusAbsen,
                         employee[0].emId,
-                        "",
-                        "",
+                        nomorSp,
+                        nomorSp,
                         employee[0].full_name,
                         namaDatabaseDynamic,
                         namaDatabasMaster,
@@ -9583,8 +9583,8 @@ module.exports = {
                         "Absensi Pulang Cepat",
                         statusAbsen,
                         employee[0].emId,
-                        "",
-                        "",
+                        nomorSp,
+                        nomorSp,
                         employee[0].full_name,
                         namaDatabaseDynamic,
                         namaDatabasMaster,
@@ -11712,6 +11712,7 @@ module.exports = {
                                     });
                                     return;
                                   }
+                                  console.log('ini data absensi', dataAbsensi);
 
                                   utility.notifikasi(
                                     employee[0].token_notif,

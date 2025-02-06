@@ -1645,7 +1645,7 @@ module.exports = {
     const convertYear = tahun.substring(2, 4);
     const convertBulan = array[1];
   
-    const namaDatabaseDynamic = `${database}_hrm2501`;
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
     
     var startDate=req.body.start_date;
     var endDate=req.body.end_date;
@@ -1656,7 +1656,7 @@ module.exports = {
 
     console.log(namaDatabaseDynamic);
 
-    console.log('body ',req.body)
+    console.log('body nih lastAbsen2',req.body);
 
 var script='';
     let records;
