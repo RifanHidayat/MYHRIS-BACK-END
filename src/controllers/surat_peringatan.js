@@ -321,18 +321,17 @@ module.exports = {
                         status == "Approved" ||
                         status == "Approve"
                       ) {
-                        var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].alasan} 
-                                Anda perlu segera diperbaiki. Mohon perhatian serius!`;
+                        var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].judul}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
                         console.log(employee[0]);
 
                            utility.insertNotifikasiGlobal(
-                            employee[0].em_id,
+                            dataSp[0].em_id,
                             'Info SP',
                             'sp',
                             employee[0].em_id,
                             dataSp[0].id,
                             '',
-                            employee[0].full_name,
+                            dataSp[0].em_id,
                             databasedinamik,
                             databseMaster,
                             text)

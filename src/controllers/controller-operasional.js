@@ -8789,11 +8789,12 @@ module.exports = {
               jika terlambat mencapai ${parseInt(
                 sysdata[1].name
               )}x. Kami akan mengeluarkan surat peringatan`;
+            console.log('ini employe',employee);
             utility.insertNotifikasiAbsensi(
               sysdata[2].name,
               "Absensi Terlambat",
               statusAbsen,
-              employee[0].emId,
+              employee[0].em_id,
               "",
               "",
               employee[0].full_name,
@@ -8870,7 +8871,7 @@ module.exports = {
                           sysdataSP[0].name,
                           "Absensi Terlambat",
                           statusAbsen,
-                          employee[0].emId,
+                          employee[0].em_id,
                           "",
                           sysdataSP[0].nomor,
                           employee[0].full_name,
@@ -8884,7 +8885,7 @@ module.exports = {
                           sysdataSP[1].name,
                           "Absensi Terlambat",
                           statusAbsen,
-                          employee[0].emId,
+                          employee[0].em_id,
                           "",
                           sysdataSP[0].nomor,
                           employee[0].full_name,
@@ -8938,7 +8939,7 @@ module.exports = {
                           sysdataSP[0].name,
                           "Absensi Terlambat",
                           statusAbsen,
-                          employee[0].emId,
+                          employee[0].em_id,
                           "",
                           sysdataSP[0].nomor,
                           employee[0].full_name,
@@ -8952,7 +8953,7 @@ module.exports = {
                           sysdataSP[1].name,
                           "Absensi Terlambat",
                           statusAbsen,
-                          employee[0].emId,
+                          employee[0].em_id,
                           "",
                           sysdataSP[0].nomor,
                           employee[0].full_name,
@@ -9013,7 +9014,7 @@ module.exports = {
                       sysdataSP[0].name,
                       "Absensi Terlambat",
                       statusAbsen,
-                      employee[0].emId,
+                      employee[0].em_id,
                       "",
                       sysdataSP[0].nomor,
                       employee[0].full_name,
@@ -9027,7 +9028,7 @@ module.exports = {
                       sysdataSP[1].name,
                       "Absensi Terlambat",
                       statusAbsen,
-                      employee[0].emId,
+                      employee[0].em_id,
                       "",
                       "",
                       employee[0].full_name,
@@ -9324,7 +9325,7 @@ module.exports = {
                 sysdata[2].name,
                 "Absensi Pulang Cepat",
                 statusAbsen,
-                employee[0].emId,
+                employee[0].em_id,
                 "",
                 "",
                 employee[0].full_name,
@@ -9403,7 +9404,7 @@ module.exports = {
                             sysdataSP[0].name,
                             "Absensi Pulang Cepat",
                             statusAbsen,
-                            employee[0].emId,
+                            employee[0].em_id,
                             nomorSp,
                             nomorSp,
                             employee[0].full_name,
@@ -9417,7 +9418,7 @@ module.exports = {
                             sysdataSP[1].name,
                             "Absensi Pulang Cepat",
                             statusAbsen,
-                            employee[0].emId,
+                            employee[0].em_id,
                             nomorSp,
                             nomorSp,
                             employee[0].full_name,
@@ -9471,7 +9472,7 @@ module.exports = {
                             sysdataSP[0].name,
                             "Absensi Pulang Cepat",
                             statusAbsen,
-                            employee[0].emId,
+                            employee[0].em_id,
                             nomorSp,
                             nomorSp,
                             employee[0].full_name,
@@ -9485,7 +9486,7 @@ module.exports = {
                             sysdataSP[1].name,
                             "Absensi Pulang Cepat",
                             statusAbsen,
-                            employee[0].emId,
+                            employee[0].em_id,
                             nomorSp,
                             nomorSp,
                             employee[0].full_name,
@@ -9557,7 +9558,7 @@ module.exports = {
                         sysdataSP[0].name,
                         "Absensi Pulang Cepat",
                         statusAbsen,
-                        employee[0].emId,
+                        employee[0].em_id,
                         nomorSp,
                         nomorSp,
                         employee[0].full_name,
@@ -9571,7 +9572,7 @@ module.exports = {
                         sysdataSP[1].name,
                         "Absensi Pulang Cepat",
                         statusAbsen,
-                        employee[0].emId,
+                        employee[0].em_id,
                         nomorSp,
                         nomorSp,
                         employee[0].full_name,
@@ -9752,15 +9753,16 @@ module.exports = {
                                   `SELECT attendance.* FROM ${namaDatabaseDynamic}.attendance LEFT  JOIN ${namaDatabaseDynamic}.emp_shift ON emp_shift.atten_date=attendance.atten_date JOIN ${namaDatabasMaster}.work_schedule  ON work_schedule.id=emp_shift.work_id  WHERE attendance.em_id='${em_id}' AND work_schedule.time_in < attendance.signin_time`
                                 );
 
-                                utility.insertNotifikasiAbsensi(
-                                  sysdata[2].name,
-                                  "Absensi Terlambat",
-                                  statusAbsen,
-                                  "",
-                                  employee[0].full_name,
-                                  namaDatabaseDynamic,
-                                  namaDatabasMaster
-                                );
+                                // utility.insertNotifikasiAbsensi(
+                                //   sysdata[2].name,
+                                //   "Absensi Terlambat",
+                                //   statusAbsen,
+                                //   employee[0].em_id,
+                                //   "",
+                                //   employee[0].full_name,
+                                //   namaDatabaseDynamic,
+                                //   namaDatabasMaster
+                                // );
 
                                 var splitBulan = sysdata[0].name.split(",");
                                 const tanggalSekarang = new Date();
@@ -14434,7 +14436,7 @@ a.typeid,
     var getbulan = req.body.bulan;
     var gettahun = req.body.tahun;
     var status = req.body.status;
-    var branchId = req.body.branch_id;
+    var branchId = req.headers.branch_id;
 
     var database = req.query.database;
 
@@ -15251,7 +15253,7 @@ a.typeid,
     console.log("-----load laporan pengajuan----------");
     var database = req.query.database;
     var emId = req.headers.em_id == undefined ? "000000123" : req.headers.em_id;
-    var branchId = req.body.branch_id;
+    var branchId = req.headers.branch_id;
 
     var status = req.body.status;
     var type = req.body.type;
