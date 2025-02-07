@@ -52,20 +52,9 @@ module.exports = {
       .replace("&start_periode=" + req.query.start_periode, "")
       .replace("&end_periode=" + req.query.end_periode, "");
     var emId = req.headers.em_id;
+    var branchId = req.headers.branch_id;
 
-    url = `SELECT notice.*,notice_question.name as pertanyaan,notice_question.id as id_pertanyaan
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    FROM notice LEFT JOIN notice_question ON notice_question.notice_id=notice.id WHERE em_ids LIKE '%${emId}%' OR em_ids=''`;
+    url = `SELECT notice.* FROM notice WHERE branch_id LIKE '%${branchId}%'`;
 
     console.log("url accouncemnt", url);
 
@@ -4565,7 +4554,7 @@ module.exports = {
                                                     return;
                                                   }
 
-                                                  // utility.notifikasi(employee[0].token_notif,title,message)
+                                                  utility.notifikasi(employee[0].token_notif,title,message)
                                                 }
                                               );
                                             }
@@ -4640,7 +4629,7 @@ module.exports = {
                                                 }
                                               );
 
-                                              // utility.notifikasi(employee[0].token_notif,title,message)
+                                              utility.notifikasi(employee[0].token_notif,title,message)
                                             }
                                           );
                                         }
@@ -4732,7 +4721,7 @@ module.exports = {
                                                     "employee id ",
                                                     listData[i]
                                                   );
-                                                  // utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                                                  utility.notifikasi(employee[0].token_notif,title,deskripsi)
                                                 }
                                               );
                                             }
@@ -4801,7 +4790,7 @@ module.exports = {
                                                     return;
                                                   }
 
-                                                  //    utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                                                     utility.notifikasi(employee[0].token_notif,title,deskripsi)
                                                 }
                                               );
                                             }
