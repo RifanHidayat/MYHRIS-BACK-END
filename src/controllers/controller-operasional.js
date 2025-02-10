@@ -2316,11 +2316,12 @@ module.exports = {
           data: [],
         });
       } else {
+        var query = `
+          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}' AND (emp_leave.leave_status='Approve' OR emp_leave.leave_status='Approve2')
+          `;
+          console.log(query);
         connection.query(
-          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.leave_types ON leave_types.id=emp_labor.typeId WHERE em_id='${em_id}' AND emp_labor.typeId='${typeId}' AND (emp_labor.status='Approve' OR 'Approve2')
-          UNION ALL
-          SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}' AND (emp_leave.leave_status='Approve' OR 'Approve2')
-          `,
+          query,
           function (error, results) {
             connection.release();
             if (error != null) console.log(error);
