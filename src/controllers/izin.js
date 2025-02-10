@@ -81,7 +81,7 @@ module.exports = {
 
       //jika fullday
       if (
-        leaveType == "FULLDay" ||
+        leaveType == "FULLDAY" ||
         leaveType == "Full Day" ||
         leaveType == "Full day"
       ) {

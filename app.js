@@ -143,7 +143,7 @@ async function kirimNotif(){
             jamIstirahatKeluar.setMinutes(jamIstirahatKeluar.getMinutes() + parseInt(startIstirahatKeluar));
 
          
-          console.log(jamMasuk.getMinutes(),jamMasuk.getHours())
+          console.log(jamMasuk.getMinutes(),jamMasuk.getHours());
    
         
             const jamSekarang = new Date(); // jam pulang 
@@ -225,7 +225,7 @@ async function kirimNotif(){
                                 console.log('data status ',data.full_name,data.notif_absen_masuk)
                                 //munculin notif
                                 var messageAbsenMasuk=`Reminder absen masuk`
-                               // utility.pushNotifikasiApproval(data.token,"Absen Masuk",messageAbsenMasuk,'info absen','',"")
+                               utility.pushNotifikasiApproval(data.token,"Absen Masuk",messageAbsenMasuk,'info absen','',"")
                                console.log('tes',data.full_name)
                               if (data.notif_absen_masuk.includes('true')){
                     
