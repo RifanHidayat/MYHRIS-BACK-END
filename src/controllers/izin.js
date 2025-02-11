@@ -197,231 +197,236 @@ module.exports = {
                           if (results.length > 0) {
                             error = true;
                           }
+                          console.log('errro', error);
+                          // if (error == false) {
+                          //   console.log('kemari kag');
+                          //   connection.query(
+                          //     `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
+                          //     (err, results) => {
+                          //       if (err) {
+                          //         console.error(
+                          //           "Error executing SELECT statement:",
+                          //           err
+                          //         );
+                          //         connection.rollback(() => {
+                          //           connection.end();
+                          //           return res.status(400).send({
+                          //             status: false,
+                          //             message: "Terjadi Kesalahan",
+                          //             data: [],
+                          //           });
+                          //         });
+                          //         return;
+                          //       }
+                          //       console.log('ini result', results);
 
-                          if (error == false) {
-                            connection.query(
-                              `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
-                              (err, results) => {
-                                if (err) {
-                                  console.error(
-                                    "Error executing SELECT statement:",
-                                    err
-                                  );
-                                  connection.rollback(() => {
-                                    connection.end();
-                                    return res.status(400).send({
-                                      status: false,
-                                      message: "Terjadi Kesalahan",
-                                      data: [],
-                                    });
-                                  });
-                                  return;
-                                }
+                          //       //  proses memasukan data
 
-                                //  proses memasukan data
+                          //       if (results.length > 0) {
+                          //         console.log('kemari');
+                          //         return res.status(200).send({
+                          //           status: false,
+                          //           message: "ulang",
+                          //           data: results,
+                          //         });
+                          //       }
 
-                                if (results.length > 0) {
-                                  return res.status(200).send({
-                                    status: false,
-                                    message: "ulang",
-                                    data: results,
-                                  });
-                                }
+                          //       connection.query(
+                          //         `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`,
+                          //         [insertData],
+                          //         (err, results) => {
+                          //           if (err) {
+                          //             console.error(
+                          //               "Error executing SELECT statement:",
+                          //               err
+                          //             );
+                          //             connection.rollback(() => {
+                          //               connection.end();
+                          //               return res.status(400).send({
+                          //                 status: false,
+                          //                 message: "Terjadi Kesalahan",
+                          //                 data: [],
+                          //               });
+                          //             });
+                          //             return;
+                          //           }
+                          //           connection.query(
+                          //             `INSERT INTO ${namaDatabaseDynamic}.logs_actvity SET ?`,
+                          //             [dataInsertLog],
+                          //             (err, results) => {
+                          //               if (err) {
+                          //                 console.error(
+                          //                   "Error executing SELECT statement:",
+                          //                   err
+                          //                 );
+                          //                 connection.rollback(() => {
+                          //                   connection.end();
+                          //                   return res.status(400).send({
+                          //                     status: false,
+                          //                     message: "Terjadi Kesalahan",
+                          //                     data: [],
+                          //                   });
+                          //                 });
+                          //                 return;
+                          //               }
+                          //               connection.query(
+                          //                 `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${emId}'`,
+                          //                 (err, employee) => {
+                          //                   if (err) {
+                          //                     console.error(
+                          //                       "Error executing SELECT statement:",
+                          //                       err
+                          //                     );
+                          //                     connection.rollback(() => {
+                          //                       connection.end();
+                          //                       return res.status(400).send({
+                          //                         status: false,
+                          //                         message: "Terjadi Kesalahan",
+                          //                         data: [],
+                          //                       });
+                          //                     });
+                          //                     return;
+                          //                   }
 
-                                connection.query(
-                                  `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`,
-                                  [insertData],
-                                  (err, results) => {
-                                    if (err) {
-                                      console.error(
-                                        "Error executing SELECT statement:",
-                                        err
-                                      );
-                                      connection.rollback(() => {
-                                        connection.end();
-                                        return res.status(400).send({
-                                          status: false,
-                                          message: "Terjadi Kesalahan",
-                                          data: [],
-                                        });
-                                      });
-                                      return;
-                                    }
-                                    connection.query(
-                                      `INSERT INTO ${namaDatabaseDynamic}.logs_actvity SET ?`,
-                                      [dataInsertLog],
-                                      (err, results) => {
-                                        if (err) {
-                                          console.error(
-                                            "Error executing SELECT statement:",
-                                            err
-                                          );
-                                          connection.rollback(() => {
-                                            connection.end();
-                                            return res.status(400).send({
-                                              status: false,
-                                              message: "Terjadi Kesalahan",
-                                              data: [],
-                                            });
-                                          });
-                                          return;
-                                        }
-                                        connection.query(
-                                          `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${emId}'`,
-                                          (err, employee) => {
-                                            if (err) {
-                                              console.error(
-                                                "Error executing SELECT statement:",
-                                                err
-                                              );
-                                              connection.rollback(() => {
-                                                connection.end();
-                                                return res.status(400).send({
-                                                  status: false,
-                                                  message: "Terjadi Kesalahan",
-                                                  data: [],
-                                                });
-                                              });
-                                              return;
-                                            }
+                          //                   connection.query(
+                          //                     `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
+                          //                     (err, transaksi) => {
+                          //                       if (err) {
+                          //                         console.error(
+                          //                           "Error executing SELECT statement:",
+                          //                           err
+                          //                         );
+                          //                         connection.rollback(() => {
+                          //                           connection.end();
+                          //                           return res
+                          //                             .status(400)
+                          //                             .send({
+                          //                               status: false,
+                          //                               message:
+                          //                                 "Terjadi Kesalahan",
+                          //                               data: [],
+                          //                             });
+                          //                         });
+                          //                         return;
+                          //                       }
 
-                                            connection.query(
-                                              `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
-                                              (err, transaksi) => {
-                                                if (err) {
-                                                  console.error(
-                                                    "Error executing SELECT statement:",
-                                                    err
-                                                  );
-                                                  connection.rollback(() => {
-                                                    connection.end();
-                                                    return res
-                                                      .status(400)
-                                                      .send({
-                                                        status: false,
-                                                        message:
-                                                          "Terjadi Kesalahan",
-                                                        data: [],
-                                                      });
-                                                  });
-                                                  return;
-                                                }
+                          //                       connection.query(
+                          //                         `SELECT * FROM sysdata WHERE kode='032'`,
+                          //                         (err, sysdata) => {
+                          //                           if (err) {
+                          //                             console.error(
+                          //                               "Error executing SELECT statement:",
+                          //                               err
+                          //                             );
+                          //                             connection.rollback(
+                          //                               () => {
+                          //                                 connection.end();
+                          //                                 return res
+                          //                                   .status(400)
+                          //                                   .send({
+                          //                                     status: false,
+                          //                                     message:
+                          //                                       "Terjadi Kesalahan",
+                          //                                     data: [],
+                          //                                   });
+                          //                               }
+                          //                             );
+                          //                             return;
+                          //                           }
 
-                                                connection.query(
-                                                  `SELECT * FROM sysdata WHERE kode='032'`,
-                                                  (err, sysdata) => {
-                                                    if (err) {
-                                                      console.error(
-                                                        "Error executing SELECT statement:",
-                                                        err
-                                                      );
-                                                      connection.rollback(
-                                                        () => {
-                                                          connection.end();
-                                                          return res
-                                                            .status(400)
-                                                            .send({
-                                                              status: false,
-                                                              message:
-                                                                "Terjadi Kesalahan",
-                                                              data: [],
-                                                            });
-                                                        }
-                                                      );
-                                                      return;
-                                                    }
+                          //                           console.log('kenotif 1');
 
-                                                    //notifikasi approval
-                                                    //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
-                                                    utility.insertNotifikasi(
-                                                      employee[0].em_report_to,
-                                                      "Approval Izin",
-                                                      "Izin",
-                                                      employee[0].em_id,
-                                                      transaksi[0].id,
-                                                      transaksi[0].nomor_ajuan,
-                                                      employee[0].full_name,
-                                                      namaDatabaseDynamic,
-                                                      databaseMaster
-                                                    );
-                                                    utility.insertNotifikasi(
-                                                      sysdata[0].name,
-                                                      "Pengajuan SakiT",
-                                                      "Izin",
-                                                      employee[0].em_id,
-                                                      transaksi[0].id,
-                                                      transaksi[0].nomor_ajuan,
-                                                      employee[0].full_name,
-                                                      namaDatabaseDynamic,
-                                                      databaseMaster
-                                                    );
+                          //                           //notifikasi approval
+                          //                           //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
+                          //                            utility.insertNotifikasi(
+                          //                             employee[0].em_report_to,
+                          //                             "Approval Izin",
+                          //                             "Izin",
+                          //                             employee[0].em_id,
+                          //                             transaksi[0].id,
+                          //                             transaksi[0].nomor_ajuan,
+                          //                             employee[0].full_name,
+                          //                             namaDatabaseDynamic,
+                          //                             databaseMaster
+                          //                           );
+                          //                           utility.insertNotifikasi(
+                          //                             sysdata[0].name,
+                          //                             "Pengajuan SakiT",
+                          //                             "Izin",
+                          //                             employee[0].em_id,
+                          //                             transaksi[0].id,
+                          //                             transaksi[0].nomor_ajuan,
+                          //                             employee[0].full_name,
+                          //                             namaDatabaseDynamic,
+                          //                             databaseMaster
+                          //                           );
 
-                                                    connection.commit((err) => {
-                                                      if (err) {
-                                                        console.error(
-                                                          "Error committing transaction:",
-                                                          err
-                                                        );
-                                                        connection.rollback(
-                                                          () => {
-                                                            connection.end();
-                                                            return res
-                                                              .status(400)
-                                                              .send({
-                                                                status: false,
-                                                                message:
-                                                                  "Kombinasi email & password Anda Salah",
-                                                                data: [],
-                                                              });
-                                                          }
-                                                        );
-                                                        return;
-                                                      }
-                                                      connection.end();
+                          //                           connection.commit((err) => {
+                          //                             if (err) {
+                          //                               console.error(
+                          //                                 "Error committing transaction:",
+                          //                                 err
+                          //                               );
+                          //                               connection.rollback(
+                          //                                 () => {
+                          //                                   connection.end();
+                          //                                   return res
+                          //                                     .status(400)
+                          //                                     .send({
+                          //                                       status: false,
+                          //                                       message:
+                          //                                         "Kombinasi email & password Anda Salah",
+                          //                                       data: [],
+                          //                                     });
+                          //                                 }
+                          //                               );
+                          //                               return;
+                          //                             }
+                          //                             connection.end();
 
-                                                      console.log(
-                                                        "Transaction completed successfully! 2"
-                                                      );
-                                                      return res
-                                                        .status(200)
-                                                        .send({
-                                                          status: true,
-                                                          message:
-                                                            "Kombinasi email & password Anda Salah",
-                                                          data: records,
-                                                        });
-                                                    });
-                                                  }
-                                                );
-                                              }
-                                            );
-                                          }
-                                        );
-                                      }
-                                    );
-                                  }
-                                );
-                              }
-                            );
-                          } else {
-                            connection.commit((err) => {
-                              if (err) {
-                                console.error(
-                                  "Error committing transaction:",
-                                  err
-                                );
-                                connection.rollback(() => {
-                                  connection.end();
-                                  return res.status(400).send({
-                                    status: true,
-                                    message: pesan,
-                                    data: [],
-                                  });
-                                });
-                                return;
-                              }
-                            });
-                          }
+                          //                             console.log(
+                          //                               "Transaction completed successfully! 2"
+                          //                             );
+                          //                             return res
+                          //                               .status(200)
+                          //                               .send({
+                          //                                 status: true,
+                          //                                 message:
+                          //                                   "Kombinasi email & password Anda Salah",
+                          //                                 data: records,
+                          //                               });
+                          //                           });
+                          //                         }
+                          //                       );
+                          //                     }
+                          //                   );
+                          //                 }
+                          //               );
+                          //             }
+                          //           );
+                          //         }
+                          //       );
+                          //     }
+                          //   );
+                          // } else {
+                          //   connection.commit((err) => {
+                          //     if (err) {
+                          //       console.error(
+                          //         "Error committing transaction:",
+                          //         err
+                          //       );
+                          //       connection.rollback(() => {
+                          //         connection.end();
+                          //         return res.status(400).send({
+                          //           status: true,
+                          //           message: pesan,
+                          //           data: [],
+                          //         });
+                          //       });
+                          //       return;
+                          //     }
+                          //   });
+                          // }
                         }
                       );
                     }
@@ -429,13 +434,16 @@ module.exports = {
                 }
               );
             }
-
             if (error == false) {
+              console.log('kemari kag');
               connection.query(
                 `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
                 (err, results) => {
                   if (err) {
-                    console.error("Error executing SELECT statement:", err);
+                    console.error(
+                      "Error executing SELECT statement:",
+                      err
+                    );
                     connection.rollback(() => {
                       connection.end();
                       return res.status(400).send({
@@ -446,10 +454,12 @@ module.exports = {
                     });
                     return;
                   }
+                  console.log('ini result', results);
 
                   //  proses memasukan data
 
                   if (results.length > 0) {
+                    console.log('kemari');
                     return res.status(200).send({
                       status: false,
                       message: "ulang",
@@ -462,7 +472,10 @@ module.exports = {
                     [insertData],
                     (err, results) => {
                       if (err) {
-                        console.error("Error executing SELECT statement:", err);
+                        console.error(
+                          "Error executing SELECT statement:",
+                          err
+                        );
                         connection.rollback(() => {
                           connection.end();
                           return res.status(400).send({
@@ -521,11 +534,14 @@ module.exports = {
                                     );
                                     connection.rollback(() => {
                                       connection.end();
-                                      return res.status(400).send({
-                                        status: false,
-                                        message: "Terjadi Kesalahan",
-                                        data: [],
-                                      });
+                                      return res
+                                        .status(400)
+                                        .send({
+                                          status: false,
+                                          message:
+                                            "Terjadi Kesalahan",
+                                          data: [],
+                                        });
                                     });
                                     return;
                                   }
@@ -538,20 +554,27 @@ module.exports = {
                                           "Error executing SELECT statement:",
                                           err
                                         );
-                                        connection.rollback(() => {
-                                          connection.end();
-                                          return res.status(400).send({
-                                            status: false,
-                                            message: "Terjadi Kesalahan",
-                                            data: [],
-                                          });
-                                        });
+                                        connection.rollback(
+                                          () => {
+                                            connection.end();
+                                            return res
+                                              .status(400)
+                                              .send({
+                                                status: false,
+                                                message:
+                                                  "Terjadi Kesalahan",
+                                                data: [],
+                                              });
+                                          }
+                                        );
                                         return;
                                       }
 
+                                      console.log('kenotif 1');
+
                                       //notifikasi approval
                                       //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
-                                      utility.insertNotifikasi(
+                                       utility.insertNotifikasi(
                                         employee[0].em_report_to,
                                         "Approval Izin",
                                         "Izin",
@@ -580,15 +603,19 @@ module.exports = {
                                             "Error committing transaction:",
                                             err
                                           );
-                                          connection.rollback(() => {
-                                            connection.end();
-                                            return res.status(400).send({
-                                              status: false,
-                                              message:
-                                                "Kombinasi email & password Anda Salah",
-                                              data: [],
-                                            });
-                                          });
+                                          connection.rollback(
+                                            () => {
+                                              connection.end();
+                                              return res
+                                                .status(400)
+                                                .send({
+                                                  status: false,
+                                                  message:
+                                                    "Kombinasi email & password Anda Salah",
+                                                  data: [],
+                                                });
+                                            }
+                                          );
                                           return;
                                         }
                                         connection.end();
@@ -596,12 +623,14 @@ module.exports = {
                                         console.log(
                                           "Transaction completed successfully! 2"
                                         );
-                                        return res.status(200).send({
-                                          status: true,
-                                          message:
-                                            "Kombinasi email & password Anda Salah",
-                                          data: records,
-                                        });
+                                        return res
+                                          .status(200)
+                                          .send({
+                                            status: true,
+                                            message:
+                                              "Kombinasi email & password Anda Salah",
+                                            data: records,
+                                          });
                                       });
                                     }
                                   );
@@ -615,7 +644,212 @@ module.exports = {
                   );
                 }
               );
+            } else {
+              connection.commit((err) => {
+                if (err) {
+                  console.error(
+                    "Error committing transaction:",
+                    err
+                  );
+                  connection.rollback(() => {
+                    connection.end();
+                    return res.status(400).send({
+                      status: true,
+                      message: pesan,
+                      data: [],
+                    });
+                  });
+                  return;
+                }
+              });
             }
+
+            // if (error == false) {
+            //   connection.query(
+            //     `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
+            //     (err, results) => {
+            //       if (err) {
+            //         console.error("Error executing SELECT statement:", err);
+            //         connection.rollback(() => {
+            //           connection.end();
+            //           return res.status(400).send({
+            //             status: false,
+            //             message: "Terjadi Kesalahan",
+            //             data: [],
+            //           });
+            //         });
+            //         return;
+            //       }
+
+            //       //  proses memasukan data
+
+            //       if (results.length > 0) {
+            //         return res.status(200).send({
+            //           status: false,
+            //           message: "ulang",
+            //           data: results,
+            //         });
+            //       }
+
+            //       connection.query(
+            //         `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`,
+            //         [insertData],
+            //         (err, results) => {
+            //           if (err) {
+            //             console.error("Error executing SELECT statement:", err);
+            //             connection.rollback(() => {
+            //               connection.end();
+            //               return res.status(400).send({
+            //                 status: false,
+            //                 message: "Terjadi Kesalahan",
+            //                 data: [],
+            //               });
+            //             });
+            //             return;
+            //           }
+            //           connection.query(
+            //             `INSERT INTO ${namaDatabaseDynamic}.logs_actvity SET ?`,
+            //             [dataInsertLog],
+            //             (err, results) => {
+            //               if (err) {
+            //                 console.error(
+            //                   "Error executing SELECT statement:",
+            //                   err
+            //                 );
+            //                 connection.rollback(() => {
+            //                   connection.end();
+            //                   return res.status(400).send({
+            //                     status: false,
+            //                     message: "Terjadi Kesalahan",
+            //                     data: [],
+            //                   });
+            //                 });
+            //                 return;
+            //               }
+            //               connection.query(
+            //                 `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${emId}'`,
+            //                 (err, employee) => {
+            //                   if (err) {
+            //                     console.error(
+            //                       "Error executing SELECT statement:",
+            //                       err
+            //                     );
+            //                     connection.rollback(() => {
+            //                       connection.end();
+            //                       return res.status(400).send({
+            //                         status: false,
+            //                         message: "Terjadi Kesalahan",
+            //                         data: [],
+            //                       });
+            //                     });
+            //                     return;
+            //                   }
+
+            //                   connection.query(
+            //                     `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
+            //                     (err, transaksi) => {
+            //                       if (err) {
+            //                         console.error(
+            //                           "Error executing SELECT statement:",
+            //                           err
+            //                         );
+            //                         connection.rollback(() => {
+            //                           connection.end();
+            //                           return res.status(400).send({
+            //                             status: false,
+            //                             message: "Terjadi Kesalahan",
+            //                             data: [],
+            //                           });
+            //                         });
+            //                         return;
+            //                       }
+
+            //                       connection.query(
+            //                         `SELECT * FROM sysdata WHERE kode='032'`,
+            //                         (err, sysdata) => {
+            //                           if (err) {
+            //                             console.error(
+            //                               "Error executing SELECT statement:",
+            //                               err
+            //                             );
+            //                             connection.rollback(() => {
+            //                               connection.end();
+            //                               return res.status(400).send({
+            //                                 status: false,
+            //                                 message: "Terjadi Kesalahan",
+            //                                 data: [],
+            //                               });
+            //                             });
+            //                             return;
+            //                           }
+
+            //                           //notifikasi approval
+            //                           //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
+            //                           utility.insertNotifikasi(
+            //                             employee[0].em_report_to,
+            //                             "Approval Izin",
+            //                             "Izin",
+            //                             employee[0].em_id,
+            //                             transaksi[0].id,
+            //                             transaksi[0].nomor_ajuan,
+            //                             employee[0].full_name,
+            //                             namaDatabaseDynamic,
+            //                             databaseMaster
+            //                           );
+            //                           utility.insertNotifikasi(
+            //                             sysdata[0].name,
+            //                             "Pengajuan SakiT",
+            //                             "Izin",
+            //                             employee[0].em_id,
+            //                             transaksi[0].id,
+            //                             transaksi[0].nomor_ajuan,
+            //                             employee[0].full_name,
+            //                             namaDatabaseDynamic,
+            //                             databaseMaster
+            //                           );
+
+            //                           connection.commit((err) => {
+            //                             if (err) {
+            //                               console.error(
+            //                                 "Error committing transaction:",
+            //                                 err
+            //                               );
+            //                               connection.rollback(() => {
+            //                                 connection.end();
+            //                                 return res.status(400).send({
+            //                                   status: false,
+            //                                   message:
+            //                                     "Kombinasi email & password Anda Salah",
+            //                                   data: [],
+            //                                 });
+            //                               });
+            //                               return;
+            //                             }
+            //                             connection.end();
+
+            //                             console.log(
+            //                               "Transaction completed successfully! sini yak"
+            //                             );
+            //                             return res.status(200).send({
+            //                               status: true,
+            //                               message:
+            //                                 "Kombinasi email & password Anda Salah",
+            //                               data: records,
+            //                             });
+            //                           });
+            //                         }
+            //                       );
+            //                     }
+            //                   );
+            //                 }
+            //               );
+            //             }
+            //           );
+            //         }
+            //       );
+            //     }
+            //   );
+            // }
           });
         });
       } else {

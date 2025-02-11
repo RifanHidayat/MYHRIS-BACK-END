@@ -370,7 +370,7 @@ module.exports = {
             if (err) {
               console.error("Error committing transaction:", err);
               connection.rollback(() => {
-                connection.end();
+                // connection.end();
                 // return res.status(400).send({
                 //   status: true,
                 //   message: 'Data gagal terkirim',
@@ -380,7 +380,7 @@ module.exports = {
               });
               return;
             }
-            connection.end();
+            // connection.end();
             console.log("Transaction completed successfully!");
             // return res.status(200).send({
             //   status: true,
