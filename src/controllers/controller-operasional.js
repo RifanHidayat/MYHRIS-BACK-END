@@ -2319,20 +2319,17 @@ module.exports = {
         var query = `
           SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types ON leave_types.id=emp_leave.typeId WHERE em_id='${em_id}' AND emp_leave.typeId='${typeId}' AND (emp_leave.leave_status='Approve' OR emp_leave.leave_status='Approve2')
           `;
-          console.log(query);
-        connection.query(
-          query,
-          function (error, results) {
-            connection.release();
-            if (error != null) console.log(error);
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              jumlah_data: results.length,
-              data: results,
-            });
-          }
-        );
+        console.log(query);
+        connection.query(query, function (error, results) {
+          connection.release();
+          if (error != null) console.log(error);
+          res.send({
+            status: true,
+            message: "Berhasil ambil data!",
+            jumlah_data: results.length,
+            data: results,
+          });
+        });
       }
     });
   },
@@ -3858,7 +3855,9 @@ module.exports = {
       var bodyValue = req.body;
       var emId = req.body.em_id;
       var approveId =
-        req.body.apply2_id == null || req.body.apply2_id == undefined || req.body.apply2_id == ''
+        req.body.apply2_id == null ||
+        req.body.apply2_id == undefined ||
+        req.body.apply2_id == ""
           ? req.body.apply_id
           : req.body.apply2_id;
       var leaveTypes =
@@ -4103,10 +4102,10 @@ module.exports = {
                                           return;
                                         }
                                         var nomorLb = `LI20${convertYear}${convertBulan}`;
-                                        var nomorStr ='';
+                                        var nomorStr = "";
                                         if (teguranLisan.length > 0) {
                                           const lastNomor =
-                                          teguranLisan[0]["nomor"]; // Ambil nomor dari data terakhir
+                                            teguranLisan[0]["nomor"]; // Ambil nomor dari data terakhir
                                           console.log(lastNomor);
 
                                           const sequenceStartIndex = 8;
@@ -4136,8 +4135,9 @@ module.exports = {
                                         console.log(nomorStr);
                                         console.log(req.body.apply_id);
                                         console.log(req.body.apply2_id);
-                                        console.log(`ini id yang ngasih teguran ${approveId}`);
-                                        
+                                        console.log(
+                                          `ini id yang ngasih teguran ${approveId}`
+                                        );
 
                                         connection.query(
                                           `INSERT INTO teguran_lisan (
@@ -4176,7 +4176,9 @@ module.exports = {
                                               return;
                                             }
                                             var queryInsertTeguranLisanId = `UPDATE ${namaDatabaseDynamic}.${nameTable} SET id_surat=${teguranLisan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
-                                            console.log(queryInsertTeguranLisanId);
+                                            console.log(
+                                              queryInsertTeguranLisanId
+                                            );
                                             connection.query(
                                               queryInsertTeguranLisanId,
                                               (err, mantap) => {
@@ -4187,16 +4189,19 @@ module.exports = {
                                                   );
                                                   connection.rollback(() => {
                                                     connection.end();
-                                                    return res.status(400).send({
-                                                      status: true,
-                                                      message: "gaga ambil data",
-                                                      data: [],
-                                                    });
+                                                    return res
+                                                      .status(400)
+                                                      .send({
+                                                        status: true,
+                                                        message:
+                                                          "gaga ambil data",
+                                                        data: [],
+                                                      });
                                                   });
                                                   return;
-                                                } 
+                                                }
                                               }
-                                            )
+                                            );
 
                                             var konsekuensiArray =
                                               konsekuensi.split(",");
@@ -4222,18 +4227,16 @@ module.exports = {
                                                       "Error executing detail query:",
                                                       err
                                                     );
-                                                    connection.rollback(
-                                                      () => {
-                                                        connection.end();
-                                                        return res
-                                                          .status(400)
-                                                          .json({
-                                                            status: false,
-                                                            message:
-                                                              "Gagal menyimpan detail",
-                                                          });
-                                                      }
-                                                    );
+                                                    connection.rollback(() => {
+                                                      connection.end();
+                                                      return res
+                                                        .status(400)
+                                                        .json({
+                                                          status: false,
+                                                          message:
+                                                            "Gagal menyimpan detail",
+                                                        });
+                                                    });
                                                     return;
                                                   }
                                                 }
@@ -4246,7 +4249,9 @@ module.exports = {
                                   }
 
                                   if (tipeSurat == "surat_peringatan") {
-                                    console.log(`SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`);
+                                    console.log(
+                                      `SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`
+                                    );
                                     connection.query(
                                       `SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`,
                                       (err, suratPeringatan) => {
@@ -4283,7 +4288,7 @@ module.exports = {
                                             letterId = "4";
                                           }
                                         } else {
-                                          letterId ='2'
+                                          letterId = "2";
                                         }
 
                                         connection.query(
@@ -4305,7 +4310,7 @@ module.exports = {
                                               return;
                                             }
                                             var nomorLb = `SP20${convertYear}${convertBulan}`;
-                                            var nomorStr = '';
+                                            var nomorStr = "";
                                             if (teguranLisan.length > 0) {
                                               var text =
                                                 teguranLisan[0]["nomor"];
@@ -4313,22 +4318,23 @@ module.exports = {
                                                 parseInt(
                                                   text.substring(8, 13)
                                                 ) + 1;
-                                              nomorStr = String(
-                                                nomor
-                                              ).padStart(4, "0");
+                                              nomorStr = String(nomor).padStart(
+                                                4,
+                                                "0"
+                                              );
                                               nomorLb = nomorLb + nomorStr;
                                             } else {
                                               var nomor = 1;
-                                              nomorStr = String(
-                                                nomor
-                                              ).padStart(4, "0");
+                                              nomorStr = String(nomor).padStart(
+                                                4,
+                                                "0"
+                                              );
                                               nomorLb = nomorLb + nomorStr;
                                             }
                                             console.log(nomorLb);
                                             console.log(letterId);
                                             console.log(nomorStr);
                                             console.log(utility.mounthNow());
-
 
                                             connection.query(
                                               `INSERT INTO employee_letter (
@@ -4370,27 +4376,34 @@ module.exports = {
                                                 }
 
                                                 var queryInsertTeguranLisanId = `UPDATE ${namaDatabaseDynamic}.${nameTable} SET id_surat=${teguranLisan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
-                                            console.log(queryInsertTeguranLisanId);
-                                            connection.query(
-                                              queryInsertTeguranLisanId,
-                                              (err, mantap) => {
-                                                if (err) {
-                                                  console.error(
-                                                    "Error executing SELECT statement:",
-                                                    err
-                                                  );
-                                                  connection.rollback(() => {
-                                                    connection.end();
-                                                    return res.status(400).send({
-                                                      status: true,
-                                                      message: "gaga ambil data",
-                                                      data: [],
-                                                    });
-                                                  });
-                                                  return;
-                                                } 
-                                              }
-                                            )
+                                                console.log(
+                                                  queryInsertTeguranLisanId
+                                                );
+                                                connection.query(
+                                                  queryInsertTeguranLisanId,
+                                                  (err, mantap) => {
+                                                    if (err) {
+                                                      console.error(
+                                                        "Error executing SELECT statement:",
+                                                        err
+                                                      );
+                                                      connection.rollback(
+                                                        () => {
+                                                          connection.end();
+                                                          return res
+                                                            .status(400)
+                                                            .send({
+                                                              status: true,
+                                                              message:
+                                                                "gaga ambil data",
+                                                              data: [],
+                                                            });
+                                                        }
+                                                      );
+                                                      return;
+                                                    }
+                                                  }
+                                                );
 
                                                 var konsekuensiArray =
                                                   konsekuensi.split(",");
@@ -4555,7 +4568,11 @@ module.exports = {
                                                     return;
                                                   }
 
-                                                  utility.notifikasi(employee[0].token_notif,title,message)
+                                                  utility.notifikasi(
+                                                    employee[0].token_notif,
+                                                    title,
+                                                    message
+                                                  );
                                                 }
                                               );
                                             }
@@ -4630,7 +4647,11 @@ module.exports = {
                                                 }
                                               );
 
-                                              utility.notifikasi(employee[0].token_notif,title,message)
+                                              utility.notifikasi(
+                                                employee[0].token_notif,
+                                                title,
+                                                message
+                                              );
                                             }
                                           );
                                         }
@@ -4722,7 +4743,11 @@ module.exports = {
                                                     "employee id ",
                                                     listData[i]
                                                   );
-                                                  utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                                                  utility.notifikasi(
+                                                    employee[0].token_notif,
+                                                    title,
+                                                    deskripsi
+                                                  );
                                                 }
                                               );
                                             }
@@ -4791,7 +4816,11 @@ module.exports = {
                                                     return;
                                                   }
 
-                                                     utility.notifikasi(employee[0].token_notif,title,deskripsi)
+                                                  utility.notifikasi(
+                                                    employee[0].token_notif,
+                                                    title,
+                                                    deskripsi
+                                                  );
                                                 }
                                               );
                                             }
@@ -8790,7 +8819,7 @@ module.exports = {
               jika terlambat mencapai ${parseInt(
                 sysdata[1].name
               )}x. Kami akan mengeluarkan surat peringatan`;
-            console.log('ini employe',employee);
+            console.log("ini employe", employee);
             utility.insertNotifikasiAbsensi(
               sysdata[2].name,
               "Absensi Terlambat",
@@ -10814,8 +10843,17 @@ module.exports = {
 
     var query1 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan IN ('2', '3')   AND a.status_transaksi=1`;
     var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='1'   AND a.status_transaksi=1`;
-    var query3 = `SELECT o.name as category_pengajuan,   a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='1'  AND a.status_transaksi=1 `;
+    var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
+  JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
+  WHERE a.em_id=b.em_id 
+  AND (
+    (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
+    OR 
+    (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%'))
+)
 
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  AND a.status_transaksi=1    `;
     var query4 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending' AND a.ajuan='2'  AND a.status_transaksi=1`;
     var query5 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='4'   AND a.status_transaksi=1`;
     var query6 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'  AND a.status_transaksi=1`;
@@ -10833,6 +10871,9 @@ module.exports = {
     a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND (a.status='Pending' OR a.status='pending') AND a.ajuan='4' AND a.status_transaksi=1 `;
 
     var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending' AND emp_loan.em_id!='${em_id}' `;
+    var query11 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.employee_letter a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
+
+    var query12 = `SELECT a.em_id, b.full_name FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b  ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027'   WHERE   a.status IN ('Pending')  AND sysdata.name LIKE '%${em_id}%' `;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan IN ('2', '3')   AND a.status_transaksi=1
@@ -10919,7 +10960,7 @@ module.exports = {
         });
       } else {
         connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};`,
+          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
           [em_id],
           function (error, results) {
             if (error != null) console.log(error);
@@ -10937,6 +10978,8 @@ module.exports = {
               jumlah_checkin: results[7].length,
               jumlah_wfh: results[8].length,
               jumlah_kasbon: results[9].length,
+              jumlah_surat_peringatan: results[10].length,
+              jumlah_teguran_lisan: results[11].length,
               data1: results[0],
               data2: results[1],
               data3: results[2],
@@ -10944,9 +10987,11 @@ module.exports = {
               data5: results[4],
               data6: results[5],
               data7: results[6],
-              data7: results[7],
-              data8: results[8],
-              data9: results[9],
+              data8: results[7],
+              data9: results[8],
+              data10: results[9],
+              data11: results[10],
+              data12: results[11],
             });
           }
         );
@@ -11704,7 +11749,7 @@ module.exports = {
                                     });
                                     return;
                                   }
-                                  console.log('ini data absensi', dataAbsensi);
+                                  console.log("ini data absensi", dataAbsensi);
 
                                   utility.notifikasi(
                                     employee[0].token_notif,
@@ -12770,6 +12815,13 @@ module.exports = {
       stauts = "Pending";
     }
 
+    var conditionStatusLabor = "";
+    if (stauts == "pending" || stauts == "PENDING" || stauts == "Pending") {
+      conditionStatusLabor = "AND a.status IN ('Pending','Approve')";
+    } else {
+      conditionStatusLabor = "AND a.status  IN  ('Approve2','Rejected')";
+    }
+    var orderby1 = "ORDER BY idd DESC";
     console.log(req.body);
 
     const tahun = `${gettahun}`;
@@ -12865,45 +12917,60 @@ a.typeid,
     AND a.status_transaksi=1
     `;
 
-    var query3 = `SELECT
-    
-    CASE
-    WHEN ( a.approve_status  IS NULL OR a.approve_status='Pending')  AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
-    WHEN  (a.approve_status  IS NULL  OR a.approve_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+    var query3 = `SELECT 
+     a.id as idd,
+     CASE
+     WHEN ( a.approve_status  IS NULL OR a.approve_status='Pending')  AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
+     WHEN  (a.approve_status IS NULL   OR a.approve_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
 
-    ELSE "Approve"
-    END AS approve_status,
-    CASE
-    WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by='') THEN "Pending"
-    WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-    
+     ELSE "Approve"
+     END AS approve_status,
+     CASE
+     WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by!='') THEN "Pending"
+     WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+     
 
-    ELSE "Approve"
-    END AS approve2_status,
-    a.dari_jam,
-    a.sampai_jam,
-    a.approve_by,
-    a.approve2_by,
-    a.em_delegation,
-    a.atten_date,
-    a.uraian,
-    a.nomor_ajuan,
-    a.em_id,
-    a.approve_id,
-    a.place_in,
-    a.place_out,
-    a.status,
-        	a.ajuan,
+     ELSE "Approve"
+     END AS approve2_status,
+     a.dari_jam,
+     a.sampai_jam,
+     a.approve_by,
+     a.approve2_by,
+     a.em_delegation,
+     a.atten_date,
+     a.uraian,
+     a.nomor_ajuan,
+     a.em_id,
+     a.approve_id,
+     a.place_in,
+     a.place_out,
+     a.status,
+	a.ajuan,
 a.approve_id,
 a.approve_date,
 a.id,
+
+CASE
+    WHEN o.dinilai = 'N' THEN b.em_report2_to
+    ELSE a.em_ids
+END AS em_ids,
+o.dinilai,
+    
+   
+
+     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id 
+   
+     ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
+     -- Kondisi dinilai = 'Y' untuk mengganti em_delegation dan em_ids
+     AND (
+         (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%'))
+         OR 
+         (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' ))
+     )
     
 
-    o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND a.em_delegation LIKE '%${em_id}%' AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND a.ajuan='1'
-
-    
-    AND a.status_transaksi=1
-    `;
+     ${orderby1}
+     `;
     var query4 = `
 SELECT 
 CASE
@@ -13030,9 +13097,44 @@ a.typeid,
     var query8 = `SELECT emp_loan.approve_by, emp_loan.id, employee.full_name, emp_loan.status as  approve_status,emp_loan.approve_id,emp_loan.approve_date,emp_loan.tgl_ajuan as tanggal_ajuan ,
     emp_loan.periode_mulai_cicil as periode,
     emp_loan.nomor_ajuan,emp_loan.description,emp_loan.total_loan as total_pinjaman ,emp_loan.durasi_cicil 
-    FROM ${database}_hrm.sysdata JOIN ${database}_hrm.emp_loan ON sysdata.kode='019' JOIN ${database}_hrm.employee ON employee.em_id=emp_loan.em_id WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status LIKE '%${status}%'  AND emp_loan.em_id!='${em_id}' `;
-
+    FROM ${database}_hrm.sysdata JOIN ${database}_hrm.emp_loan ON sysdata.kode='019' JOIN ${database}_hrm.employee ON employee.em_id=emp_loan.em_id WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status LIKE '%${stauts}%'  AND emp_loan.em_id!='${em_id}' `;
     var query9 = `SELECT
+     a.id as idd,
+     CASE
+      WHEN ( a.approve_status IS NULL OR a.approve_status='Pending')  AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
+      WHEN  (a.approve_status  IS NULL OR a.approve_status='Rejected')  AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+ 
+      ELSE "Approve"
+      END AS approve_status,
+      CASE
+      WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by!='') THEN "Pending"
+      WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+      
+ 
+      ELSE "Approve"
+      END AS approve2_status,
+      a.dari_jam,
+      a.sampai_jam,
+      a.approve_by,
+      a.approve2_by,
+      a.em_delegation,
+      a.atten_date,
+      a.uraian,
+      a.nomor_ajuan,
+      a.em_id,
+      a.approve_id,
+      a.place_in,
+      a.place_out,
+    a.ajuan,
+    a.approve_id,
+ a.approve_date,
+ a.id,
+      
+      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
+      b.full_name,a.status as status,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a 
+      JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.ajuan='4' AND a.status_transaksi=1 `;
+
+    var query10 = `SELECT
     CASE
     WHEN ( a.approve_status  IS NULL  OR a.approve_status='Pending') AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
     WHEN  (a.approve_status  IS NULL OR a.approve_status='Rejected')  AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
@@ -13058,6 +13160,34 @@ a.typeid,
      b.full_name,a.status as leave_status ,a.status as status FROM employee_letter a JOIN ${database}_hrm.employee b
      WHERE a.em_id=b.em_id  AND b.em_report_to LIKE '%${em_id}%' AND a.status LIKE '%${stauts}%' AND a.status!='Cancel'`;
     //  AND emp_loan.nomor_ajuan LIKE '%LO2023110001%'
+
+    var query12 = `SELECT
+       letter.name as nama,
+       CASE
+         WHEN (a.approve_status IS NULL OR a.approve_status = 'Pending') THEN "Pending"
+         WHEN (a.approve_status = 'Rejected') THEN "Rejected"
+         ELSE "Approve"
+       END AS approve_status,
+     a.eff_date AS atten_date,
+     a.pelanggaran AS pelangaran,
+     a.nomor AS nomor_ajuan,
+     a.em_id,
+     a.approve_id,
+     a.approve_date,
+     e2.full_name AS approve_by,
+     a.hal AS judul,
+     a.tgl_surat AS tanggal_ajuan,
+     a.id,
+     b.em_report_to,
+     b.em_report2_to,
+     b.full_name,
+     a.status AS leave_status
+     FROM ${database}_hrm.teguran_lisan a JOIN ${database}_hrm.employee b 
+     LEFT JOIN ${database}_hrm.sysdata ON sysdata.kode='027' 
+     LEFT JOIN ${database}_hrm.letter ON a.letter_id=letter.id
+     LEFT JOIN 
+       ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
+        WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%' ORDER BY a.id DESC`;
 
     const configDynamic = {
       multipleStatements: true,
@@ -13103,6 +13233,7 @@ a.typeid,
             });
           });
         } else if (url_data == "lembur") {
+          console.log(query3);
           connection.query(query3, function (error, dataLembur) {
             connection.release();
             res.send({
@@ -13151,6 +13282,18 @@ a.typeid,
               data: dataAbsensi,
             });
           });
+        } else if (url_data == "wfh") {
+          console.log(query9);
+          connection.query(query9, function (error, dataWfh) {
+            connection.release();
+            console.log(dataWfh);
+            res.send({
+              status: true,
+              message: "Berhasil ambil data approve Klaim!",
+              jenis: "wfh",
+              data: dataWfh,
+            });
+          });
         } else if (url_data == "kasbon") {
           connection.query(query8, function (error, dataLoan) {
             connection.release();
@@ -13162,13 +13305,27 @@ a.typeid,
             });
           });
         } else if (url_data == "surat_peringatan") {
-          connection.query(query9, function (error, dataLoan) {
+          connection.query(query10, function (error, dataLoan) {
             connection.release();
             res.send({
               status: true,
               message: "Berhasil ambil data approve klaim!",
               jenis: "kasbon",
               data: dataLoan,
+            });
+          });
+        } else if (url_data == "teguran_lisan") {
+          console.log(query12);
+
+          connection.query(query12, function (error, dataAbsensi) {
+            connection.release();
+            console.log("data ", dataAbsensi);
+
+            res.send({
+              status: true,
+              message: "Berhasil ambil data approve Teguran Lisan!",
+              jenis: "teguran lisan",
+              data: dataAbsensi,
             });
           });
         }
@@ -13305,6 +13462,7 @@ a.apply_id,
 a.typeid,
 c.input_time,
 a.time_plan_to,
+a.time_plan,
      c.name as nama_penagjuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id 
     AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  ${conditionStatus}  AND a.leave_status!='Cancel' AND a.ajuan IN ('2', '3')  AND a.status_transaksi=1 ${orderby1}`;
 
@@ -16061,7 +16219,7 @@ GROUP BY TBL.full_name`;
     var database = req.query.database;
     var em_id = req.body.em_id;
     var terpakai = req.body.terpakai;
-    console.log('ini apa',req.query);
+    console.log("ini apa", req.query);
     var date = req.query.end_periode.split("-");
 
     const databaseDynamic = `${database}_hrm${date[0].substring(2, 4)}${
@@ -16083,9 +16241,8 @@ GROUP BY TBL.full_name`;
     };
     const mysql = require("mysql");
     const poolDynamic = mysql.createPool(configDynamic);
-    
+
     poolDynamic.getConnection(function (err, connection) {
-      
       if (err) console.log(err);
       connection.query(query1, function (error, results) {
         if (error != null) console.log(error);
@@ -16094,16 +16251,13 @@ GROUP BY TBL.full_name`;
         var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
         var query2 = `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}'`;
         console.log(query2);
-        connection.query(
-          query2,
-          function (error, results1) {
-            res.send({
-              status: true,
-              message: "Berhasil Potong cuti!",
-              data: results1,
-            });
-          }
-        );
+        connection.query(query2, function (error, results1) {
+          res.send({
+            status: true,
+            message: "Berhasil Potong cuti!",
+            data: results1,
+          });
+        });
       });
       connection.release();
     });
@@ -17347,6 +17501,10 @@ GROUP BY TBL.full_name`;
     var nameFile = req.body.file;
     var lokasiMasuk = req.body.lokasi_masuk_id;
     var lokasiKeluar = req.body.lokasi_keluar_id;
+    var lokasiMasukRest = req.body.lokasi_masuk_id_rest;
+    var lokasiKeluarRest = req.body.lokasi_keluar_id_rest;
+    var checkinRest = req.body.checkin_rest;
+    var checkoutRest = req.body.checkout_rest;
 
     console.log(req.body);
 
@@ -17425,17 +17583,9 @@ GROUP BY TBL.full_name`;
                         return;
                       }
 
-                      if (results.length > 0) {
-                        return res.status(400).send({
-                          status: true,
-                          message: "Data sudah tersedia",
-                          data: results,
-                        });
-                      }
-
                       connection.query(
-                        ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' ORDER BY id DESC `,
-                        (err, results) => {
+                        `SELECT * FROM ${databaseMaster}.places_coordinate WHERE id='${lokasiKeluarRest}' `,
+                        (err, lokasiKeluarRestResult) => {
                           if (err) {
                             console.error(
                               "Error executing SELECT statement:",
@@ -17451,103 +17601,124 @@ GROUP BY TBL.full_name`;
                             });
                             return;
                           }
-                          if (results.length > 0) {
-                            var text = results[0]["nomor_ajuan"];
-                            nomor = parseInt(text.substring(8, 13)) + 1;
-                            var nomorStr = String(nomor).padStart(4, "0");
-                            nomorAjuan =
-                              `RQ20${convertYear}${convertBulan}` + nomorStr;
-                          } else {
-                            nomor = 1;
-                            var nomorStr = String(nomor).padStart(4, "0");
-                            nomorAjuan =
-                              `RQ20${convertYear}${convertBulan}` + nomorStr;
-                          }
-                          var queryInsert = "";
-                          var absenMasuk = req.body.address_masuk;
-                          console.log(absenMasuk);
-                          var absenKeluar = req.body.address_keluar;
-                          queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,uraian,ajuan,em_delegation,req_file,place_in,place_out,approve_status)
-              VALUES ('${nomorAjuan}','${em_id}','${date}','${checkin}','${checkout}',CURDATE(),'${status}','1','${catatan}','3','','${nameFile}','${lokasiMasuk}','${lokasiKeluar}','Pending')`;
-                          if (lokasiMasuk == "") {
-                            queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,uraian,ajuan,em_delegation,req_file,place_in,place_out,approve_status,signout_note,signout_pict,signout_longlat,signout_addr)
-                VALUES ('${nomorAjuan}','${em_id}','${date}','00:00:00','${checkout}',CURDATE(),'${status}','1','${catatan}','3','','${nameFile}','${lokasiMasuk}','${lokasiKeluarResult[0].place}','Pending','${catatan}','${nameFile}','${lokasiKeluarResult[0].place_longlat}','${absenKeluar}')`;
-                          } else if (lokasiKeluar == "") {
-                            queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,uraian,ajuan,em_delegation,req_file,place_in,place_out,approve_status,signin_note,signin_pict,signin_longlat,signin_addr)
-                VALUES ('${nomorAjuan}','${em_id}','${date}','${checkin}','00:00:00',CURDATE(),'${status}','1','${catatan}','3','','${nameFile}','${lokasiMasukResult[0].place}','${lokasiKeluar}','Pending','${catatan}','${nameFile}','${lokasiMasukResult[0].place_longlat}','${absenMasuk}')`;
-                          } else {
-                            queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,uraian,ajuan,em_delegation,req_file,place_in,place_out,approve_status,signin_note,signin_pict,signin_longlat,signout_note,signout_pict,signout_longlat,signin_addr,signout_addr)
-                VALUES ('${nomorAjuan}','${em_id}','${date}','${checkin}','${checkout}',CURDATE(),'${status}','1','${catatan}','3','','${nameFile}','${lokasiMasukResult[0].place}','${lokasiKeluarResult[0].place}','Pending','${catatan}','${nameFile}','${lokasiMasukResult[0].place_longlat}','${catatan}','${nameFile}','${lokasiKeluarResult[0].place_longlat}','${absenMasuk}','${absenKeluar}')`;
-                          }
-                          connection.query(queryInsert, (err, results) => {
-                            if (err) {
-                              console.error(
-                                "Error executing SELECT statement:",
-                                err
-                              );
-                              connection.rollback(() => {
-                                connection.end();
+
+                          connection.query(
+                            `SELECT * FROM ${databaseMaster}.places_coordinate WHERE id='${lokasiMasukRest}' `,
+                            (err, lokasiMasukRestResult) => {
+                              if (err) {
+                                console.error(
+                                  "Error executing SELECT statement:",
+                                  err
+                                );
+                                connection.rollback(() => {
+                                  connection.end();
+                                  return res.status(400).send({
+                                    status: true,
+                                    message: "Data gagal terkirim",
+                                    data: results,
+                                  });
+                                });
+                                return;
+                              }
+
+                              if (results.length > 0) {
                                 return res.status(400).send({
                                   status: true,
-                                  message: "Data gagal terkirim",
+                                  message: "Data sudah tersedia",
                                   data: results,
                                 });
-                              });
-                              return;
-                            }
-                            connection.query(
-                              `SELECT * FROM ${namaDatabaseDynamic}.${namaTable} WHERE nomor_ajuan='${nomorAjuan}'`,
-                              (err, transaksi) => {
-                                if (err) {
-                                  console.error(
-                                    "Error executing SELECT statement:",
-                                    err
-                                  );
-                                  connection.rollback(() => {
-                                    connection.end();
-                                    return res.status(400).send({
-                                      status: true,
-                                      message: "Data gagal terkirim",
-                                      data: results,
-                                    });
-                                  });
-                                  return;
-                                }
-                                connection.query(
-                                  `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${em_id}'`,
-                                  (err, employee) => {
-                                    if (err) {
-                                      console.error(
-                                        "Error executing SELECT statement:",
-                                        err
-                                      );
-                                      connection.rollback(() => {
-                                        connection.end();
-                                        return res.status(400).send({
-                                          status: true,
-                                          message: "Data gagal terkirim",
-                                          data: results,
-                                        });
-                                      });
-                                      return;
-                                    }
+                              }
 
-                                    utility.insertNotifikasi(
-                                      employee[0].em_report_to,
-                                      "Approval Absensi",
-                                      "Absensi",
-                                      employee[0].em_id,
-                                      transaksi[0].id,
-                                      transaksi[0].nomor_ajuan,
-                                      employee[0].full_name,
-                                      namaDatabaseDynamic,
-                                      databaseMaster
+                              connection.query(
+                                ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' ORDER BY id DESC `,
+                                (err, results) => {
+                                  if (err) {
+                                    console.error(
+                                      "Error executing SELECT statement:",
+                                      err
                                     );
+                                    connection.rollback(() => {
+                                      connection.end();
+                                      return res.status(400).send({
+                                        status: true,
+                                        message: "Data gagal terkirim",
+                                        data: results,
+                                      });
+                                    });
+                                    return;
+                                  }
+                                  if (results.length > 0) {
+                                    var text = results[0]["nomor_ajuan"];
+                                    nomor = parseInt(text.substring(8, 13)) + 1;
+                                    var nomorStr = String(nomor).padStart(
+                                      4,
+                                      "0"
+                                    );
+                                    nomorAjuan =
+                                      `RQ20${convertYear}${convertBulan}` +
+                                      nomorStr;
+                                  } else {
+                                    nomor = 1;
+                                    var nomorStr = String(nomor).padStart(
+                                      4,
+                                      "0"
+                                    );
+                                    nomorAjuan =
+                                      `RQ20${convertYear}${convertBulan}` +
+                                      nomorStr;
+                                  }
+                                  var queryInsert = "";
+                                  var absenMasuk = req.body.address_masuk;
+                                  console.log(absenMasuk);
+                                  var absenMasukRest =
+                                    req.body.address_masuk_Rest;
+                                  var absenKeluarRest =
+                                    req.body.address_keluar_Rest;
+                                  var absenKeluar = req.body.address_keluar;
+                                  queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (
+                            nomor_ajuan,em_id,atten_date,
+                            dari_jam,sampai_jam,tgl_ajuan,
+                            status,status_transaksi,uraian,
+                            ajuan,em_delegation,req_file,
+                            place_in,place_out,approve_status,
+                            signin_note,signin_pict,signin_longlat,
+                            signout_note,signout_pict,signout_longlat,
+                            place_break_in,place_break_out,breakin_time,
+                            breakout_time,breakin_note,breakout_note,
+                            breakin_longlat, breakout_longlat,
+                            signin_addr,signout_addr,breakin_addr,breakout_addr)
+                            VALUES (
+                            '${nomorAjuan}','${em_id}','${date}',
+                            '${checkin}','${checkout}',CURDATE(),
+                            '${status}','1','${catatan}',
+                            '3','','${nameFile}',
+                            '${lokasiMasukResult?.[0]?.place ?? ""}','${
+                                    lokasiKeluarResult?.[0]?.place ?? ""
+                                  }','Pending',
+                            '${catatan}','${nameFile}','${
+                                    lokasiMasukResult?.[0]?.place_longlat ?? ""
+                                  }',
+                            '${catatan}','${nameFile}','${
+                                    lokasiKeluarResult?.[0]?.place_longlat ?? ""
+                                  }',
+                            '${lokasiMasukRestResult?.[0]?.place ?? ""}','${
+                                    lokasiKeluarRestResult?.[0]?.place ?? ""
+                                  }','${checkinRest}',
+                            '${checkoutRest}','${catatan}','${catatan}',
+                            '${
+                              lokasiMasukRestResult?.[0]?.place_longlat ?? ""
+                            }','${
+                                    lokasiKeluarRestResult?.[0]
+                                      ?.place_longlat ?? ""
+                                  }',
+                            '${absenMasuk}','${absenKeluar}', '${absenMasukRest}','${absenKeluarRest}')`;
 
-                                    connection.commit((err) => {
+                                  connection.query(
+                                    queryInsert,
+                                    (err, results) => {
                                       if (err) {
                                         console.error(
-                                          "Error committing transaction:",
+                                          "Error executing SELECT statement:",
                                           err
                                         );
                                         connection.rollback(() => {
@@ -17555,25 +17726,100 @@ GROUP BY TBL.full_name`;
                                           return res.status(400).send({
                                             status: true,
                                             message: "Data gagal terkirim",
-                                            data: [],
+                                            data: results,
                                           });
                                         });
                                         return;
                                       }
-                                      connection.end();
-                                      console.log(
-                                        "Transaction completed successfully!"
+                                      connection.query(
+                                        `SELECT * FROM ${namaDatabaseDynamic}.${namaTable} WHERE nomor_ajuan='${nomorAjuan}'`,
+                                        (err, transaksi) => {
+                                          if (err) {
+                                            console.error(
+                                              "Error executing SELECT statement:",
+                                              err
+                                            );
+                                            connection.rollback(() => {
+                                              connection.end();
+                                              return res.status(400).send({
+                                                status: true,
+                                                message: "Data gagal terkirim",
+                                                data: results,
+                                              });
+                                            });
+                                            return;
+                                          }
+                                          connection.query(
+                                            `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${em_id}'`,
+                                            (err, employee) => {
+                                              if (err) {
+                                                console.error(
+                                                  "Error executing SELECT statement:",
+                                                  err
+                                                );
+                                                connection.rollback(() => {
+                                                  connection.end();
+                                                  return res.status(400).send({
+                                                    status: true,
+                                                    message:
+                                                      "Data gagal terkirim",
+                                                    data: results,
+                                                  });
+                                                });
+                                                return;
+                                              }
+
+                                              utility.insertNotifikasi(
+                                                employee[0].em_report_to,
+                                                "Approval Absensi",
+                                                "Absensi",
+                                                employee[0].em_id,
+                                                transaksi[0].id,
+                                                transaksi[0].nomor_ajuan,
+                                                employee[0].full_name,
+                                                namaDatabaseDynamic,
+                                                databaseMaster
+                                              );
+
+                                              connection.commit((err) => {
+                                                if (err) {
+                                                  console.error(
+                                                    "Error committing transaction:",
+                                                    err
+                                                  );
+                                                  connection.rollback(() => {
+                                                    connection.end();
+                                                    return res
+                                                      .status(400)
+                                                      .send({
+                                                        status: true,
+                                                        message:
+                                                          "Data gagal terkirim",
+                                                        data: [],
+                                                      });
+                                                  });
+                                                  return;
+                                                }
+                                                connection.end();
+                                                console.log(
+                                                  "Transaction completed successfully!"
+                                                );
+                                                return res.status(200).send({
+                                                  status: true,
+                                                  message:
+                                                    "data berhasil terkirm",
+                                                });
+                                              });
+                                            }
+                                          );
+                                        }
                                       );
-                                      return res.status(200).send({
-                                        status: true,
-                                        message: "data berhasil terkirm",
-                                      });
-                                    });
-                                  }
-                                );
-                              }
-                            );
-                          });
+                                    }
+                                  );
+                                }
+                              );
+                            }
+                          );
                         }
                       );
                     }
