@@ -35,50 +35,47 @@ module.exports = {
             connection.end();
             return;
           }
-          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+          var querySuratPeringatan = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
           console.log(querySuratPeringatan);
-          connection.query(
-            querySuratPeringatan,
-            (err, employee) => {
+          connection.query(querySuratPeringatan, (err, employee) => {
+            if (err) {
+              console.error("Error executing SELECT statement:", err);
+              connection.rollback(() => {
+                connection.end();
+
+                return res.status(400).send({
+                  status: false,
+                  message: "gagal ambil data",
+                  data: [],
+                });
+              });
+              return;
+            }
+
+            connection.commit((err) => {
               if (err) {
-                console.error("Error executing SELECT statement:", err);
+                console.error("Error committing transaction:", err);
                 connection.rollback(() => {
                   connection.end();
-
                   return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
+                    status: true,
+                    message: "data tidak tersedia",
                     data: [],
                   });
                 });
                 return;
               }
+              console;
 
-              connection.commit((err) => {
-                if (err) {
-                  console.error("Error committing transaction:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: true,
-                      message: "data tidak tersedia",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                console;
-
-                connection.end();
-                console.log("Transaction completed successfully!");
-                return res.status(200).send({
-                  status: true,
-                  message: "data tersedia",
-                  data: employee,
-                });
+              connection.end();
+              console.log("Transaction completed successfully!");
+              return res.status(200).send({
+                status: true,
+                message: "data tersedia",
+                data: employee,
               });
-            }
-          );
+            });
+          });
         });
       });
     } catch (e) {
@@ -107,40 +104,37 @@ module.exports = {
             connection.end();
             return;
           }
-          var querySuratPeringatan= `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+          var querySuratPeringatan = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
           console.log(querySuratPeringatan);
-          connection.query(
-            querySuratPeringatan,
-            (err, employee) => {
+          connection.query(querySuratPeringatan, (err, employee) => {
+            if (err) {
+              console.error("Error executing SELECT statement:", err);
+              connection.rollback(() => {
+                connection.end();
+
+                return res.status(400).send({
+                  status: false,
+                  message: "gagal ambil data",
+                  data: [],
+                });
+              });
+              return;
+            }
+
+            connection.commit((err) => {
               if (err) {
-                console.error("Error executing SELECT statement:", err);
+                console.error("Error committing transaction:", err);
                 connection.rollback(() => {
                   connection.end();
-
                   return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
+                    status: true,
+                    message: "data tidak tersedia",
                     data: [],
                   });
                 });
                 return;
               }
-
-              connection.commit((err) => {
-                if (err) {
-                  console.error("Error committing transaction:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: true,
-                      message: "data tidak tersedia",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                console;
-
+              if (employee.length > 0) {
                 connection.end();
                 console.log("Transaction completed successfully!");
                 return res.status(200).send({
@@ -148,9 +142,49 @@ module.exports = {
                   message: "data tersedia",
                   data: employee,
                 });
-              });
-            }
-          );
+              } else {
+                var querySuratPeringatanPending = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' ORDER BY id DESC`;
+                console.log(querySuratPeringatanPending);
+                connection.query(querySuratPeringatanPending, (err, employee) => {
+                  if (err) {
+                    console.error("Error executing SELECT statement:", err);
+                    connection.rollback(() => {
+                      connection.end();
+
+                      return res.status(400).send({
+                        status: false,
+                        message: "gagal ambil data",
+                        data: [],
+                      });
+                    });
+                    return;
+                  }
+
+                  connection.commit((err) => {
+                    if (err) {
+                      console.error("Error committing transaction:", err);
+                      connection.rollback(() => {
+                        connection.end();
+                        return res.status(400).send({
+                          status: true,
+                          message: "data tidak tersedia",
+                          data: [],
+                        });
+                      });
+                      return;
+                    }
+                    connection.end();
+                    console.log("Transaction completed successfully!");
+                    return res.status(200).send({
+                      status: true,
+                      message: "data tersedia",
+                      data: employee,
+                    });
+                  });
+                });
+              }
+            });
+          });
         });
       });
     } catch (e) {
@@ -324,17 +358,18 @@ module.exports = {
                         var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].judul}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
                         console.log(employee[0]);
 
-                           utility.insertNotifikasiGlobal(
-                            dataSp[0].em_id,
-                            'Info SP',
-                            'sp',
-                            employee[0].em_id,
-                            dataSp[0].id,
-                            '',
-                            dataSp[0].em_id,
-                            databasedinamik,
-                            databseMaster,
-                            text)
+                        utility.insertNotifikasiGlobal(
+                          dataSp[0].em_id,
+                          "Info SP",
+                          "sp",
+                          employee[0].em_id,
+                          dataSp[0].id,
+                          "",
+                          dataSp[0].em_id,
+                          databasedinamik,
+                          databseMaster,
+                          text
+                        );
                       }
 
                       connection.commit((err) => {

@@ -134,15 +134,55 @@ module.exports = {
                 });
                 return;
               }
-              console;
+              if (employee.length > 0) {
+                connection.end();
+                console.log("Transaction completed successfully!");
+                return res.status(200).send({
+                  status: true,
+                  message: "data tersedia",
+                  data: employee,
+                });
+              } else {
+                var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%'  ORDER BY id DESC`;
+                console.log(queryTeguranLisan);
+                connection.query(queryTeguranLisan, (err, employee) => {
+                  if (err) {
+                    console.error("Error executing SELECT statement:", err);
+                    connection.rollback(() => {
+                      connection.end();
 
-              connection.end();
-              console.log("Transaction completed successfully!");
-              return res.status(200).send({
-                status: true,
-                message: "data tersedia",
-                data: employee,
-              });
+                      return res.status(400).send({
+                        status: false,
+                        message: "gagal ambil data",
+                        data: [],
+                      });
+                    });
+                    return;
+                  }
+
+                  connection.commit((err) => {
+                    if (err) {
+                      console.error("Error committing transaction:", err);
+                      connection.rollback(() => {
+                        connection.end();
+                        return res.status(400).send({
+                          status: true,
+                          message: "data tidak tersedia",
+                          data: [],
+                        });
+                      });
+                      return;
+                    }
+                    connection.end();
+                    console.log("Transaction completed successfully!");
+                    return res.status(200).send({
+                      status: true,
+                      message: "data tersedia",
+                      data: employee,
+                    });
+                  });
+                });
+              }
             });
           });
         });

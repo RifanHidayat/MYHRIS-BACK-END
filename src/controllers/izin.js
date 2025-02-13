@@ -57,7 +57,8 @@ module.exports = {
         acttivity_script: script,
         createdUserID: req.body.created_by,
       };
-
+      var cutLeave = req.body.cut_leave;
+      var jumlahCuti = req.body.total_cuti;
       var array = req.body.start_date.split("-");
       var dates = req.body.date_selected.split(",");
       console.log("date ", dates[0]);
@@ -96,6 +97,15 @@ module.exports = {
               connection.end();
               return;
             }
+            var queryPendingPotongCuti = `
+    SELECT 
+    SUM(e.leave_duration) AS total_leave_duration
+FROM ${namaDatabaseDynamic}.emp_leave e
+JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+WHERE e.em_id = '${req.body.em_id}' 
+  AND e.status_transaksi = 1
+  AND lt.cut_leave = 1;
+`;
             for (var i = 0; i < dates.length; i++) {
               var d = dates[i];
 
@@ -112,25 +122,50 @@ module.exports = {
                 month = date[1];
               }
             }
-              // const databasePeriode = `${database}_hrm${year}${month}`;
+            // const databasePeriode = `${database}_hrm${year}${month}`;
 
-              connection.query(
-                `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${emId}' AND date_selected LIKE '%${d}%' AND status_transaksi=1 AND (leave_status='Pending' OR leave_status='Approve' OR leave_status='Approve1' OR leave_status='Approve2')`,
-                (err, results) => {
+            connection.query(
+              `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${emId}' AND date_selected LIKE '%${d}%' AND status_transaksi=1 AND (leave_status='Pending' OR leave_status='Approve' OR leave_status='Approve1' OR leave_status='Approve2')`,
+              (err, results) => {
+                if (err) {
+                  console.error("Error executing SELECT statement:", err);
+                  error = true;
+                  connection.rollback(() => {
+                    connection.end();
+                    return res.status(400).send({
+                      status: false,
+                      message: "Terjadi Kesalahan",
+                      data: [],
+                    });
+                  });
+                  return;
+                }
+
+                connection.query(queryPendingPotongCuti, (err, dataPending) => {
                   if (err) {
                     console.error("Error executing SELECT statement:", err);
-                    error = true;
                     connection.rollback(() => {
                       connection.end();
                       return res.status(400).send({
                         status: false,
-                        message: "Terjadi Kesalahan",
+                        message: "gagal ambil data",
                         data: [],
                       });
                     });
                     return;
                   }
-
+                  console.log(queryPendingPotongCuti);
+                  console.log(dataPending);
+                  console.log(jumlahCuti);
+                  const totalLeaveDuration =
+                    (dataPending[0]?.total_leave_duration || 0) +
+                    req.body.leave_duration;
+                  if (cutLeave == 1){
+                    if (totalLeaveDuration > jumlahCuti) {
+                      error = true;
+                      pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
+                    }
+                  }
                   records = results;
                   console.log(`Masuk 1 ${records.length}`);
                   if (records.length > 0) {
@@ -197,9 +232,9 @@ module.exports = {
                           if (results.length > 0) {
                             error = true;
                           }
-                          console.log('errro', error);
+                          console.log("errro", error);
                           if (error == false) {
-                            console.log('kemari kag');
+                            console.log("kemari kag");
                             connection.query(
                               `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
                               (err, results) => {
@@ -218,19 +253,19 @@ module.exports = {
                                   });
                                   return;
                                 }
-                                console.log('ini result', results);
-              
+                                console.log("ini result", results);
+
                                 //  proses memasukan data
-              
+
                                 if (results.length > 0) {
-                                  console.log('kemari');
+                                  console.log("kemari");
                                   return res.status(200).send({
                                     status: false,
                                     message: "ulang",
                                     data: results,
                                   });
                                 }
-              
+
                                 connection.query(
                                   `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`,
                                   [insertData],
@@ -287,7 +322,7 @@ module.exports = {
                                               });
                                               return;
                                             }
-              
+
                                             connection.query(
                                               `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${req.body.nomor_ajuan}'`,
                                               (err, transaksi) => {
@@ -309,7 +344,7 @@ module.exports = {
                                                   });
                                                   return;
                                                 }
-              
+
                                                 connection.query(
                                                   `SELECT * FROM sysdata WHERE kode='032'`,
                                                   (err, sysdata) => {
@@ -333,12 +368,12 @@ module.exports = {
                                                       );
                                                       return;
                                                     }
-              
-                                                    console.log('kenotif 1');
-              
+
+                                                    console.log("kenotif 1");
+
                                                     //notifikasi approval
                                                     //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
-                                                     utility.insertNotifikasi(
+                                                    utility.insertNotifikasi(
                                                       employee[0].em_report_to,
                                                       "Approval Izin",
                                                       "Izin",
@@ -360,7 +395,7 @@ module.exports = {
                                                       namaDatabaseDynamic,
                                                       databaseMaster
                                                     );
-              
+
                                                     connection.commit((err) => {
                                                       if (err) {
                                                         console.error(
@@ -383,7 +418,7 @@ module.exports = {
                                                         return;
                                                       }
                                                       connection.end();
-              
+
                                                       console.log(
                                                         "Transaction completed successfully! 2"
                                                       );
@@ -410,19 +445,20 @@ module.exports = {
                             );
                           } else {
                             connection.end();
-                                  return res.status(400).send({
-                                    status: true,
-                                    message: pesan,
-                                    data: [],
-                                  });
+                            return res.status(400).send({
+                              status: true,
+                              message: pesan,
+                              data: [],
+                            });
                           }
                         }
                       );
                     }
                   );
-                }
-              );
-            
+                });
+              }
+            );
+
             // if (error == false) {
             //   console.log('kemari kag');
             //   connection.query(
@@ -977,7 +1013,8 @@ module.exports = {
                                                           "Izin",
                                                           employee[0].em_id,
                                                           transaksi[0].id,
-                                                          transaksi[0].nomor_ajuan,
+                                                          transaksi[0]
+                                                            .nomor_ajuan,
                                                           employee[0].full_name,
                                                           namaDatabaseDynamic,
                                                           databaseMaster
