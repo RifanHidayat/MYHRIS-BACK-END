@@ -34,7 +34,19 @@ module.exports = {
             return;
           }
 
-          var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%' AND approve_status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+          var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, 
+teguran_lisan.* , 
+CASE 
+           WHEN elv.teguran_lisan_id IS NOT NULL THEN 1 
+           ELSE 0 
+         END AS is_view 
+FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id 
+LEFT JOIN letter ON letter.id=teguran_lisan.letter_id 
+LEFT JOIN teguran_lisan_view elv 
+    ON elv.teguran_lisan_id = teguran_lisan.id 
+    AND elv.em_id = teguran_lisan.em_id
+WHERE teguran_lisan.em_id LIKE '${emId}' AND teguran_lisan.status='Approve' 
+AND exp_date >= CURDATE() ORDER BY id DESC`;
           console.log(queryTeguranLisan);
           connection.query(queryTeguranLisan, (err, employee) => {
             if (err) {
@@ -85,6 +97,86 @@ module.exports = {
       });
     }
   },
+
+  async getUnreadSuratCount(req, res) {
+      var database = req.query.database;
+      var emId = req.headers.em_id;
+  
+      console.log('kesini gak sih');
+    
+      try {
+        const connection = await model.createConnection(database);
+        connection.connect((err) => {
+          if (err) {
+            console.error("Error connecting to the database:", err);
+            return res.status(500).send({ status: false, message: "Koneksi gagal" });
+          }
+    
+          const queryUnreadCount = `
+            SELECT COUNT(*) AS unread_count
+            FROM teguran_lisan el
+            WHERE el.em_id = ?
+            AND el.status = 'Approve'
+            AND el.exp_date >= CURDATE()
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM teguran_lisan_view elr
+                WHERE elr.teguran_lisan_id = el.id
+                AND elr.em_id = ?
+            )`;
+    
+          connection.query(queryUnreadCount, [emId, emId], (err, result) => {
+            connection.end();
+            if (err) {
+              console.error("Error executing query:", err);
+              return res.status(400).send({ status: false, message: "Gagal mengambil jumlah surat" });
+            }
+    
+            return res.status(200).send({ 
+              status: true, 
+              message: "Jumlah surat yang belum dibaca", 
+              unread_count: result[0].unread_count 
+            });
+          });
+        });
+      } catch (e) {
+        return res.status(500).send({ status: false, message: "Terjadi kesalahan server" });
+      }
+    },
+
+  async updateStatusTeguranLisan(req, res) {
+      var database = req.query.database;
+      var emId = req.body.em_id;
+      var letterId = req.body.letter_id;
+    
+      try {
+        const connection = await model.createConnection(database);
+        connection.connect((err) => {
+          if (err) {
+            console.error("Error connecting to the database:", err);
+            return res.status(500).send({ status: false, message: "Koneksi gagal" });
+          }
+    
+          const queryInsert = `
+            INSERT INTO teguran_lisan_view (teguran_lisan_id, em_id) 
+            VALUES (?, ?)`;
+  
+          console.log('ini em_id ',emId);
+          connection.query(queryInsert, [letterId, emId], (err, result) => {
+            connection.end();
+            // console.log(queryInsert);
+            if (err) {
+              console.error("Error inserting into employee_letter_view:", err);
+              return res.status(400).send({ status: false, message: "Gagal update status" });
+            }
+    
+            return res.status(200).send({ status: true, message: "Surat peringatan sudah dibaca" });
+          });
+        });
+      } catch (e) {
+        return res.status(500).send({ status: false, message: "Terjadi kesalahan server" });
+      }
+    },
 
   async searchSuratTeguran(req, res) {
     var database = req.query.database;
