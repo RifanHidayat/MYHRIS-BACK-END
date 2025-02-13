@@ -36,6 +36,9 @@ module.exports = {
     var createdBy = req.body.created_by;
 
     var bodyValue = req.body;
+    var cutLeave = req.body.cut_leave;
+    delete bodyValue.cut_leave;
+    delete bodyValue.total_cuti;
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
@@ -69,10 +72,11 @@ module.exports = {
     }
     const databaseMaster = `${database}_hrm`;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    var jumlahCuti = req.body.total_cuti;
     var nomorLb = `CT20${convertYear}${convertBulan}`;
     var script = `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`;
     var transaksi = "";
-    console.log('-------buat cuti--------')
+    console.log("-------buat cuti--------");
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
@@ -91,26 +95,39 @@ module.exports = {
           var splits = req.body.date_selected.split(",");
 
           var query = ``;
+          var queryPendingPotongCuti = `
+    SELECT 
+    SUM(e.leave_duration) AS total_leave_duration
+FROM ${namaDatabaseDynamic}.emp_leave e
+JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+WHERE e.em_id = '${req.body.em_id}' 
+  AND e.status_transaksi = 1
+  AND lt.cut_leave = 1;
+`;
 
           for (var i = 0; i < splits.length; i++) {
             console.log(i);
 
-            if (i == 0 || i == "0") {
-              query = `  
-                    SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                    WHERE em_id='${req.body.em_id}' 
-                    AND (date_selected LIKE '%${splits[i]}%')  
-                    AND  status_transaksi=1 
-                     AND leave_status IN ('Pending','Approve','Approve2')
-                    `;
+            let subQuery = `  
+    SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+    WHERE em_id='${req.body.em_id}' 
+    AND date_selected LIKE '%${splits[i]}%'  
+    AND status_transaksi=1 
+    AND leave_status IN ('Pending','Approve','Approve2')`;
+
+    //         let subQueryPending = `
+    // SELECT e.* FROM ${namaDatabaseDynamic}.emp_leave e
+    // JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+    // WHERE e.em_id = '${req.body.em_id}' 
+    // AND e.status_transaksi = 1
+    // AND lt.cut_leave = 1`;
+
+            if (i === 0) {
+              query = subQuery;
+              // queryPendingPotongCuti = subQueryPending;
             } else {
-              query = ` ${query} UNION ALL   
-                     SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                    WHERE em_id='${req.body.em_id}' 
-                    AND (date_selected LIKE '%${splits[i]}%')  
-                    AND  status_transaksi=1 
-                     AND leave_status IN ('Pending','Approve','Approve2')
-                    `;
+              query += ` UNION ALL ${subQuery}`;
+              // queryPendingPotongCuti += ` UNION ALL ${subQueryPending}`;
             }
           }
           console.log(query);
@@ -135,81 +152,7 @@ module.exports = {
               return;
             }
 
-            console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                  WHERE em_id='${req.body.em_id}' 
-                  AND (date_selected LIKE '%${req.body.date_selected}%')  
-                  AND  status_transaksi=1 
-                   AND leave_status IN ('Pending','Approve','Approve2')`);
-            for (var i = 0; i < data.length; i++) {
-              if (data.length > 0) {
-                if (data[0].leave_type == "HALFDAY") {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan_to}`
-                  );
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  transaksi = "Izin";
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-
-                    // return res.status(400).send({
-                    //     status: false,
-                    //     message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                    //     data:[]
-
-                    //   });
-                  }
-                } else if (
-                  req.body.leave_type == "FULLDAY" ||
-                  req.body.leave_type == "FULL DAY" ||
-                  req.body.leave_type == "Full Day"
-                ) {
-                  console.log(data[i].ajuan);
-
-                  if (data[i].ajuan == "1" || data[i].ajuan == 1) {
-                    isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-                    // return res.status(400).send({
-                    //   status: false,
-                    //   message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[i].leave_status}`,
-                    //   data:[]
-
-                    // });
-                  }
-
-                  if (data[i].ajuan == "2" || data[i].ajuan == 2) {
-                    isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-
-                    // return res.status(400).send({
-                    //   status: false,
-                    //   message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[i].leave_status}`,
-                    //   data:[]
-
-                    // });
-                  }
-                }
-              }
-            }
-            connection.query(query, (err, data) => {
+            connection.query(queryPendingPotongCuti, (err, dataPending) => {
               if (err) {
                 console.error("Error executing SELECT statement:", err);
                 connection.rollback(() => {
@@ -222,111 +165,174 @@ module.exports = {
                 });
                 return;
               }
+              console.log(queryPendingPotongCuti);
+              console.log(dataPending);
+              console.log(jumlahCuti);
+              const totalLeaveDuration = (dataPending[0]?.total_leave_duration || 0) + req.body.leave_duration;
+              if (cutLeave == 1){
+                if (totalLeaveDuration > jumlahCuti) {
+                  error = true;
+                  pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
+                }
+              }
 
+              console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+                WHERE em_id='${req.body.em_id}' 
+                AND (date_selected LIKE '%${req.body.date_selected}%')  
+                AND  status_transaksi=1 
+                 AND leave_status IN ('Pending','Approve','Approve2')`);
               for (var i = 0; i < data.length; i++) {
                 if (data.length > 0) {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
+                  if (data[0].leave_type == "HALFDAY") {
+                    var timeParam1 = new Date(
+                      `${req.body.atten_date}T${req.body.dari_jam}`
+                    );
+                    var timeParam2 = new Date(
+                      `${req.body.atten_date}T${req.body.sampai_jam}`
+                    );
+                    /// jika suda ada data
+                    var time1 = new Date(
+                      `${data[i].atten_date}T${data[i].time_plan}`
+                    );
+                    var time2 = new Date(
+                      `${data[i].atten_date}T${data[i].time_plan_to}`
+                    );
+                    if (time1 > time2) {
+                      time2.setDate(time2.getDate() + 1);
+                    }
 
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].dari_jam}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].sampai_jam}`
-                  );
+                    if (timeParam1 > timeParam2) {
+                      timeParam2.setDate(time2.getDate() + 1);
+                    }
 
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
+                    transaksi = "Izin";
 
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (data[i].ajuan == "2") {
-                    transaksi = "Tugas Luar";
-                  }
-
-                  if (data[i].ajuan == "1") {
-                    transaksi = "Lembur";
-                  }
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                    // return res.status(400).send({
-                    //     status: false,
-                    //     message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                    //     data:[]
-
-                    //   });
-                  } else {
-                    if (isDateInRange(timeParam2, time1, time2)) {
+                    if (isDateInRange(timeParam1, time1, time2)) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                      pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+
                       // return res.status(400).send({
                       //     status: false,
-                      //     message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
+                      //     message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
                       //     data:[]
 
                       //   });
                     }
+                  } else if (
+                    req.body.leave_type == "FULLDAY" ||
+                    req.body.leave_type == "FULL DAY" ||
+                    req.body.leave_type == "Full Day"
+                  ) {
+                    console.log(data[i].ajuan);
+
+                    if (data[i].ajuan == "1" || data[i].ajuan == 1) {
+                      isError = true;
+                      pesan = `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                      // return res.status(400).send({
+                      //   status: false,
+                      //   message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[i].leave_status}`,
+                      //   data:[]
+
+                      // });
+                    }
+
+                    if (data[i].ajuan == "2" || data[i].ajuan == 2) {
+                      isError = true;
+                      pesan = `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+
+                      // return res.status(400).send({
+                      //   status: false,
+                      //   message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[i].leave_status}`,
+                      //   data:[]
+
+                      // });
+                    }
                   }
                 }
               }
-              console.log("is errr", isError);
+              connection.query(query, (err, data) => {
+                if (err) {
+                  console.error("Error executing SELECT statement:", err);
+                  connection.rollback(() => {
+                    connection.end();
+                    return res.status(400).send({
+                      status: false,
+                      message: "gagal ambil data",
+                      data: [],
+                    });
+                  });
+                  return;
+                }
 
-              if (isError == true || isError == "true") {
-                connection.end();
-                return res.status(200).send({
-                  status: false,
-                  message: pesan,
-                  data: [],
-                });
-              } else {
-                connection.query(
-                  `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan LIKE '%CT%' ORDER BY id DESC LIMIT 1`,
-                  (err, results) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: false,
-                          message: "gagal ambil data",
-                          data: [],
-                        });
-                      });
-                      return;
+                for (var i = 0; i < data.length; i++) {
+                  if (data.length > 0) {
+                    var timeParam1 = new Date(
+                      `${req.body.atten_date}T${req.body.dari_jam}`
+                    );
+                    var timeParam2 = new Date(
+                      `${req.body.atten_date}T${req.body.sampai_jam}`
+                    );
+
+                    /// jika suda ada data
+                    var time1 = new Date(
+                      `${data[i].atten_date}T${data[i].dari_jam}`
+                    );
+                    var time2 = new Date(
+                      `${data[i].atten_date}T${data[i].sampai_jam}`
+                    );
+
+                    if (time1 > time2) {
+                      time2.setDate(time2.getDate() + 1);
                     }
 
-                    //   if (results.length>0){
+                    if (timeParam1 > timeParam2) {
+                      timeParam2.setDate(time2.getDate() + 1);
+                    }
 
-                    //   }else{
+                    if (data[i].ajuan == "2") {
+                      transaksi = "Tugas Luar";
+                    }
 
-                    //     nomorLb=`20${convertYear}${convertBulan}0001`
-                    //   }
-                    if (results.length > 0) {
-                      var text = results[0]["nomor_ajuan"];
-                      var nomor = parseInt(text.substring(8, 13)) + 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorLb = nomorLb + nomorStr;
+                    if (data[i].ajuan == "1") {
+                      transaksi = "Lembur";
+                    }
+
+                    if (isDateInRange(timeParam1, time1, time2)) {
+                      isError = true;
+                      pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                      // return res.status(400).send({
+                      //     status: false,
+                      //     message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
+                      //     data:[]
+
+                      //   });
                     } else {
-                      var nomor = 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorLb = nomorLb + nomorStr;
+                      if (isDateInRange(timeParam2, time1, time2)) {
+                        isError = true;
+                        pesan = `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                        // return res.status(400).send({
+                        //     status: false,
+                        //     message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
+                        //     data:[]
+
+                        //   });
+                      }
                     }
-                    bodyValue.nomor_ajuan = nomorLb;
-                    var dates = bodyValue.date_selected.split(",");
-                    bodyValue.start_date = dates[0];
-                    bodyValue.end_date = dates[dates.length - 1];
-                    console.log('yah kemari berapa kali?');
-                    connection.query(script, [bodyValue], (err, results) => {
+                  }
+                }
+                console.log("is errr", isError);
+
+                if (isError == true || isError == "true") {
+                  connection.end();
+                  return res.status(200).send({
+                    status: false,
+                    message: pesan,
+                    data: [],
+                  });
+                } else {
+                  connection.query(
+                    `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan LIKE '%CT%' ORDER BY id DESC LIMIT 1`,
+                    (err, results) => {
                       if (err) {
                         console.error("Error executing SELECT statement:", err);
                         connection.rollback(() => {
@@ -339,182 +345,221 @@ module.exports = {
                         });
                         return;
                       }
-                      connection.query(
-                        `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${bodyValue.nomor_ajuan}'`,
-                        (err, transaksi) => {
-                          if (err) {
-                            console.error(
-                              "Error executing SELECT statement:",
-                              err
-                            );
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: false,
-                                message: "gagal ambil data",
-                                data: [],
-                              });
+
+                      //   if (results.length>0){
+
+                      //   }else{
+
+                      //     nomorLb=`20${convertYear}${convertBulan}0001`
+                      //   }
+                      if (results.length > 0) {
+                        var text = results[0]["nomor_ajuan"];
+                        var nomor = parseInt(text.substring(8, 13)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorLb = nomorLb + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorLb = nomorLb + nomorStr;
+                      }
+                      bodyValue.nomor_ajuan = nomorLb;
+                      var dates = bodyValue.date_selected.split(",");
+                      bodyValue.start_date = dates[0];
+                      bodyValue.end_date = dates[dates.length - 1];
+                      console.log("yah kemari berapa kali?");
+                      connection.query(script, [bodyValue], (err, results) => {
+                        if (err) {
+                          console.error(
+                            "Error executing SELECT statement:",
+                            err
+                          );
+                          connection.rollback(() => {
+                            connection.end();
+                            return res.status(400).send({
+                              status: false,
+                              message: "gagal ambil data",
+                              data: [],
                             });
-                            return;
-                          }
-
-                          connection.query(
-                            `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${bodyValue.em_id}'`,
-                            [bodyValue],
-                            (err, employee) => {
-                              if (err) {
-                                console.error(
-                                  "Error executing SELECT statement:",
-                                  err
-                                );
-                                connection.rollback(() => {
-                                  connection.end();
-                                  return res.status(400).send({
-                                    status: false,
-                                    message: "gagal ambil data",
-                                    data: [],
-                                  });
+                          });
+                          return;
+                        }
+                        connection.query(
+                          `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${bodyValue.nomor_ajuan}'`,
+                          (err, transaksi) => {
+                            if (err) {
+                              console.error(
+                                "Error executing SELECT statement:",
+                                err
+                              );
+                              connection.rollback(() => {
+                                connection.end();
+                                return res.status(400).send({
+                                  status: false,
+                                  message: "gagal ambil data",
+                                  data: [],
                                 });
-                                return;
-                              }
-                              connection.query(
-                                `SELECT * FROM sysdata WHERE kode IN ('031','012')`,
-                                (err, sysdataCuti) => {
-                                  if (err) {
-                                    console.error(
-                                      "Error executing SELECT statement:",
-                                      err
-                                    );
-                                    connection.rollback(() => {
-                                      connection.end();
-                                      return res.status(400).send({
-                                        status: false,
-                                        message: "gagal ambil data",
-                                        data: [],
-                                      });
+                              });
+                              return;
+                            }
+
+                            connection.query(
+                              `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${bodyValue.em_id}'`,
+                              [bodyValue],
+                              (err, employee) => {
+                                if (err) {
+                                  console.error(
+                                    "Error executing SELECT statement:",
+                                    err
+                                  );
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: false,
+                                      message: "gagal ambil data",
+                                      data: [],
                                     });
-                                    return;
-                                  }
-
-                                  connection.query(
-                                    `SELECT * FROM assign_leave WHERE  em_id='${bodyValue.em_id}' AND dateyear='${tahun}'`,
-                                    (err, cutiData) => {
-                                      if (err) {
-                                        console.error(
-                                          "Error executing SELECT statement:",
-                                          err
-                                        );
-                                        connection.rollback(() => {
-                                          connection.end();
-                                          return res.status(400).send({
-                                            status: false,
-                                            message: "gagal ambil data",
-                                            data: [],
-                                          });
+                                  });
+                                  return;
+                                }
+                                connection.query(
+                                  `SELECT * FROM sysdata WHERE kode IN ('031','012')`,
+                                  (err, sysdataCuti) => {
+                                    if (err) {
+                                      console.error(
+                                        "Error executing SELECT statement:",
+                                        err
+                                      );
+                                      connection.rollback(() => {
+                                        connection.end();
+                                        return res.status(400).send({
+                                          status: false,
+                                          message: "gagal ambil data",
+                                          data: [],
                                         });
-                                        return;
-                                      }
+                                      });
+                                      return;
+                                    }
 
-                                      utility.insertNotifikasi(
-                                        employee[0].em_report_to,
-                                        "Approval Cuti",
-                                        "Cuti",
-                                        employee[0].em_id,
-                                        transaksi[0].id,
-                                        transaksi[0].nomor_ajuan,
-                                        employee[0].full_name,
-                                        namaDatabaseDynamic,
-                                        databaseMaster
-                                      );
-                                      utility.insertNotifikasi(
-                                        sysdataCuti[1].name,
-                                        "Pengajuan Cuti",
-                                        "Cuti",
-                                        employee[0].em_id,
-                                        transaksi[0].id,
-                                        transaksi[0].nomor_ajuan,
-                                        employee[0].full_name,
-                                        namaDatabaseDynamic,
-                                        databaseMaster
-                                      );
-
-                                      connection.commit((err) => {
+                                    connection.query(
+                                      `SELECT * FROM assign_leave WHERE  em_id='${bodyValue.em_id}' AND dateyear='${tahun}'`,
+                                      (err, cutiData) => {
                                         if (err) {
                                           console.error(
-                                            "Error committing transaction:",
+                                            "Error executing SELECT statement:",
                                             err
                                           );
                                           connection.rollback(() => {
                                             connection.end();
                                             return res.status(400).send({
-                                              status: true,
-                                              message:
-                                                "Kombinasi email & password Anda Salah",
+                                              status: false,
+                                              message: "gagal ambil data",
                                               data: [],
                                             });
                                           });
                                           return;
                                         }
-                                        connection.end();
-                                        console.log(
-                                          "Transaction completed successfully!"
+
+                                        utility.insertNotifikasi(
+                                          employee[0].em_report_to,
+                                          "Approval Cuti",
+                                          "Cuti",
+                                          employee[0].em_id,
+                                          transaksi[0].id,
+                                          transaksi[0].nomor_ajuan,
+                                          employee[0].full_name,
+                                          namaDatabaseDynamic,
+                                          databaseMaster
+                                        );
+                                        utility.insertNotifikasi(
+                                          sysdataCuti[1].name,
+                                          "Pengajuan Cuti",
+                                          "Cuti",
+                                          employee[0].em_id,
+                                          transaksi[0].id,
+                                          transaksi[0].nomor_ajuan,
+                                          employee[0].full_name,
+                                          namaDatabaseDynamic,
+                                          databaseMaster
                                         );
 
-                                        if (cutiData.length > 0) {
-                                          return res.status(200).send({
-                                            status: true,
-                                            message:
-                                              "Kombinasi email & password Anda Salah",
-                                            tipe: sysdataCuti[0].name,
-                                            sisa_cuti:
-                                              cutiData[0].saldo_cut_off +
-                                              cutiData[0]
-                                                .saldo_cuti_bulan_lalu +
-                                              cutiData[0]
-                                                .saldo_cuti_tahun_lalu +
-                                              cutiData[0].perolehan_cuti -
-                                              cutiData[0].expired_cuti -
-                                              cutiData[0].cuti_bersama -
-                                              cutiData[0].terpakai,
-                                            total_cuti: 0,
-                                            keterangan:
-                                              "Anda memiliki beberapa pengajuan cuti",
-                                          });
-                                        } else {
-                                          return res.status(200).send({
-                                            status: true,
-                                            message:
-                                              "Kombinasi email & password Anda Salah",
-                                            tipe: sysdataCuti[0].name,
-                                            sisa_cuti: 0,
-                                            total_cuti: 0,
-                                            keterangan:
-                                              "Anda memiliki beberapa pengajuan cuti",
-                                          });
-                                        }
+                                        connection.commit((err) => {
+                                          if (err) {
+                                            console.error(
+                                              "Error committing transaction:",
+                                              err
+                                            );
+                                            connection.rollback(() => {
+                                              connection.end();
+                                              return res.status(400).send({
+                                                status: true,
+                                                message:
+                                                  "Kombinasi email & password Anda Salah",
+                                                data: [],
+                                              });
+                                            });
+                                            return;
+                                          }
+                                          connection.end();
+                                          console.log(
+                                            "Transaction completed successfully!"
+                                          );
 
-                                        // return res.status(200).send({
-                                        //   status: true,
-                                        //   message: "Kombinasi email & password Anda Salah",
-                                        //   tipe:sysdataCuti[0].name,
-                                        //   sisa_cuti:(cutiData[0].adjust_cuti + cutiData[0].total_day - cutiData[0].terpakai) ,
-                                        //   total_cuti:0,
-                                        //   keterangan:"Anda memiliki beberapa pengajuan cuti"
+                                          if (cutiData.length > 0) {
+                                            return res.status(200).send({
+                                              status: true,
+                                              message:
+                                                "Kombinasi email & password Anda Salah",
+                                              tipe: sysdataCuti[0].name,
+                                              sisa_cuti:
+                                                cutiData[0].saldo_cut_off +
+                                                cutiData[0]
+                                                  .saldo_cuti_bulan_lalu +
+                                                cutiData[0]
+                                                  .saldo_cuti_tahun_lalu +
+                                                cutiData[0].perolehan_cuti -
+                                                cutiData[0].expired_cuti -
+                                                cutiData[0].cuti_bersama -
+                                                cutiData[0].terpakai,
+                                              total_cuti: 0,
+                                              keterangan:
+                                                "Anda memiliki beberapa pengajuan cuti",
+                                            });
+                                          } else {
+                                            return res.status(200).send({
+                                              status: true,
+                                              message:
+                                                "Kombinasi email & password Anda Salah",
+                                              tipe: sysdataCuti[0].name,
+                                              sisa_cuti: 0,
+                                              total_cuti: 0,
+                                              keterangan:
+                                                "Anda memiliki beberapa pengajuan cuti",
+                                            });
+                                          }
 
-                                        // });
-                                      });
-                                    }
-                                  );
-                                }
-                              );
-                            }
-                          );
-                        }
-                      );
-                    });
-                  }
-                );
-              }
+                                          // return res.status(200).send({
+                                          //   status: true,
+                                          //   message: "Kombinasi email & password Anda Salah",
+                                          //   tipe:sysdataCuti[0].name,
+                                          //   sisa_cuti:(cutiData[0].adjust_cuti + cutiData[0].total_day - cutiData[0].terpakai) ,
+                                          //   total_cuti:0,
+                                          //   keterangan:"Anda memiliki beberapa pengajuan cuti"
+
+                                          // });
+                                        });
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            );
+                          }
+                        );
+                      });
+                    }
+                  );
+                }
+              });
             });
           });
         });

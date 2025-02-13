@@ -4242,6 +4242,42 @@ module.exports = {
                                                 }
                                               );
                                             }
+                                            connection.query(
+                                              `SELECT * FROM sysdata WHERE kode=045`,
+                                              (err, notifTl) => {
+                                                if (err) {
+                                                  console.error(
+                                                    "Error executing SELECT statement:",
+                                                    err
+                                                  );
+                                                  connection.rollback(() => {
+                                                    connection.end();
+                                                    return res
+                                                      .status(400)
+                                                      .send({
+                                                        status: true,
+                                                        message:
+                                                          "gaga ambil data",
+                                                        data: [],
+                                                      });
+                                                  });
+                                                  return;
+                                                }
+
+                                                utility.insertNotifikasiGlobal(
+                                                  notifTl[0]["name"],
+                                                  "Teguran Lisan",
+                                                  "Teguran Lisan",
+                                                  emId,
+                                                  employee[0]["id"],
+                                                  nomorLb,
+                                                  employee[0]["full_name"],
+                                                  namaDatabaseDynamic,
+                                                  databaseMaster,
+                                                  `Teguran Lisan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+                                                );
+                                              }
+                                            );
                                           }
                                         );
                                       }
@@ -4441,6 +4477,48 @@ module.exports = {
                                                         );
                                                         return;
                                                       }
+                                                      connection.query(
+                                                        `SELECT * FROM sysdata WHERE kode=026`,
+                                                        (err, notifTl) => {
+                                                          if (err) {
+                                                            console.error(
+                                                              "Error executing SELECT statement:",
+                                                              err
+                                                            );
+                                                            connection.rollback(
+                                                              () => {
+                                                                connection.end();
+                                                                return res
+                                                                  .status(400)
+                                                                  .send({
+                                                                    status: true,
+                                                                    message:
+                                                                      "gaga ambil data",
+                                                                    data: [],
+                                                                  });
+                                                              }
+                                                            );
+                                                            return;
+                                                          }
+
+                                                          console.log(notifTl);
+
+                                                          utility.insertNotifikasiGlobal(
+                                                            notifTl[0]["name"],
+                                                            "Surat Peringatan",
+                                                            "Surat Peringatan",
+                                                            emId,
+                                                            employee[0]["id"],
+                                                            nomorLb,
+                                                            employee[0][
+                                                              "full_name"
+                                                            ],
+                                                            namaDatabaseDynamic,
+                                                            databaseMaster,
+                                                            `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+                                                          );
+                                                        }
+                                                      );
                                                     }
                                                   );
                                                 }
@@ -5183,6 +5261,9 @@ module.exports = {
 
   async editData(req, res) {
     console.log("-----edit data izin ----------");
+    function isDateInRange(date, startDate, endDate) {
+      return date >= startDate && date <= endDate;
+    }
     var database = req.query.database;
     let name_url = req.originalUrl;
     var convert1 = name_url
@@ -5198,12 +5279,19 @@ module.exports = {
     var atten_date = req.body.atten_date;
     var createdBy = req.body.created_by;
     var bodyValue = req.body;
+    var jumlahCuti = req.body.total_cuti;
     delete bodyValue.val;
     delete bodyValue.cari;
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
     delete bodyValue.type;
+    delete bodyValue.cut_leave;
+
+    var isError = false;
+    var pesan = "";
+    var cutLeave = req.body.cut_leave;
+
 
     console.log(req.body);
 
@@ -5235,6 +5323,8 @@ module.exports = {
       convertBulan = getBulan;
     }
 
+    const databaseMaster = `${database}_hrm`;
+
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
     var script = `UPDATE ${namaDatabaseDynamic}.${nameTable} SET ? WHERE ${nameWhere} = '${cariWhere}'`;
 
@@ -5260,22 +5350,220 @@ module.exports = {
         delete bodyValue.atten_date;
       }
       if (err) console.log(err);
-      connection.query(script, [bodyValue], function (error, results) {
-        console.log(error);
-        connection.release();
-        if (error != null)
-          connection.query(
-            `INSERT INTO logs_actvity SET ?;`,
-            [dataInsertLog],
-            function (error) {
-              if (error != null) console.log(error);
-            }
-          );
+      var query = "";
+      var splits = req.body.date_selected.split(",");
 
-        res.send({
-          status: true,
-          message: "Berhasil di update!",
-          data: results,
+      var query = ``;
+      var queryPendingPotongCuti = `
+          SELECT 
+          SUM(e.leave_duration) AS total_leave_duration
+      FROM ${namaDatabaseDynamic}.emp_leave e
+      JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+      WHERE e.em_id = '${req.body.em_id}' 
+        AND e.status_transaksi = 1
+        AND lt.cut_leave = 1
+        AND e.${nameWhere} != '${cariWhere}'
+      `;
+
+      for (var i = 0; i < splits.length; i++) {
+        console.log(i);
+
+        let subQuery = `  
+          SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+          WHERE em_id='${req.body.em_id}' 
+          AND date_selected LIKE '%${splits[i]}%'  
+          AND status_transaksi=1 
+          AND leave_status IN ('Pending','Approve','Approve2') 
+          AND ${nameWhere} != '${cariWhere}'`;
+
+        if (i === 0) {
+          query = subQuery;
+        } else {
+          query += ` UNION ALL ${subQuery}`;
+        }
+      }
+      console.log(query);
+      connection.query(query, (err, data) => {
+        if (err) {
+          console.error("Error executing SELECT statement:", err);
+          connection.rollback(() => {
+            connection.end();
+            return res.status(400).send({
+              status: false,
+              message: "gagal ambil data",
+              data: [],
+            });
+          });
+          return;
+        }
+        connection.query(queryPendingPotongCuti, (err, dataPending) => {
+          if (err) {
+            console.error("Error executing SELECT statement:", err);
+            connection.rollback(() => {
+              connection.end();
+              return res.status(400).send({
+                status: false,
+                message: "gagal ambil data",
+                data: [],
+              });
+            });
+            return;
+          }
+          console.log(queryPendingPotongCuti);
+          console.log(dataPending);
+          console.log(jumlahCuti);
+          const totalLeaveDuration =
+            (dataPending[0]?.total_leave_duration || 0) +
+            req.body.leave_duration;
+            if (cutLeave == 1){
+              if (totalLeaveDuration > jumlahCuti) {
+                isError = true;
+                pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
+              }
+            }
+
+          console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+                      WHERE em_id='${req.body.em_id}' 
+                      AND (date_selected LIKE '%${req.body.date_selected}%')  
+                      AND  status_transaksi=1 
+                       AND leave_status IN ('Pending','Approve','Approve2')`);
+          for (var i = 0; i < data.length; i++) {
+            if (data.length > 0) {
+              if (data[0].leave_type == "HALFDAY") {
+                var timeParam1 = new Date(
+                  `${req.body.atten_date}T${req.body.dari_jam}`
+                );
+                var timeParam2 = new Date(
+                  `${req.body.atten_date}T${req.body.sampai_jam}`
+                );
+                /// jika suda ada data
+                var time1 = new Date(
+                  `${data[i].atten_date}T${data[i].time_plan}`
+                );
+                var time2 = new Date(
+                  `${data[i].atten_date}T${data[i].time_plan_to}`
+                );
+                if (time1 > time2) {
+                  time2.setDate(time2.getDate() + 1);
+                }
+
+                if (timeParam1 > timeParam2) {
+                  timeParam2.setDate(time2.getDate() + 1);
+                }
+
+                transaksi = "Izin";
+
+                if (isDateInRange(timeParam1, time1, time2)) {
+                  isError = true;
+                  pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                }
+              } else if (
+                req.body.leave_type == "FULLDAY" ||
+                req.body.leave_type == "FULL DAY" ||
+                req.body.leave_type == "Full Day"
+              ) {
+                console.log(data[i].ajuan);
+
+                if (data[i].ajuan == "1" || data[i].ajuan == 1) {
+                  isError = true;
+                  pesan = `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                }
+
+                if (data[i].ajuan == "2" || data[i].ajuan == 2) {
+                  isError = true;
+                  pesan = `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                }
+              }
+            }
+          }
+          connection.query(query, (err, data) => {
+            if (err) {
+              console.error("Error executing SELECT statement:", err);
+              connection.rollback(() => {
+                connection.end();
+                return res.status(400).send({
+                  status: false,
+                  message: "gagal ambil data",
+                  data: [],
+                });
+              });
+              return;
+            }
+
+            for (var i = 0; i < data.length; i++) {
+              if (data.length > 0) {
+                var timeParam1 = new Date(
+                  `${req.body.atten_date}T${req.body.dari_jam}`
+                );
+                var timeParam2 = new Date(
+                  `${req.body.atten_date}T${req.body.sampai_jam}`
+                );
+
+                /// jika suda ada data
+                var time1 = new Date(
+                  `${data[i].atten_date}T${data[i].dari_jam}`
+                );
+                var time2 = new Date(
+                  `${data[i].atten_date}T${data[i].sampai_jam}`
+                );
+
+                if (time1 > time2) {
+                  time2.setDate(time2.getDate() + 1);
+                }
+
+                if (timeParam1 > timeParam2) {
+                  timeParam2.setDate(time2.getDate() + 1);
+                }
+
+                if (data[i].ajuan == "2") {
+                  transaksi = "Tugas Luar";
+                }
+
+                if (data[i].ajuan == "1") {
+                  transaksi = "Lembur";
+                }
+
+                if (isDateInRange(timeParam1, time1, time2)) {
+                  isError = true;
+                  pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                } else {
+                  if (isDateInRange(timeParam2, time1, time2)) {
+                    isError = true;
+                    pesan = `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                  }
+                }
+              }
+            }
+            console.log("is errr", isError);
+
+            if (isError == true || isError == "true") {
+              connection.release()
+              return res.status(500).send({
+                status: false,
+                message: pesan,
+                data: [],
+              });
+            } else {
+              connection.query(script, [bodyValue], function (error, results) {
+                console.log(error);
+                connection.release();
+                if (error != null)
+                  connection.query(
+                    `INSERT INTO logs_actvity SET ?;`,
+                    [dataInsertLog],
+                    function (error) {
+                      if (error != null) console.log(error);
+                    }
+                  );
+
+                res.send({
+                  status: true,
+                  message: "Berhasil di update!",
+                  data: results,
+                });
+              });
+            }
+          });
         });
       });
     });
@@ -8707,7 +8995,7 @@ module.exports = {
             var idSp = "";
 
             const [sysdata] = await connection.query(
-              ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('S01','020','029','S08','SO9') `
+              ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('S01','020','029','S08','S09') `
             );
             console.log("nama database master ", namaDatabasMaster);
             console.log("nama database periode ", namaDatabaseDynamic);
@@ -8832,12 +9120,12 @@ module.exports = {
               namaDatabasMaster
             );
 
-            if (terlambat.length >= parseInt(sysdata[1].name)) {
+            if (terlambat.length == parseInt(sysdata[1].name)) {
               statusSpName = "Surat Peringatan 1";
               (statussp = "sp1"), (idSp = "2");
             }
 
-            if (terlambat.length >= parseInt(sysdata[3].name)) {
+            if (terlambat.length == parseInt(sysdata[3].name)) {
               statusSpName = "Surat Peringatan 2";
               statussp = "sp2";
               idSp = "3";
@@ -8849,7 +9137,7 @@ module.exports = {
             //   idSp='4'
             // }
 
-            if (terlambat.length >= parseInt(sysdata[1].name)) {
+            if (terlambat.length == parseInt(sysdata[1].name)) {
               var status = "Pending";
               var alasan = "Absen datang terlambat";
               var approveStatus = "Pending";
@@ -8929,9 +9217,7 @@ module.exports = {
                     deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
                       `;
                   }
-                }
-
-                if (cekDataSp[0]["letter_id"] == "3") {
+                } else if (cekDataSp[0]["letter_id"] == "3") {
                   if (terlambat.length >= parseInt(sysdata[4].name)) {
                     // SP 3
                     deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
@@ -9071,7 +9357,6 @@ module.exports = {
               }
             } else {
             }
-          } else {
           }
         } else {
           var lastItem = results.pop();
