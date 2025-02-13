@@ -168,10 +168,11 @@ WHERE e.em_id = '${req.body.em_id}'
               console.log(queryPendingPotongCuti);
               console.log(dataPending);
               console.log(jumlahCuti);
+              console.log(cutLeave);
               const totalLeaveDuration = (dataPending[0]?.total_leave_duration || 0) + req.body.leave_duration;
               if (cutLeave == 1){
                 if (totalLeaveDuration > jumlahCuti) {
-                  error = true;
+                  isError = true;
                   pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
                 }
               }
