@@ -235,7 +235,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                   data: employee,
                 });
               } else {
-                var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%'  ORDER BY id DESC`;
+                var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, teguran_lisan.* FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id LEFT JOIN letter ON letter.id=teguran_lisan.letter_id WHERE teguran_lisan.em_id LIKE '%${emId}%' AND teguran_lisan.status='Pending'  ORDER BY id DESC`;
                 console.log(queryTeguranLisan);
                 connection.query(queryTeguranLisan, (err, employee) => {
                   if (err) {
@@ -407,89 +407,107 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                 });
                 return;
               }
-              connection.query(
-                `UPDATE teguran_lisan SET status='${status}',approve_status='${status}',approve_date=CURDATE(),approve_id='${emId}', 
-                exp_date=DATE_ADD(CURDATE(), INTERVAL 3 MONTH) WHERE id='${id}'`,
-                (err, employeqqe) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
+              connection.query(`SELECT * FROM sysdata WHERE kode = 020`, (err, result) => {
+                if (err) {
+                  console.error("Error executing SELECT statement:", err);
+                  connection.rollback(() => {
+                    connection.end();
+  
+                    return res.status(400).send({
+                      status: false,
+                      message: "gagal ambil data",
+                      data: [],
                     });
-                    return;
-                  }
-
-                  connection.query(
-                    `SELECT * FROM teguran_lisan WHERE id='${id}'`,
-                    (err, dataSp) => {
-                      if (err) {
-                        console.error("Error executing SELECT statement:", err);
-                        connection.rollback(() => {
-                          connection.end();
-
-                          return res.status(400).send({
-                            status: false,
-                            message: "gagal ambil data",
-                            data: [],
-                          });
+                  });
+                  return;
+                }
+                var masaBerlaku = result[0]['name'];
+                console.log(masaBerlaku);
+                connection.query(
+                  `UPDATE teguran_lisan SET status='${status}',approve_status='${status}',approve_date=CURDATE(),eff_date=CURDATE(),approve_id='${emId}', 
+                  exp_date=DATE_ADD(CURDATE(), INTERVAL ${masaBerlaku} MONTH) WHERE id='${id}'`,
+                  (err, employeqqe) => {
+                    if (err) {
+                      console.error("Error executing SELECT statement:", err);
+                      connection.rollback(() => {
+                        connection.end();
+  
+                        return res.status(400).send({
+                          status: false,
+                          message: "gagal ambil data",
+                          data: [],
                         });
-                        return;
-                      }
-
-                      if (
-                        status == "Approve" ||
-                        status == "Approved" ||
-                        status == "Approve"
-                      ) {
-                        var text = `Peringatan: Teguran Lisan telah diterbitkan. Anda mendapatkan Teguran Lisan dengan alasan  ${dataSp[0].pelanggaran}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
-                        console.log(dataSp[0]);
-
-                        utility.insertNotifikasiGlobal(
-                          dataSp[0].em_id,
-                          "Info Teguran Lisan",
-                          "tl",
-                          employee[0].em_id,
-                          dataSp[0].id,
-                          dataSp[0].nomor_ajuan,
-                          employee[0].full_name,
-                          databasedinamik,
-                          databseMaster,
-                          text
-                        );
-                      }
-
-                      connection.commit((err) => {
+                      });
+                      return;
+                    }
+  
+                    connection.query(
+                      `SELECT * FROM teguran_lisan WHERE id='${id}'`,
+                      (err, dataSp) => {
                         if (err) {
-                          console.error("Error committing transaction:", err);
+                          console.error("Error executing SELECT statement:", err);
                           connection.rollback(() => {
                             connection.end();
+  
                             return res.status(400).send({
-                              status: true,
-                              message: "data tidak tersedia",
+                              status: false,
+                              message: "gagal ambil data",
                               data: [],
                             });
                           });
                           return;
                         }
-
-                        connection.end();
-                        console.log("Transaction completed successfully!");
-                        return res.status(200).send({
-                          status: true,
-                          message: "data tersedia",
-                          data: employee,
+  
+                        if (
+                          status == "Approve" ||
+                          status == "Approved" ||
+                          status == "Approve"
+                        ) {
+                          var text = `Peringatan: Teguran Lisan telah diterbitkan. Anda mendapatkan Teguran Lisan dengan alasan  ${dataSp[0].pelanggaran}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
+                          console.log(dataSp[0]);
+  
+                          utility.insertNotifikasiGlobal(
+                            dataSp[0].em_id,
+                            "Info Teguran Lisan",
+                            "tl",
+                            employee[0].em_id,
+                            dataSp[0].id,
+                            dataSp[0].nomor_ajuan,
+                            employee[0].full_name,
+                            databasedinamik,
+                            databseMaster,
+                            text
+                          );
+                        }
+  
+                        connection.commit((err) => {
+                          if (err) {
+                            console.error("Error committing transaction:", err);
+                            connection.rollback(() => {
+                              connection.end();
+                              return res.status(400).send({
+                                status: true,
+                                message: "data tidak tersedia",
+                                data: [],
+                              });
+                            });
+                            return;
+                          }
+  
+                          connection.end();
+                          console.log("Transaction completed successfully!");
+                          return res.status(200).send({
+                            status: true,
+                            message: "data tersedia",
+                            data: employee,
+                          });
                         });
-                      });
-                    }
-                  );
-                }
-              );
+                      }
+                    );
+                  }
+                );
+              })
+              
             }
           );
         });

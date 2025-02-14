@@ -1,10 +1,26 @@
 const router = require("express").Router();
-const { operasional,login, dashboard ,absensi,payroll,izin,notifikasi,
+const { 
+    operasional,
+    login, 
+    dashboard,
+    absensi,
+    payroll,
+    izin,
+    notifikasi,
     claim,
     tracking,
     wfh,
     loan,
-    chatting,lembur,cuti,tugasLuar, klaim,pengadaanKerusakan, peraturanPerusahaan,employee,suratPeringatan,pinjamanAsset,cabang, teguranLisan} = require("../controllers");
+    chatting,
+    lembur,
+    cuti,
+    tugasLuar, 
+    klaim,
+    pengadaanKerusakan, 
+    peraturanPerusahaan,employee,suratPeringatan,pinjamanAsset,cabang, 
+    teguranLisan,
+    notice,
+} = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
 const auth = require('../middleware/auth');
@@ -13,10 +29,11 @@ router.get("/employee", operasional.allData);
 router.get("/absensi", operasional.allData);
 router.get("/banner_dashboard", operasional.allData);
 router.get("/getMenu", operasional.getMenuDashboard);
-router.get("/notice", operasional.notice);
-router.post("/notice-polling", operasional.detailNoticePolling);
-router.post("/notice-polling-save", operasional.savePolling);
-router.get("/notice-polling-employee", operasional.detailNoticePollingEmployee);
+router.get("/notice", notice.notice);
+router.post("/notice/count/save", notice.updateNotice);
+router.post("/notice-polling", notice.detailNoticePolling);
+router.post("/notice-polling-save", notice.savePolling);
+router.get("/notice-polling-employee", notice.detailNoticePollingEmployee);
 router.get("/leave_types", operasional.allData);
 
 router.get("/places_coordinate",absensi.PalceCoordinate);
