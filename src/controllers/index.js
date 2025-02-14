@@ -19,6 +19,7 @@ const peraturanPerusahaan = require('./peraturan_perusahaan');
 const employee= require('./employee');
 const suratPeringatan= require('./surat_peringatan');
 const teguranLisan= require('./teguran_lisan');
+const notice= require('./notice');
 const pinjamanAsset= require('./peminjaman_asset');
 const cabang= require('./cabang');
 module.exports ={
@@ -36,4 +37,5 @@ module.exports ={
 	,suratPeringatan 
 	,pinjamanAsset,cabang,
 	teguranLisan,
+	notice
 };

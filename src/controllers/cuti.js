@@ -37,6 +37,7 @@ module.exports = {
 
     var bodyValue = req.body;
     var cutLeave = req.body.cut_leave;
+    var jumlahCuti = req.body.total_cuti;
     delete bodyValue.cut_leave;
     delete bodyValue.total_cuti;
     delete bodyValue.menu_name;
@@ -72,7 +73,7 @@ module.exports = {
     }
     const databaseMaster = `${database}_hrm`;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    var jumlahCuti = req.body.total_cuti;
+    
     var nomorLb = `CT20${convertYear}${convertBulan}`;
     var script = `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`;
     var transaksi = "";
