@@ -1204,7 +1204,7 @@ WHERE e.em_id = '${req.body.em_id}'
     var dates =
       req.query.dates == undefined ? "2024-08,2024-09" : req.query.dates;
 
-    console.log(req.query);
+    console.log('ini req.query', req.query);
 
     var query = ``;
 
