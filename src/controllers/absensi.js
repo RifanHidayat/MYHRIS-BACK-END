@@ -1645,7 +1645,7 @@ module.exports = {
     const convertYear = tahun.substring(2, 4);
     const convertBulan = array[1];
   
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const namaDatabaseDynamic = `${database}_hrm2502`;
     
     var startDate=req.body.start_date;
     var endDate=req.body.end_date;
