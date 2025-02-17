@@ -99,12 +99,14 @@ module.exports = {
             }
             var queryPendingPotongCuti = `
     SELECT 
-    SUM(e.leave_duration) AS total_leave_duration
+    SUM(e.leave_duration) AS total_leave_duration,
+    e.leave_status AS status,
+    e.nomor_ajuan AS nomorAjuan
 FROM ${namaDatabaseDynamic}.emp_leave e
 JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
 WHERE e.em_id = '${req.body.em_id}' 
   AND e.status_transaksi = 1
-  AND lt.cut_leave = 1;
+  AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve','Approve2');
 `;
             for (var i = 0; i < dates.length; i++) {
               var d = dates[i];
@@ -156,14 +158,16 @@ WHERE e.em_id = '${req.body.em_id}'
                   }
                   console.log(queryPendingPotongCuti);
                   console.log(dataPending);
-                  console.log(jumlahCuti);
+                  console.log('ini jumlah cuti user',jumlahCuti);
+                  console.log('ini cut leave',cutLeave);
                   const totalLeaveDuration =
                     (dataPending[0]?.total_leave_duration || 0) +
                     req.body.leave_duration;
+                  console.log('ini total leave durasion', totalLeaveDuration)
                   if (cutLeave == 1){
                     if (totalLeaveDuration > jumlahCuti) {
                       error = true;
-                      pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
+                      pesan = `Kamu mempunyai cuti dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
                     }
                   }
                   records = results;
