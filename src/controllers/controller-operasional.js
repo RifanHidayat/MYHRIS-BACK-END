@@ -4918,6 +4918,7 @@ module.exports = {
     var createdBy = req.body.created_by;
     var bodyValue = req.body;
     var jumlahCuti = req.body.total_cuti;
+    var cutLeave = req.body.cut_leave;
     delete bodyValue.val;
     delete bodyValue.total_cuti;
     delete bodyValue.cari;
@@ -4929,7 +4930,6 @@ module.exports = {
 
     var isError = false;
     var pesan = "";
-    var cutLeave = req.body.cut_leave;
 
     console.log(req.body);
 
@@ -5016,12 +5016,14 @@ module.exports = {
         var query = ``;
         var queryPendingPotongCuti = `
           SELECT 
-          SUM(e.leave_duration) AS total_leave_duration
+          SUM(e.leave_duration) AS total_leave_duration,
+          e.leave_status AS status,
+    e.nomor_ajuan AS nomorAjuan
       FROM ${namaDatabaseDynamic}.emp_leave e
       JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
       WHERE e.em_id = '${req.body.em_id}' 
         AND e.status_transaksi = 1
-        AND lt.cut_leave = 1
+        AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve', 'Approve2')
         AND e.${nameWhere} != '${cariWhere}'
       `;
         for (var i = 0; i < splits.length; i++) {
@@ -5074,11 +5076,13 @@ module.exports = {
             const totalLeaveDuration =
               (dataPending[0]?.total_leave_duration || 0) +
               req.body.leave_duration;
+            console.log('ini total duration', totalLeaveDuration);
+            console.log('ini cut leave', cutLeave);
             if (cutLeave == 1) {
               if (totalLeaveDuration > jumlahCuti) {
                 isError = true;
-                pesan = `Kamu mempunyai cuti dengan status pending sehingga sisa cuti kamu tidak mencukupi`;
-              }
+                pesan = `Kamu mempunyai cuti dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
+                }
             }
 
             console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
@@ -8663,18 +8667,18 @@ module.exports = {
             );
             console.log("nama database master ", namaDatabasMaster);
             console.log("nama database periode ", namaDatabaseDynamic);
-            console.log(sysdata);
 
             var splitBulan = sysdata[0].name.split(",");
+
             const tanggalSekarang = new Date();
             const tanggalSekarangsp1 = tanggalSekarang.setMonth(
               tanggalSekarang.getMonth() + parseInt(splitBulan[0].toString())
             );
-            const tanggalSekarangsp2 = tanggalSekarang.setMonth(
-              tanggalSekarang.getMonth() + parseInt(splitBulan[1].toString())
-            );
+            // const tanggalSekarangsp2 = tanggalSekarang.setMonth(
+            //   tanggalSekarang.getMonth() + parseInt(splitBulan[1].toString())
+            // );
             var fixtgl = utility.dateConvert(tanggalSekarangsp1);
-            var fixtglSp2 = utility.dateConvert(tanggalSekarangsp2);
+            var fixtglSp2 = utility.dateConvert(tanggalSekarangsp1);
             // var queryTerlambat=`SELECT attendance.* FROM ${namaDatabaseDynamic}.attendance JOIN ${namaDatabaseDynamic}.emp_shift ON emp_shift.atten_date=attendance.atten_date AND attendance.em_id=emp_shift.em_id  JOIN ${namaDatabasMaster}.work_schedule  ON work_schedule.id=emp_shift.work_id  WHERE attendance.em_id='${em_id}' AND work_schedule.time_in < attendance.signin_time`
 
             var startPeriode =
@@ -13637,6 +13641,8 @@ a.signin_pict as foto_masuk,
 a.signout_pict as foto_keluar,
 a.place_in as place_in,
 a.place_out as place_out,
+a.breakout_time,
+a.breakin_time,
 
 
 
@@ -17384,6 +17390,7 @@ GROUP BY TBL.full_name`;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
     var date = req.body.date;
+    var nomorAjuan = req.body.nomor_ajuan;
 
     const tahun = `${gettahun}`;
     const convertYear = tahun.substring(2, 4);
@@ -17420,7 +17427,7 @@ GROUP BY TBL.full_name`;
         });
       } else {
         connection.query(
-          `UPDATE emp_labor SET status_transaksi=0 WHERE em_id='${em_id}'AND atten_date='${date}'`,
+          `UPDATE emp_labor SET status_transaksi=0 WHERE em_id='${em_id}'AND nomor_ajuan='${nomorAjuan}'`,
           function (error, results) {
             if (error != null) console.log(error);
             res.send({
