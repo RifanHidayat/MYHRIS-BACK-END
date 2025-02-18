@@ -1,3 +1,4 @@
 node_modules
 src/utils/keyprivate.json
 keyprivate.json
+.env

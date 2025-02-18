@@ -1246,7 +1246,7 @@ app.post('/push-notification', function (req, res) {
 
 
 app.listen(2627, () => {
-  console.log("Server Berjalan di Port : 2628");
+  console.log("Server Berjalan di Port : 2627");
 });
 
 
