@@ -38,7 +38,7 @@ router.get("/leave_types", operasional.allData);
 
 router.get("/places_coordinate",absensi.PalceCoordinate);
 router.post("/attendance",absensi.historyAttendance);
-// router.post("/attendance-offiline",absensi.kirimAbsensiOffline);
+router.post("/attendance-offiline",absensi.kirimAbsensiOffline);
 router.get("/places_coordinate_pengajuan",absensi.PalceCoordinatePengajuan);
 router.get("/faq", operasional.allData);
 router.get("/all_department", operasional.allData);
