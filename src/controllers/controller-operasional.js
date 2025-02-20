@@ -3532,6 +3532,32 @@ module.exports = {
         menu_name == "Dinas Luar"
       ) {
         delete bodyValue.konsekuensi;
+
+        if (bodyValue.hasOwnProperty('approve2_id')) {
+          bodyValue.apply2_id = bodyValue.approve2_id;
+          delete bodyValue.approve2_id;
+        }
+        if (bodyValue.hasOwnProperty('approve_id')) {
+          bodyValue.apply_id = bodyValue.approve_id;
+          delete bodyValue.approve_id;
+        }if (bodyValue.hasOwnProperty('approve_date')) {
+          bodyValue.apply_date = bodyValue.approve_date;
+          delete bodyValue.approve_date;
+        }
+        if (bodyValue.hasOwnProperty('approve2_date')) {
+          bodyValue.apply2_date = bodyValue.approve2_date;
+          delete bodyValue.approve2_date;
+        }
+        if (bodyValue.hasOwnProperty('approve_by')) {
+          bodyValue.apply_by = bodyValue.approve_by;
+          delete bodyValue.approve_by;
+        }
+        if (bodyValue.hasOwnProperty('approve2_by')) {
+          bodyValue.apply2_by = bodyValue.approve2_by;
+          delete bodyValue.approve2_by;
+        }
+        
+
         nameTable = "emp_leave";
         console.log("masuk sini ", nameTable);
       }
