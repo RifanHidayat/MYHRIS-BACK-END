@@ -3493,11 +3493,11 @@ module.exports = {
       var bodyValue = req.body;
       var emId = req.body.em_id;
       var approveId =
-        req.body.apply2_id == null ||
-        req.body.apply2_id == undefined ||
-        req.body.apply2_id == ""
-          ? req.body.apply_id
-          : req.body.apply2_id;
+        req.body.approve2_id == null ||
+        req.body.approve2_id == undefined ||
+        req.body.approve2_id == ""
+          ? req.body.approve_id
+          : req.body.approve_id;
       var leaveTypes =
         req.body.leave_type == undefined ? "" : req.body.leave_type;
       var typeId = req.body.typeid == undefined ? "" : req.body.typeid;
@@ -4411,6 +4411,8 @@ module.exports = {
                                           var title = "";
                                           var deskripsi = "";
                                           console.log(listData[i]);
+                                          console.log('ini employee apa', employee[0].full_name);
+                                          console.log('ini employee APprove', employeeApproved);
                                           title = `Approval ${namaTransaksi}`;
                                           deskripsi = `Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`;
                                           connection.query(
@@ -12194,8 +12196,6 @@ module.exports = {
                             return;
                           }
                         });
-
-                        connection.end();
                         console.log("Transaction completed successfully!");
                         return res.status(200).send({
                           status: true,
@@ -12224,8 +12224,6 @@ module.exports = {
                             return;
                           }
                         });
-
-                        connection.end();
                         console.log("Transaction completed successfully!");
                         return res.status(200).send({
                           status: true,
@@ -17678,9 +17676,9 @@ GROUP BY TBL.full_name`;
             connection.end();
             return;
           }
-
+          console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body.date}' AND (status='Approve' OR status='Pending')`);
           connection.query(
-            `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body}' AND (status='Approve' OR status='Pending')`,
+            `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body.date}' AND (status='Approve' OR status='Pending') AND status_transaksi = '1'`,
             (err, results) => {
               if (err) {
                 console.error("Error executing SELECT statement:", err);
@@ -17762,14 +17760,29 @@ GROUP BY TBL.full_name`;
                                 });
                                 return;
                               }
-
-                              if (results.length > 0) {
-                                return res.status(400).send({
-                                  status: true,
-                                  message: "Data sudah tersedia",
-                                  data: results,
-                                });
+                            
+                              for (let i = 0; i < results.length; i++) {
+                                const item = results[i];
+                                const checks = [
+                                  { key: 'dari_jam', value: checkin + ':00' },
+                                  { key: 'sampai_jam', value: checkout + ':00'},
+                                  { key: 'breakin_time', value: checkinRest + ':00'},
+                                  { key: 'breakout_time', value: checkoutRest + ':00'}
+                                ];
+                              
+                                for (const check of checks) {
+                                  if (item[check.key] !== '00:00:00' && item[check.key] === check.value) {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: "Anda sudah memiliki pengajuan di tanggal dan jam yang sama",
+                                      data: item
+                                    });
+                                  }
+                                }
                               }
+                              console.log("Loop selesai, lanjut ke kode berikutnya!");
+                              
 
                               connection.query(
                                 ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' ORDER BY id DESC `,

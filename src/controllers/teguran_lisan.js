@@ -421,11 +421,11 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                   });
                   return;
                 }
-                var masaBerlaku = result[0]['name'];
-                console.log(masaBerlaku);
+                var masaBerlaku = result[0]['name'].split(',');
+                var masaBerlakuTL = masaBerlaku[2];
                 connection.query(
                   `UPDATE teguran_lisan SET status='${status}',approve_status='${status}',approve_date=CURDATE(),eff_date=CURDATE(),approve_id='${emId}', 
-                  exp_date=DATE_ADD(CURDATE(), INTERVAL ${masaBerlaku} MONTH) WHERE id='${id}'`,
+                  exp_date=DATE_ADD(CURDATE(), INTERVAL ${masaBerlakuTL} MONTH) WHERE id='${id}'`,
                   (err, employeqqe) => {
                     if (err) {
                       console.error("Error executing SELECT statement:", err);
