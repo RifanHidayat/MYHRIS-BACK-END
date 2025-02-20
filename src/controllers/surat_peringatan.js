@@ -371,6 +371,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var id = req.body.id;
     var status = req.body.status;
     var konsekuensi = req.body.konsekuesi;
+    var tipeSp = req.body.tipe_sp;
     console.log(req.body);
 
     var branchId = req.body.branch_id;
@@ -427,10 +428,22 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                   });
                   return;
                 }
-                var masaBerlaku = result[0]['name'];
+                var masaBerlaku = result[0]['name'].split(',');
+                var masaSp1 = masaBerlaku[0];
+                var masaSp2 = masaBerlaku[1];
+                console.log(masaSp1);                
+                console.log(masaSp2);       
+                var masaBerlakuSP = '';
+                if (tipeSp == 'Surat Peringatan 1'){
+                  masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp1} MONTH)`;
+                } else if(tipeSp == 'Surat Peringatan 2'){
+                  masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp2} MONTH)`;
+                } else {
+                  masaBerlakuSP = `CURDATE()`
+                }
                 connection.query(
                   `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),eff_date=CURDATE(),approve_id='${emId}',tipe_konsekuensi='${konsekuensi}',
-                  exp_date = DATE_ADD(CURDATE(), INTERVAL ${masaBerlaku} MONTH)  WHERE id='${id}'`,
+                  exp_date = ${masaBerlakuSP}  WHERE id='${id}'`,
                   (err, employeqqe) => {
                     if (err) {
                       console.error("Error executing SELECT statement:", err);
