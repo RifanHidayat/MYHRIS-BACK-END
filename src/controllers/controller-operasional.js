@@ -12097,6 +12097,7 @@ module.exports = {
                       if (status == "Rejected" || status == "Reject") {
                         var namaTransaksi = "Absensi";
 
+                        console.log(sysdata[1]);
                         console.log(sysdata[1].name.toString().split(","));
                         console.log(approveBy1);
                         console.log(approveBy2);
@@ -12631,7 +12632,7 @@ module.exports = {
                             });
                             if (lastItem.breakin_time == "00:00:00") {
                               var data = {
-                                breakin_time: `${dataAbsensi[0].breakin_time}`,
+                                breakin_time: `${dataAbsensi[0].breakin_time ?? '00:00:00'}`,
                                 place_break_in: `${dataAbsensi[0].place_break_in}`,
                                 breakin_longlat:
                                   `${dataAbsensi[0].breakin_longlat}`,
@@ -12664,7 +12665,7 @@ module.exports = {
                             } 
                             if (lastItem.breakout_time == "00:00:00") {
                               var data = {
-                                breakout_time: `${dataAbsensi[0].breakout_time}`,
+                                breakout_time: `${dataAbsensi[0].breakout_time ?? '00:00:00'} `,
                                 place_break_out: `${dataAbsensi[0].place_break_out}`,
                                 breakout_longlat:
                                   `${dataAbsensi[0].breakout_longlat}`,
