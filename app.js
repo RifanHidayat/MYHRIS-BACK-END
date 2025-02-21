@@ -16,6 +16,8 @@ admin.initializeApp({
 const NodeCache = require('node-cache');
 require('dotenv').config();
 var ipServer=process.env.API_URL
+var portEnv=process.env.PORT_API
+var apiKey=process.env.API_KEY
 
 var remoteDirectory = 'public_html/7H202305001'
 const SftpClient = require('ssh2-sftp-client');
@@ -73,7 +75,7 @@ cron1.schedule('* * * * * *', () => {
 
 async function kirimNotif(){
   const cachedData = myCache.get('employees');
-  const connection = await model.createConnection1('sisrajj');
+  const connection = await model.createConnection1(apiKey);
   if (cachedData) {
 
         const cachedDataSysdata = myCache.get('sysdata');
@@ -160,10 +162,10 @@ async function kirimNotif(){
                 var array=dateNow.split('-')
                 var tahun=array[0].toString().substring(2,4)
                 var bulan=array[1].toString()
-                var namaDatabaseDynamic=`sisrajj_hrm${tahun}${bulan}`
+                var namaDatabaseDynamic=`${apiKey}_hrm${tahun}${bulan}`
 
         
-              const connection = await model.createConnection2('sisrajj');
+              const connection = await model.createConnection2(apiKey);
             connection.connect((err) => {
               if (err) {
                 console.error('Error connecting to the database:', err);
@@ -483,7 +485,7 @@ async function kirimNotif(){
                 var array=dateNow.split('-')
                 var tahun=array[0].toString().substring(2,4)
                 var bulan=array[1].toString()
-                var namaDatabaseDynamic=`sisrajj_hrm${tahun}${bulan}`
+                var namaDatabaseDynamic=`${apiKey}_hrm${tahun}${bulan}`
 
         
               const connection = await model.createConnection2('sisraajj');
@@ -622,14 +624,14 @@ async function fetchData() {
     var date2=utility.dateNow2().split('-');
     var tahun=date2[0].substring(2,4)
     var bulan=date2[1];
-    var namaDatabase=`sisrajj_hrm${tahun}${bulan}`
-    const connection = await model.createConnection('sisrajj');
+    var namaDatabase=`${apiKey}_hrm${tahun}${bulan}`
+    const connection = await model.createConnection(apiKey);
 
     var employeeAll=''
     var emIds='';
     var query=`
     SELECT 'absensi' as status, '' as notif_absen_masuk,'' as notif_absen_keluar,'' as notif_istirahat_keluar,'' as notif_istirahat_masuk, employee.em_id,employee.tipe_absen, employee.full_name ,employee.token_notif,work_schedule.time_in,work_schedule.time_out,work_schedule.break_in,work_schedule.break_out FROM ${namaDatabase}.emp_shift 
-    JOIN sisrajj_hrm.work_schedule ON emp_shift.work_id=work_schedule.id LEFT JOIN sisrajj_hrm.employee ON employee.em_id=emp_shift.em_id WHERE atten_date='${dateNow}'
+    JOIN ${apiKey}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id LEFT JOIN ${apiKey}_hrm.employee ON employee.em_id=emp_shift.em_id WHERE atten_date='${dateNow}'
     `
     console.log(query)
     var querySysdata=`
@@ -820,6 +822,7 @@ app.use(
 
 const appRouteSiscom = require("./src/routes/route-siscom");
 const { chatting } = require("./src/controllers");
+const api = require("sha1");
 app.use("/", appRouteSiscom);
 
 // upload file 
@@ -1245,7 +1248,7 @@ app.post('/push-notification', function (req, res) {
 
 
 
-app.listen(2627, () => {
+app.listen(portEnv, () => {
   console.log("Server Berjalan di Port : 2627");
 });
 

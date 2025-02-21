@@ -100,7 +100,8 @@ module.exports = {
     SELECT 
     SUM(e.leave_duration) AS total_leave_duration,
     e.leave_status AS status,
-    e.nomor_ajuan AS nomorAjuan
+    e.nomor_ajuan AS nomorAjuan,
+    lt.name AS namaAjuan
 FROM ${namaDatabaseDynamic}.emp_leave e
 JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
 WHERE e.em_id = '${req.body.em_id}' 
@@ -177,7 +178,7 @@ WHERE e.em_id = '${req.body.em_id}'
               if (cutLeave == 1){
                 if (totalLeaveDuration > jumlahCuti) {
                   isError = true;
-                  pesan = `Kamu mempunyai cuti dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
+                  pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
                 }
               }
 
@@ -214,7 +215,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
                     if (isDateInRange(timeParam1, time1, time2)) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                      pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
 
                       // return res.status(400).send({
                       //     status: false,
@@ -232,7 +233,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
                     if (data[i].ajuan == "1" || data[i].ajuan == 1) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                      pesan = `Kamu telah melakukan pengajuan Cuti  pada tanggal ${req.body.date_selected} dengan status ${data[i].leave_status}`;
                       // return res.status(400).send({
                       //   status: false,
                       //   message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[i].leave_status}`,
@@ -243,7 +244,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
                     if (data[i].ajuan == "2" || data[i].ajuan == 2) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                      pesan = `Kamu telah melakukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
 
                       // return res.status(400).send({
                       //   status: false,
@@ -304,7 +305,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
                     if (isDateInRange(timeParam1, time1, time2)) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                      pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
                       // return res.status(400).send({
                       //     status: false,
                       //     message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
@@ -314,7 +315,7 @@ WHERE e.em_id = '${req.body.em_id}'
                     } else {
                       if (isDateInRange(timeParam2, time1, time2)) {
                         isError = true;
-                        pesan = `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                        pesan = `Kamu telah melakukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
                         // return res.status(400).send({
                         //     status: false,
                         //     message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,

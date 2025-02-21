@@ -101,7 +101,8 @@ module.exports = {
     SELECT 
     SUM(e.leave_duration) AS total_leave_duration,
     e.leave_status AS status,
-    e.nomor_ajuan AS nomorAjuan
+    e.nomor_ajuan AS nomorAjuan,
+    lt.name AS namaAjuan
 FROM ${namaDatabaseDynamic}.emp_leave e
 JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
 WHERE e.em_id = '${req.body.em_id}' 
@@ -167,7 +168,7 @@ WHERE e.em_id = '${req.body.em_id}'
                   if (cutLeave == 1) {
                     if (totalLeaveDuration > jumlahCuti) {
                       error = true;
-                      pesan = `Kamu mempunyai cuti dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
+                      pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
                     }
                   }
                   records = results;
