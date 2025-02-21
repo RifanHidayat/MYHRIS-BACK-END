@@ -43,7 +43,7 @@ module.exports = {
     console.log(req.headers)
 
     var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' 
-    AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' )
+    AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' ) AND tanggal_berlaku <= CURDATE()
      `
       try{
           const connection=await model.createConnection(database);
@@ -263,7 +263,7 @@ module.exports = {
 
     var query=`SELECT ${table}.* FROM ${database}_hrm.${table} LEFT JOIN ${tableDetail} ON ${table}.id=${tableDetail}.peraturan_perusahaan_id AND ${tableDetail}.em_id='${emId}'  WHERE 
        status_transaksi='1' AND em_ids LIKE '%${emId}%' OR em_ids='' AND status='1' 
-        AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' )
+        AND (   branch_id LIKE '%${branchId.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${branchId}%' ) AND ${table}.tanggal_berlaku <= CURDATE()
     AND ${tableDetail}.peraturan_perusahaan_id IS  NULL ORDER BY ${table}.id ASC LIMIT 1`
 
     console.log(query)
@@ -448,7 +448,7 @@ module.exports = {
                   });
 
                 }
-                var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  
+                var query=`SELECT * FROM ${table} WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  AND tanggal_berlaku <= CURDATE()
                 AND (   branch_id LIKE '%${employee[0].branch_id.toString().padStart(2, '0')}%'  OR    branch_id LIKE '%${employee[0].branch_id}%' )
              ORDER BY id DESC LIMIT 1`
 

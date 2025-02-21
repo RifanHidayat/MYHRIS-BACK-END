@@ -41,7 +41,6 @@ const configSftp = {
 };
 
 module.exports = {
-  
   async allData(req, res) {
     var database = req.query.database;
     console.log("database ", database);
@@ -1310,7 +1309,7 @@ module.exports = {
             var data2 = records[0]["em_report2_to"].split(",");
             var finalData = data1.concat(data2);
             connection.query(
-              `SELECT *  FROM employee WHERE em_id IN (?)`,
+              `SELECT *  FROM employee WHERE em_id IN (?) ORDER BY full_name ASC`,
               [finalData],
               (err, results) => {
                 if (err) {
@@ -2862,6 +2861,9 @@ module.exports = {
       // return;
       if (menu_name == "Lembur" || menu_name == "Tugas Luar") {
         nameTable = "emp_labor";
+        if(bodyValue.alasan1 == ''){
+          delete bodyValue.alasan1;
+        }
       }
 
       if (
@@ -3517,6 +3519,9 @@ module.exports = {
         nameTable = "emp_labor";
         delete bodyValue.tasks;
         delete bodyValue.total_persentase;
+        if(bodyValue.alasan1 == ''){
+          delete bodyValue.alasan1;
+        }
       }
 
       if (
@@ -3533,30 +3538,30 @@ module.exports = {
       ) {
         delete bodyValue.konsekuensi;
 
-        if (bodyValue.hasOwnProperty('approve2_id')) {
+        if (bodyValue.hasOwnProperty("approve2_id")) {
           bodyValue.apply2_id = bodyValue.approve2_id;
           delete bodyValue.approve2_id;
         }
-        if (bodyValue.hasOwnProperty('approve_id')) {
+        if (bodyValue.hasOwnProperty("approve_id")) {
           bodyValue.apply_id = bodyValue.approve_id;
           delete bodyValue.approve_id;
-        }if (bodyValue.hasOwnProperty('approve_date')) {
+        }
+        if (bodyValue.hasOwnProperty("approve_date")) {
           bodyValue.apply_date = bodyValue.approve_date;
           delete bodyValue.approve_date;
         }
-        if (bodyValue.hasOwnProperty('approve2_date')) {
+        if (bodyValue.hasOwnProperty("approve2_date")) {
           bodyValue.apply2_date = bodyValue.approve2_date;
           delete bodyValue.approve2_date;
         }
-        if (bodyValue.hasOwnProperty('approve_by')) {
+        if (bodyValue.hasOwnProperty("approve_by")) {
           bodyValue.apply_by = bodyValue.approve_by;
           delete bodyValue.approve_by;
         }
-        if (bodyValue.hasOwnProperty('approve2_by')) {
+        if (bodyValue.hasOwnProperty("approve2_by")) {
           bodyValue.apply2_by = bodyValue.approve2_by;
           delete bodyValue.approve2_by;
         }
-        
 
         nameTable = "emp_leave";
         console.log("masuk sini ", nameTable);
@@ -4437,8 +4442,14 @@ module.exports = {
                                           var title = "";
                                           var deskripsi = "";
                                           console.log(listData[i]);
-                                          console.log('ini employee apa', employee[0].full_name);
-                                          console.log('ini employee APprove', employeeApproved);
+                                          console.log(
+                                            "ini employee apa",
+                                            employee[0].full_name
+                                          );
+                                          console.log(
+                                            "ini employee APprove",
+                                            employeeApproved
+                                          );
                                           title = `Approval ${namaTransaksi}`;
                                           deskripsi = `Notifikasi Pengajuan ${namaTransaksi}  dari ${employee[0].full_name} - ${emId} dengan nomor ajuan telah di ${bodyStatusFinal} oleh ${employeeApproved[0].full_name}`;
                                           connection.query(
@@ -5017,8 +5028,8 @@ module.exports = {
       }
       if (err) console.log(err);
       console.log(req.body.leave_status);
-      let path = name_url.split('?')[0].replace('/', '');
-      if (req.body.leave_status == "Cancel" || path == 'edit-notifikasi') {
+      let path = name_url.split("?")[0].replace("/", "");
+      if (req.body.leave_status == "Cancel" || path == "edit-notifikasi") {
         connection.query(script, [bodyValue], function (error, results) {
           console.log(error);
           connection.release();
@@ -5046,6 +5057,7 @@ module.exports = {
           SELECT 
           SUM(e.leave_duration) AS total_leave_duration,
           e.leave_status AS status,
+          lt.name AS namaAjuan,
     e.nomor_ajuan AS nomorAjuan
       FROM ${namaDatabaseDynamic}.emp_leave e
       JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
@@ -5104,13 +5116,13 @@ module.exports = {
             const totalLeaveDuration =
               (dataPending[0]?.total_leave_duration || 0) +
               req.body.leave_duration;
-            console.log('ini total duration', totalLeaveDuration);
-            console.log('ini cut leave', cutLeave);
+            console.log("ini total duration", totalLeaveDuration);
+            console.log("ini cut leave", cutLeave);
             if (cutLeave == 1) {
               if (totalLeaveDuration > jumlahCuti) {
                 isError = true;
-                pesan = `Kamu mempunyai cuti dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
-                }
+                pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
+              }
             }
 
             console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
@@ -5146,7 +5158,7 @@ module.exports = {
 
                   if (isDateInRange(timeParam1, time1, time2)) {
                     isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
                   }
                 } else if (
                   req.body.leave_type == "FULLDAY" ||
@@ -5157,12 +5169,12 @@ module.exports = {
 
                   if (data[i].ajuan == "1" || data[i].ajuan == 1) {
                     isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                    pesan = `Kamu telah melakukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
                   }
 
                   if (data[i].ajuan == "2" || data[i].ajuan == 2) {
                     isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
+                    pesan = `Kamu telah melakukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
                   }
                 }
               }
@@ -5216,11 +5228,11 @@ module.exports = {
 
                   if (isDateInRange(timeParam1, time1, time2)) {
                     isError = true;
-                    pesan = `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
                   } else {
                     if (isDateInRange(timeParam2, time1, time2)) {
                       isError = true;
-                      pesan = `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
+                      pesan = `Kamu telah melakukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
                     }
                   }
                 }
@@ -11795,7 +11807,7 @@ module.exports = {
                         }','','',1,1,"","","","","") `;
 
                         if (results.length == 0) {
-                          console.log('kesiniin yah kamu ');
+                          console.log("kesiniin yah kamu ");
                           // `INSERT INTO attendance SET ?;`, [insertData],
 
                           connection.query(queryInsert, (err, results) => {
@@ -11855,8 +11867,7 @@ module.exports = {
                               var data = {
                                 breakin_time: `${dataAbsensi[0].breakin_time}`,
                                 place_break_in: `${dataAbsensi[0].place_break_in}`,
-                                breakin_longlat:
-                                  `${dataAbsensi.breakin_longlat}`,
+                                breakin_longlat: `${dataAbsensi.breakin_longlat}`,
                                 breakin_pict: `${dataAbsensi[0].breakin_pict}`,
                                 breakin_note: `${dataAbsensi.breakin_note}`,
                                 breakin_addr: `${dataAbsensi[0].breakin_addr}`,
@@ -11886,8 +11897,7 @@ module.exports = {
                               var data = {
                                 breakout_time: `${dataAbsensi[0].breakout_time}`,
                                 place_break_out: `${dataAbsensi[0].place_break_out}`,
-                                breakout_longlat:
-                                  `${dataAbsensi.breakout_longlat}`,
+                                breakout_longlat: `${dataAbsensi.breakout_longlat}`,
                                 breakout_pict: `${dataAbsensi[0].breakout_pict}`,
                                 breakout_note: `${dataAbsensi.breakout_note}`,
                                 breakout_addr: `${dataAbsensi[0].breakout_addr}`,
@@ -12070,8 +12080,7 @@ module.exports = {
               emp_labor.breakin_time,emp_labor.breakout_time,emp_labor.breakin_longlat,emp_labor.breakout_longlat,
               emp_labor.breakin_note,emp_labor.breakin_note,
               emp_labor.place_break_in,emp_labor.place_break_out,emp_labor.breakin_addr,emp_labor.breakout_addr,
-              employee.* FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id WHERE emp_labor.id='${id}'`
-              );
+              employee.* FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id WHERE emp_labor.id='${id}'`);
             connection.query(
               `SELECT 
               emp_labor.nomor_ajuan,emp_labor.dari_jam,emp_labor.sampai_jam,emp_labor.signin_note,emp_labor.signout_note,emp_labor.signin_addr,emp_labor.signout_addr,emp_labor.signin_longlat,emp_labor.signout_longlat,emp_labor.place_out,emp_labor.place_in,emp_labor.signout_pict,
@@ -12577,23 +12586,21 @@ module.exports = {
                           dataAbsensi[0].signin_pict ?? ""
                         }','${dataAbsensi[0].signout_pict ?? ""}','${
                           dataAbsensi[0].signin_note ?? ""
-                        }','${
-                          dataAbsensi[0].signout_note ?? ""
-                        }','','',
-                        '${dataAbsensi[0].breakin_time ?? '00:00:00'}',
-                        '${dataAbsensi[0].breakin_note ?? ''}',
-                        '${dataAbsensi[0].breakin_addr ?? ''}',
-                        '${dataAbsensi[0].place_break_in ?? ''}',
-                        '${dataAbsensi[0].breakin_longlat ?? ''}',
-                        '${dataAbsensi[0].breakout_time ?? '00:00:00'}',
-                        '${dataAbsensi[0].breakout_note ?? ''}',
-                        '${dataAbsensi[0].breakout_addr ?? ''}',
-                        '${dataAbsensi[0].place_break_out ?? ''}',
-                        '${dataAbsensi[0].breakout_longlat ?? ''}',
+                        }','${dataAbsensi[0].signout_note ?? ""}','','',
+                        '${dataAbsensi[0].breakin_time ?? "00:00:00"}',
+                        '${dataAbsensi[0].breakin_note ?? ""}',
+                        '${dataAbsensi[0].breakin_addr ?? ""}',
+                        '${dataAbsensi[0].place_break_in ?? ""}',
+                        '${dataAbsensi[0].breakin_longlat ?? ""}',
+                        '${dataAbsensi[0].breakout_time ?? "00:00:00"}',
+                        '${dataAbsensi[0].breakout_note ?? ""}',
+                        '${dataAbsensi[0].breakout_addr ?? ""}',
+                        '${dataAbsensi[0].place_break_out ?? ""}',
+                        '${dataAbsensi[0].breakout_longlat ?? ""}',
                         1,1,"","","","","") `;
 
                         if (results.length == 0) {
-                          console.log('kamu kesini yah ', results);
+                          console.log("kamu kesini yah ", results);
                           // `INSERT INTO attendance SET ?;`, [insertData],
 
                           connection.query(queryInsert, (err, results) => {
@@ -12619,7 +12626,7 @@ module.exports = {
                           var queryNew = `UPDATE ${namaDatabaseDynamic}.attendance SET ? WHERE id='${id_record}'`;
                           console.log(lastItem);
                           console.log(dataAbsensi);
-                          
+
                           if (
                             lastItem.signout_longlat == "" ||
                             lastItem.signout_time == "00:00:00"
@@ -12636,30 +12643,34 @@ module.exports = {
 
                             console.log("dta absensi new", queryNew);
                             console.log(data);
-                            connection.query(queryNew, [data],
-                               (err, results) => {
-                              if (err) {
-                                console.error(
-                                  "Error executing UPDATE statement:",
-                                  err
-                                );
-                                connection.rollback(() => {
-                                  connection.end();
-                                  return res.status(400).send({
-                                    status: true,
-                                    message: "terjadi kesalahan",
-                                    data: [],
+                            connection.query(
+                              queryNew,
+                              [data],
+                              (err, results) => {
+                                if (err) {
+                                  console.error(
+                                    "Error executing UPDATE statement:",
+                                    err
+                                  );
+                                  connection.rollback(() => {
+                                    connection.end();
+                                    return res.status(400).send({
+                                      status: true,
+                                      message: "terjadi kesalahan",
+                                      data: [],
+                                    });
                                   });
-                                });
-                                return;
+                                  return;
+                                }
                               }
-                            });
+                            );
                             if (lastItem.breakin_time == "00:00:00") {
                               var data = {
-                                breakin_time: `${dataAbsensi[0].breakin_time ?? '00:00:00'}`,
+                                breakin_time: `${
+                                  dataAbsensi[0].breakin_time ?? "00:00:00"
+                                }`,
                                 place_break_in: `${dataAbsensi[0].place_break_in}`,
-                                breakin_longlat:
-                                  `${dataAbsensi[0].breakin_longlat}`,
+                                breakin_longlat: `${dataAbsensi[0].breakin_longlat}`,
                                 breakin_pict: `${dataAbsensi[0].breakin_pict}`,
                                 breakin_note: `${dataAbsensi[0].breakin_note}`,
                                 breakin_addr: `${dataAbsensi[0].breakin_addr}`,
@@ -12686,13 +12697,14 @@ module.exports = {
                                   }
                                 }
                               );
-                            } 
+                            }
                             if (lastItem.breakout_time == "00:00:00") {
                               var data = {
-                                breakout_time: `${dataAbsensi[0].breakout_time ?? '00:00:00'} `,
+                                breakout_time: `${
+                                  dataAbsensi[0].breakout_time ?? "00:00:00"
+                                } `,
                                 place_break_out: `${dataAbsensi[0].place_break_out}`,
-                                breakout_longlat:
-                                  `${dataAbsensi[0].breakout_longlat}`,
+                                breakout_longlat: `${dataAbsensi[0].breakout_longlat}`,
                                 breakout_pict: `${dataAbsensi[0].breakout_pict}`,
                                 breakout_note: `${dataAbsensi[0].breakout_note}`,
                                 breakout_addr: `${dataAbsensi[0].breakout_addr}`,
@@ -17702,7 +17714,9 @@ GROUP BY TBL.full_name`;
             connection.end();
             return;
           }
-          console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body.date}' AND (status='Approve' OR status='Pending')`);
+          console.log(
+            `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body.date}' AND (status='Approve' OR status='Pending')`
+          );
           connection.query(
             `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' AND em_id='${em_id}' AND atten_date='${req.body.date}' AND (status='Approve' OR status='Pending') AND status_transaksi = '1'`,
             (err, results) => {
@@ -17786,29 +17800,43 @@ GROUP BY TBL.full_name`;
                                 });
                                 return;
                               }
-                            
+
                               for (let i = 0; i < results.length; i++) {
                                 const item = results[i];
                                 const checks = [
-                                  { key: 'dari_jam', value: checkin + ':00' },
-                                  { key: 'sampai_jam', value: checkout + ':00'},
-                                  { key: 'breakin_time', value: checkinRest + ':00'},
-                                  { key: 'breakout_time', value: checkoutRest + ':00'}
+                                  { key: "dari_jam", value: checkin + ":00" },
+                                  {
+                                    key: "sampai_jam",
+                                    value: checkout + ":00",
+                                  },
+                                  {
+                                    key: "breakin_time",
+                                    value: checkinRest + ":00",
+                                  },
+                                  {
+                                    key: "breakout_time",
+                                    value: checkoutRest + ":00",
+                                  },
                                 ];
-                              
+
                                 for (const check of checks) {
-                                  if (item[check.key] !== '00:00:00' && item[check.key] === check.value) {
+                                  if (
+                                    item[check.key] !== "00:00:00" &&
+                                    item[check.key] === check.value
+                                  ) {
                                     connection.end();
                                     return res.status(400).send({
                                       status: true,
-                                      message: "Anda sudah memiliki pengajuan di tanggal dan jam yang sama",
-                                      data: item
+                                      message:
+                                        "Anda sudah memiliki pengajuan di tanggal dan jam yang sama",
+                                      data: item,
                                     });
                                   }
                                 }
                               }
-                              console.log("Loop selesai, lanjut ke kode berikutnya!");
-                              
+                              console.log(
+                                "Loop selesai, lanjut ke kode berikutnya!"
+                              );
 
                               connection.query(
                                 ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='3' ORDER BY id DESC `,

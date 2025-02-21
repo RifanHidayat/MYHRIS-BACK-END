@@ -1,5 +1,5 @@
 const utility=require('./utility')
-var ipServer=process.env.API_URL
+
 module.exports = {
     query: function (query, databaseDynamic, callback) {
         const mysql = require("mysql");
