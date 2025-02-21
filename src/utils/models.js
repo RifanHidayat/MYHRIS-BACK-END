@@ -99,7 +99,7 @@ module.exports = {
         const mysql = require("mysql");
         const connection =new  mysql.createConnection({
         multipleStatements: true,
-        host: 'myappdev.siscom.id',
+        host: process.env.MY_DATABASE,
         user: 'pro',
         password: 'Siscom3519',
         timezone: "+00:00",

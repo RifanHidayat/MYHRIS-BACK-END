@@ -15,6 +15,7 @@ const model = require('../utils/models');
 require('dotenv').config();
 
 var ipServer=process.env.API_URL
+var myDatabse=process.env.MY_DATABASE
 module.exports = {
     async isAuth(req,res,next){
         console.log("---------Cek valid token----------------")
@@ -43,7 +44,7 @@ module.exports = {
               };
               const configDynamicAdmin={
                 multipleStatements: true,
-                host: 'myappdev.siscom.id',
+                host: myDatabse,
                 user: 'pro',
                 password: 'Siscom3519',
                 timezone: "+00:00",

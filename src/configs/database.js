@@ -2,7 +2,7 @@ module.exports = {
     
 
     multipleStatements: true,
-    host: 'myapp.siscom.id',
+    host: process.env.MY_DATABASE,
     user: 'pro',
     password: 'Siscom3519',
     timezone: "+00:00",
