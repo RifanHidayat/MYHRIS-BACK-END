@@ -11396,11 +11396,12 @@ module.exports = {
     var attenDate = req.body.date;
     console.log("body absensi ", req.body);
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    if (startDate != "") {
-      queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${emId}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC LIMIT 1;`;
-    } else {
-      queryCek = `SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_date='${attenDate}';`;
-    }
+    // if (startDate != "") {
+    //   queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance 
+    //   WHERE em_id='${emId}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC LIMIT 1;`;
+    // } else {
+    // }
+    queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND atten_date='${attenDate}';`;
     if (pola == "1") {
       console.log(`database dynamic ${namaDatabaseDynamic}`);
       try {
@@ -13843,6 +13844,7 @@ o.dinilai,
      a.approve2_by,
      a.em_delegation,
      a.atten_date,
+     a.tgl_ajuan,
      a.uraian,
      a.nomor_ajuan,
      a.em_id,
