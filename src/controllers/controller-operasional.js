@@ -7027,7 +7027,7 @@ module.exports = {
      
      `;
 
-    console.log(query);
+    console.log('query update employee',query);
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
@@ -12263,7 +12263,7 @@ module.exports = {
                         console.log("Transaction completed successfully!");
                         return res.status(200).send({
                           status: true,
-                          message: "Berhasil reject pengajuan absensi",
+                          message: "Berhasil Approve pengajuan absensi",
                           data: records,
                         });
                       }
@@ -12626,7 +12626,7 @@ module.exports = {
                           var id_record = lastItem.id;
                           var queryNew = `UPDATE ${namaDatabaseDynamic}.attendance SET ? WHERE id='${id_record}'`;
                           console.log(lastItem);
-                          console.log(dataAbsensi);
+                          console.log('ini data absensi ',dataAbsensi);
 
                           if (
                             lastItem.signout_longlat == "" ||
@@ -12638,7 +12638,7 @@ module.exports = {
                               place_out: `${dataAbsensi[0].place_out}`,
                               signout_longlat: `${dataAbsensi.signout_longlat}`,
                               signout_pict: `${dataAbsensi[0].signout_pict}`,
-                              signout_note: `${dataAbsensi.sign_note}`,
+                              signout_note: `${dataAbsensi.signout_note}`,
                               signout_addr: `${dataAbsensi[0].signout_addr}`,
                             };
 
@@ -12665,7 +12665,38 @@ module.exports = {
                                 }
                               }
                             );
-                            if (lastItem.breakin_time == "00:00:00") {
+                            if (dataAbsensi[0].dari_jam != '00:00:00'){
+                              var data = {
+                                signin_time: `${dataAbsensi[0].dari_jam}`,
+                                place_in: `${dataAbsensi[0].place_in}`,
+                                signin_longlat: `${dataAbsensi.signin_longlat}`,
+                                signin_pict: `${dataAbsensi[0].signin_pict}`,
+                                signin_note: `${dataAbsensi.signin_note}`,
+                                signin_addr: `${dataAbsensi[0].signin_addr}`,
+                              };
+                              connection.query(
+                                queryNew,
+                                [data],
+                                (err, results) => {
+                                  if (err) {
+                                    console.error(
+                                      "Error executing UPDATE statement:",
+                                      err
+                                    );
+                                    connection.rollback(() => {
+                                      connection.end();
+                                      return res.status(400).send({
+                                        status: true,
+                                        message: "terjadi kesalahan",
+                                        data: [],
+                                      });
+                                    });
+                                    return;
+                                  }
+                                }
+                              );
+                            }
+                            if (dataAbsensi[0].breakin_time != '00:00:00') {
                               var data = {
                                 breakin_time: `${
                                   dataAbsensi[0].breakin_time ?? "00:00:00"
@@ -12699,7 +12730,7 @@ module.exports = {
                                 }
                               );
                             }
-                            if (lastItem.breakout_time == "00:00:00") {
+                            if (dataAbsensi[0].breakin_time != '00:00:00') {
                               var data = {
                                 breakout_time: `${
                                   dataAbsensi[0].breakout_time ?? "00:00:00"
