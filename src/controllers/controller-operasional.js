@@ -8754,7 +8754,7 @@ module.exports = {
 
             var queryTerlambat = `WITH RankedAttendance1 AS (
                 SELECT *, 
-                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
+                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
               
                        ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
                 FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
@@ -8804,7 +8804,7 @@ module.exports = {
             }
             queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE TBL.cuti IS NULL`;
 
-            console.log(queryTerlambat);
+            console.log('ini query terlambat yakk',queryTerlambat);
 
             const [terlambat] = await connection.query(queryTerlambat);
             console.log("masuk sini ", terlambat.length);
@@ -9238,7 +9238,7 @@ module.exports = {
 
               var queryPulangCepaat = `  WITH RankedAttendance1 AS (
           SELECT *, 
-          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
+          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
         
                  ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
           FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
