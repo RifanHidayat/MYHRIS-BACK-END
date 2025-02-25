@@ -205,6 +205,7 @@ router.post('/get-employee-attendance', operasional.getEmployeeAttendance);
 router.post('/delete-employee-attendance', operasional.UpdateEmployeeAttendance);
 router.post('/approval-employee-attendance', operasional.ApprovalAbsensi);
 router.post('/load_cuti_melahirkan', operasional.loadCutiMelahirkan);
+router.post('/masuk_prod3', operasional.masukProd3);
 
 // router.post('/emp-claim-saldo', claim.claimSaldo);
 // router.post('/bpjs-kesehatan',payroll.bpjsKesehatan);

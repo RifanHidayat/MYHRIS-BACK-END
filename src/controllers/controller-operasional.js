@@ -2861,7 +2861,7 @@ module.exports = {
       // return;
       if (menu_name == "Lembur" || menu_name == "Tugas Luar") {
         nameTable = "emp_labor";
-        if(bodyValue.alasan1 == ''){
+        if (bodyValue.alasan1 == "") {
           delete bodyValue.alasan1;
         }
       }
@@ -3519,7 +3519,7 @@ module.exports = {
         nameTable = "emp_labor";
         delete bodyValue.tasks;
         delete bodyValue.total_persentase;
-        if(bodyValue.alasan1 == ''){
+        if (bodyValue.alasan1 == "") {
           delete bodyValue.alasan1;
         }
       }
@@ -7027,7 +7027,7 @@ module.exports = {
      
      `;
 
-    console.log('query update employee',query);
+    console.log("query update employee", query);
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
@@ -8754,7 +8754,7 @@ module.exports = {
 
             var queryTerlambat = `WITH RankedAttendance1 AS (
                 SELECT *, 
-                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
+                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
               
                        ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
                 FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
@@ -8804,7 +8804,7 @@ module.exports = {
             }
             queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE TBL.cuti IS NULL`;
 
-            console.log(queryTerlambat);
+            console.log('ini query terlambat yakk',queryTerlambat);
 
             const [terlambat] = await connection.query(queryTerlambat);
             console.log("masuk sini ", terlambat.length);
@@ -9238,7 +9238,7 @@ module.exports = {
 
               var queryPulangCepaat = `  WITH RankedAttendance1 AS (
           SELECT *, 
-          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
+          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
         
                  ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
           FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
@@ -11397,7 +11397,7 @@ module.exports = {
     console.log("body absensi ", req.body);
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
     // if (startDate != "") {
-    //   queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance 
+    //   queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance
     //   WHERE em_id='${emId}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC LIMIT 1;`;
     // } else {
     // }
@@ -12626,7 +12626,7 @@ module.exports = {
                           var id_record = lastItem.id;
                           var queryNew = `UPDATE ${namaDatabaseDynamic}.attendance SET ? WHERE id='${id_record}'`;
                           console.log(lastItem);
-                          console.log('ini data absensi ',dataAbsensi);
+                          console.log("ini data absensi ", dataAbsensi);
 
                           if (
                             lastItem.signout_longlat == "" ||
@@ -12665,7 +12665,7 @@ module.exports = {
                                 }
                               }
                             );
-                            if (dataAbsensi[0].dari_jam != '00:00:00'){
+                            if (dataAbsensi[0].dari_jam != "00:00:00") {
                               var data = {
                                 signin_time: `${dataAbsensi[0].dari_jam}`,
                                 place_in: `${dataAbsensi[0].place_in}`,
@@ -12696,7 +12696,7 @@ module.exports = {
                                 }
                               );
                             }
-                            if (dataAbsensi[0].breakin_time != '00:00:00') {
+                            if (dataAbsensi[0].breakin_time != "00:00:00") {
                               var data = {
                                 breakin_time: `${
                                   dataAbsensi[0].breakin_time ?? "00:00:00"
@@ -12730,7 +12730,7 @@ module.exports = {
                                 }
                               );
                             }
-                            if (dataAbsensi[0].breakin_time != '00:00:00') {
+                            if (dataAbsensi[0].breakin_time != "00:00:00") {
                               var data = {
                                 breakout_time: `${
                                   dataAbsensi[0].breakout_time ?? "00:00:00"
@@ -16436,7 +16436,7 @@ GROUP BY TBL.full_name`;
       date[1]
     }`;
 
-    var query1 = `SELECT terpakai FROM ${databaseDynamic}.assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
+    var query1 = `SELECT * FROM ${databaseDynamic}.assign_leave WHERE em_id='${em_id}' ORDER BY dateyear DESC  `;
     console.log(query1);
     const configDynamic = {
       multipleStatements: true,
@@ -16457,17 +16457,77 @@ GROUP BY TBL.full_name`;
       connection.query(query1, function (error, results) {
         if (error != null) console.log(error);
         console.log(results);
-        var terpakaiUser = results[0].terpakai;
-        var hitung = parseInt(terpakaiUser) + parseInt(terpakai);
-        var query2 = `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}' WHERE em_id='${em_id}'`;
-        console.log(query2);
-        connection.query(query2, function (error, results1) {
-          res.send({
-            status: true,
-            message: "Berhasil Potong cuti!",
-            data: results1,
+        let terpakaiUser = parseInt(results[0].terpakai);
+        let cutiTahunLalu = parseInt(results[0].saldo_cuti_tahun_lalu);
+        let terpakaiTahunLalu = parseInt(results[0].terpakai_cuti_tahun_lalu);
+        let sisaCutiTahunLalu = cutiTahunLalu - terpakaiTahunLalu;
+        let potongCuti = parseInt(terpakai);
+        let sisaCuti = parseInt(results[0].sisa_cuti);
+        let sisa = sisaCuti - potongCuti;
+        if (sisaCutiTahunLalu > 0) {
+          if (sisaCutiTahunLalu >= potongCuti) {
+            let hitung = terpakaiTahunLalu + potongCuti;
+            let query2 = `UPDATE ${databaseDynamic}.assign_leave SET terpakai_cuti_tahun_lalu='${hitung}', sisa_cuti=${sisa} WHERE em_id='${em_id}'`;
+            connection.query(query2, function (error, results1) {
+              if (error) {
+                return res.status(500).send({
+                  status: false,
+                  message: "Gagal memproses cuti!",
+                  error: error.message,
+                });
+              }
+              res.send({
+                status: true,
+                message: "Berhasil potong cuti dari saldo tahun lalu!",
+                data: results1,
+              });
+            });
+          } else {
+            let terpakaiDariTahunLalu = sisaCutiTahunLalu;
+            let terpakaiDariTahunIni = potongCuti - sisaCutiTahunLalu;
+
+            let hitungTahunLalu = terpakaiTahunLalu + terpakaiDariTahunLalu;
+            let hitungTahunIni = terpakaiUser + terpakaiDariTahunIni;
+
+            let query2 = `UPDATE ${databaseDynamic}.assign_leave 
+                          SET terpakai_cuti_tahun_lalu='${hitungTahunLalu}', terpakai='${hitungTahunIni}' , sisa_cuti=${sisa}
+                          WHERE em_id='${em_id}'`;
+
+            connection.query(query2, function (error, results1) {
+              if (error) {
+                return res.status(500).send({
+                  status: false,
+                  message: "Gagal memproses cuti!",
+                  error: error.message,
+                });
+              }
+              res.send({
+                status: true,
+                message:
+                  "Berhasil potong cuti sebagian dari saldo tahun lalu dan sisanya dari tahun ini!",
+                data: results1,
+              });
+            });
+          }
+        } else {
+          let hitung = terpakaiUser + potongCuti;
+          let query2 = `UPDATE ${databaseDynamic}.assign_leave SET terpakai='${hitung}', sisa_cuti=${sisa} WHERE em_id='${em_id}'`;
+
+          connection.query(query2, function (error, results1) {
+            if (error) {
+              return res.status(500).send({
+                status: false,
+                message: "Gagal memproses cuti!",
+                error: error.message,
+              });
+            }
+            res.send({
+              status: true,
+              message: "Berhasil potong cuti dari saldo tahun ini!",
+              data: results1,
+            });
           });
-        });
+        }
       });
       connection.release();
     });
@@ -18357,6 +18417,57 @@ GROUP BY TBL.full_name`;
       });
     }
   },
+
+  async masukProd3(req, res) {
+    console.log("---------masuk prod3----------------");
+  
+    const database = req.query.database;
+    const valueBody = req.body;
+  
+    const ms = Date.now();
+    const d = new Date(ms);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const date = `${year}-${month}-${day}`;
+    console.log(valueBody);
+    console.log("date now", date);
+    console.log(database);
+
+    const convertYear = String(year).substring(2, 4);
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${month}`;
+    console.log(namaDatabaseDynamic);
+  
+    try {
+      const connection = await model.createConnection1(namaDatabaseDynamic);
+      await connection.beginTransaction();
+      const queryInsert = `INSERT INTO prod3 SET ?`;
+      const results = await connection.query(queryInsert, [valueBody]);
+      await connection.commit();
+      await connection.end();
+      console.log("Transaction completed successfully!");
+      return res.status(200).send({
+        status: true,
+        message: "Successfully inserted data into prod3",
+        data: [],
+      });
+  
+    } catch (err) {
+      console.error("Error occurred:", err);
+  
+      if (err.connection) {
+        await err.connection.rollback();
+        await err.connection.end();
+      }
+  
+      return res.status(400).send({
+        status: false,
+        message: "Gagal memproses data",
+        data: [],
+      });
+    }
+  }
+  
 };
 
 // var query = `SELECT employee.first_name, employee.last_name, leave_types.name, emp_leave.* FROM emp_leave LEFT JOIN employee ON employee.em_id=emp_leave.em_id LEFT JOIN leave_types ON leave_types.type_id=emp_leave.typeid WHERE emp_leave.em_delegation='${em_id}' AND emp_leave.leave_status='Pending'`

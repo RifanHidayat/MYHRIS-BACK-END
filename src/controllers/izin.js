@@ -234,9 +234,9 @@ WHERE e.em_id = '${req.body.em_id}'
                             return;
                           }
                           console.log(`Masuk 3 ${results}`);
-                          if (results.length > 0) {
-                            error = true;
-                          }
+                          // if (results.length > 0) {
+                          //   error = true;
+                          // }
                           console.log("errro", error);
                           if (error == false) {
                             console.log("kemari kag");
