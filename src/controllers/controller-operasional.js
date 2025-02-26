@@ -9841,22 +9841,6 @@ module.exports = {
               var statusSpName = "";
               var statussp = "";
               var idSp = "";
-              if (pulangCepat.length >= parseInt(sysdata[1].name)) {
-                statusSpName = "Surat Peringatan 1";
-                (statussp = "sp1"), (idSp = "2");
-              }
-
-              if (pulangCepat.length >= parseInt(sysdata[3].name)) {
-                statusSpName = "Surat Peringatan 2";
-                statussp = "sp2";
-                idSp = "3";
-              }
-
-              if (pulangCepat.length >= parseInt(sysdata[3].name)) {
-                statusSpName = "Surat Peringatan 3";
-                statussp = "sp3";
-                idSp = "4";
-              }
 
               var nilai = "Y";
               if (nilai == "Y") {
@@ -9866,7 +9850,7 @@ module.exports = {
                   var approveStatus = "Pending";
                   const [cekDataSp] = await connection.query(
                     `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' 
-                    AND status= Approved AND CURDATE()<=exp_date`
+                    AND status= 'Approve' AND CURDATE()<=exp_date ORDER BY id DESC`
                   );
                   if (cekDataSp.length > 0) {
                     // suda dapat sp1
@@ -10089,7 +10073,7 @@ module.exports = {
                   var approveStatus = "Pending";
                   const [cekDataSp] = await connection.query(
                     `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' 
-                    AND status= Approved AND CURDATE()<=exp_date`
+                    AND status= 'Approve' AND CURDATE()<=exp_date ORDER BY id DESC`
                   );
                   if (cekDataSp.length > 0) {
                     // suda dapat sp1
