@@ -3955,10 +3955,10 @@ module.exports = {
 
                                   if (tipeSurat == "surat_peringatan") {
                                     console.log(
-                                      `SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`
+                                      `SELECT * FROM employee_letter WHERE exp_date>=CURDATE() AND status='Approve' em_id='${emId}' ORDER BY id DESC`
                                     );
                                     connection.query(
-                                      `SELECT * FROM employee_letter WHERE exp_date<=CURDATE() AND em_id='${emId}' ORDER BY id DESC`,
+                                      `SELECT * FROM employee_letter WHERE exp_date>=CURDATE() AND status='Approve' AND em_id='${emId}' ORDER BY id DESC`,
                                       (err, suratPeringatan) => {
                                         if (err) {
                                           console.error(
@@ -8804,7 +8804,7 @@ module.exports = {
             }
             queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE TBL.cuti IS NULL`;
 
-            console.log('ini query terlambat yakk',queryTerlambat);
+            console.log("ini query terlambat yakk", queryTerlambat);
 
             const [terlambat] = await connection.query(queryTerlambat);
             console.log("masuk sini ", terlambat.length);
@@ -8827,110 +8827,288 @@ module.exports = {
               namaDatabaseDynamic,
               namaDatabasMaster
             );
+            var nilai = "Y";
+            if (nilai == "Y") {
+              if (terlambat.length > parseInt(sysdata[1].name)) {
+                var status = "Pending";
+                var alasan = `Absen datang terlambat ${terlambat.length}x.`;
+                var approveStatus = "Pending";
+                var titleAbsen = "Absen Datang Terlambat";
 
-            if (terlambat.length == parseInt(sysdata[1].name)) {
-              statusSpName = "Surat Peringatan 1";
-              (statussp = "sp1"), (idSp = "2");
-            }
+                const [cekDataSp] =
+                  await connection.query(`SELECT * FROM employee_letter
+                   WHERE em_id='${req.body.em_id}' AND status = 'Approve'
+                   AND CURDATE()<=exp_date ORDER BY id DESC`);
 
-            if (terlambat.length == parseInt(sysdata[3].name)) {
-              statusSpName = "Surat Peringatan 2";
-              statussp = "sp2";
-              idSp = "3";
-            }
+                if (cekDataSp.length > 0) {
+                  // suda dapat sp1
+                  if (cekDataSp[0]["letter_id"] == "2") {
+                    //sp 2
+                    statusSpName = "Surat Peringatan 2";
+                    statussp = "sp2";
+                    idSp = "3";
+                    if (terlambat.length == parseInt(sysdata[3].name)) {
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan memberikan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
 
-            // if ((terlambat.length>=parseInt(sysdata[3].name))){
-            //   statusSpName="Surat Peringatan 3"
-            //   statussp="sp3"
-            //   idSp='4'
-            // }
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
 
-            if (terlambat.length == parseInt(sysdata[1].name)) {
-              var status = "Pending";
-              var alasan = "Absen datang terlambat";
-              var approveStatus = "Pending";
-              var titleAbsen = "Absen Datang Terlambat";
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
 
-              const [cekDataSp] =
-                await connection.query(`SELECT * FROM employee_letter
-                 WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') 
-                 AND alasan LIKE '%${alasan}%'
-                 AND eff_date >=CURDATE() AND CURDATE()<=exp_date AND title='${titleAbsen}' ORDER BY id DESC`);
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else if (terlambat.length == parseInt(sysdata[4].name)) {
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
 
-              if (cekDataSp.length > 0) {
-                // suda dapat sp1
-                if (cekDataSp[0]["letter_id"] == "2") {
-                  if (terlambat.length >= parseInt(sysdata[3].name)) {
-                    // SP 2
-                    deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                        `;
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
 
-                    const [dataSp] = await connection.query(
-                      `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
-                    );
-                    nomorSp = `SP${year}${convertBulan}`;
-                    if (dataSp.length > 0) {
-                      var text = dataSp[0]["nomor"];
-                      var nomor = parseInt(text.substring(9, 14)) + 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorSp = nomorSp + nomorStr;
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
                     } else {
-                      var nomor = 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorSp = nomorSp + nomorStr;
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
                     }
+                  } else if (cekDataSp[0]["letter_id"] >= "3") {
+                    statusSpName = "Surat Peringatan 3";
+                    statussp = "sp3";
+                    idSp = "4";
+                    if (terlambat.length == parseInt(sysdata[4].name)) {
+                      // SP 3
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
 
-                    const [data] =
-                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
-                 VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtgl2}') `);
-
-                    const [insertDetail] = await connection.query(
-                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
-                    );
-
-                    const [sysdataSP] = await connection.query(
-                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                    );
-                    if (sysdataSP.length > 0) {
-                      if (sysdataSP[0].name != null) {
-                        utility.insertNotifikasiAbsensiSp(
-                          sysdataSP[0].name,
-                          "Absensi Terlambat",
-                          statusAbsen,
-                          employee[0].em_id,
-                          "",
-                          sysdataSP[0].nomor,
-                          employee[0].full_name,
-                          namaDatabaseDynamic,
-                          namaDatabasMaster,
-                          statusSpName
-                        );
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
                       }
-                      if (sysdataSP[1].name != null) {
-                        utility.insertNotifikasiAbsensiSp(
-                          sysdataSP[1].name,
-                          "Absensi Terlambat",
-                          statusAbsen,
-                          employee[0].em_id,
-                          "",
-                          sysdataSP[0].nomor,
-                          employee[0].full_name,
-                          namaDatabaseDynamic,
-                          namaDatabasMaster,
-                          statusSpName
-                        );
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
                       }
+                    } else if (terlambat.length == parseInt(sysdata[3].name)) {
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan memberikan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else {
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
                     }
-                  } else {
-                    deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
-                      `;
                   }
-                } else if (cekDataSp[0]["letter_id"] == "3") {
-                  if (terlambat.length >= parseInt(sysdata[4].name)) {
-                    // SP 3
+                } else {
+                  statusSpName = "Surat Peringatan 1";
+                  statussp = "sp1";
+                  idSp = "2";
+                  if (
+                    cekDataSp[0]["letter_id"] == "2" ||
+                    cekDataSp[0]["letter_id"] >= "3"
+                  ) {
                     deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                        `;
-
+                    `;
                     const [dataSp] = await connection.query(
                       `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
                     );
@@ -8947,8 +9125,8 @@ module.exports = {
                     }
 
                     const [data] =
-                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
-                 VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${fixtgl}','','${status}','${approveStatus}','${titleAbsen}') `);
 
                     const [insertDetail] = await connection.query(
                       `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
@@ -8979,7 +9157,7 @@ module.exports = {
                           statusAbsen,
                           employee[0].em_id,
                           "",
-                          sysdataSP[0].nomor,
+                          "",
                           employee[0].full_name,
                           namaDatabaseDynamic,
                           namaDatabasMaster,
@@ -8987,83 +9165,449 @@ module.exports = {
                         );
                       }
                     }
-                  } else {
-                    deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
-                      `;
                   }
                 }
               } else {
-                // SP 1
-                deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                  `;
-                const [dataSp] = await connection.query(
-                  `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
-                );
-                nomorSp = `SP${year}${convertBulan}`;
-                if (dataSp.length > 0) {
-                  var text = dataSp[0]["nomor"];
-                  var nomor = parseInt(text.substring(9, 14)) + 1;
-                  var nomorStr = String(nomor).padStart(4, "0");
-                  nomorSp = nomorSp + nomorStr;
+                if (terlambat.length == parseInt(sysdata[1].name)) {
+                  var status = "Pending";
+                  var alasan = `Absen datang terlambat ${terlambat.length}x.`;
+                  var approveStatus = "Pending";
+                  var titleAbsen = "Absen Datang Terlambat";
+
+                  const [cekDataSp] =
+                    await connection.query(`SELECT * FROM employee_letter
+                   WHERE em_id='${req.body.em_id}' AND status = 'Approve'
+                   AND CURDATE()<=exp_date ORDER BY id DESC`);
+
+                  if (cekDataSp.length > 0) {
+                    // suda dapat sp1
+                    if (cekDataSp[0]["letter_id"] == "2") {
+                      //sp 2
+                      statusSpName = "Surat Peringatan 2";
+                      statussp = "sp2";
+                      idSp = "3";
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan memberikan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else if (cekDataSp[0]["letter_id"] >= "3") {
+                      statusSpName = "Surat Peringatan 3";
+                      statussp = "sp3";
+                      idSp = "4";
+                      // SP 3
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    }
+                  } else {
+                    // SP 1
+                    statusSpName = "Surat Peringatan 1";
+                    statussp = "sp1";
+                    idSp = "2";
+                    deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                    `;
+                    const [dataSp] = await connection.query(
+                      `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                    );
+                    nomorSp = `SP${year}${convertBulan}`;
+                    if (dataSp.length > 0) {
+                      var text = dataSp[0]["nomor"];
+                      var nomor = parseInt(text.substring(9, 14)) + 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    } else {
+                      var nomor = 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    }
+
+                    const [data] =
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${fixtgl}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                    const [insertDetail] = await connection.query(
+                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                    );
+
+                    const [sysdataSP] = await connection.query(
+                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                    );
+                    if (sysdataSP.length > 0) {
+                      if (sysdataSP[0].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[0].name,
+                          "Absensi Terlambat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          "",
+                          sysdataSP[0].nomor,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                      if (sysdataSP[1].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[1].name,
+                          "Absensi Terlambat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          "",
+                          "",
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                    }
+                  }
                 } else {
-                  var nomor = 1;
-                  var nomorStr = String(nomor).padStart(4, "0");
-                  nomorSp = nomorSp + nomorStr;
-                }
-
-                const [data] =
-                  await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
-                 VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${fixtgl}','','${status}','${approveStatus}','${titleAbsen}') `);
-
-                const [insertDetail] = await connection.query(
-                  `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
-                );
-                //  const [sysdataSP] = await connection.query(` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026)`);
-                // if (sysdataSP.length>0){
-
-                //   if (sysdataSP[0].name!=null){
-
-                //     utility.insertNotifikasiAbsensiSp(sysdataSP[0].name,'Absensi Terlambat',statusAbsen,employee[0].emId,'','',employee[0].full_name,namaDatabaseDynamic,namaDatabasMaster)
-
-                //   }
-
-                // }
-
-                const [sysdataSP] = await connection.query(
-                  ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                );
-                if (sysdataSP.length > 0) {
-                  if (sysdataSP[0].name != null) {
-                    utility.insertNotifikasiAbsensiSp(
-                      sysdataSP[0].name,
-                      "Absensi Terlambat",
-                      statusAbsen,
-                      employee[0].em_id,
-                      "",
-                      sysdataSP[0].nomor,
-                      employee[0].full_name,
-                      namaDatabaseDynamic,
-                      namaDatabasMaster,
-                      statusSpName
-                    );
-                  }
-                  if (sysdataSP[1].name != null) {
-                    utility.insertNotifikasiAbsensiSp(
-                      sysdataSP[1].name,
-                      "Absensi Terlambat",
-                      statusAbsen,
-                      employee[0].em_id,
-                      "",
-                      "",
-                      employee[0].full_name,
-                      namaDatabaseDynamic,
-                      namaDatabasMaster,
-                      statusSpName
-                    );
-                  }
                 }
               }
             } else {
+              if (terlambat.length == parseInt(sysdata[1].name)) {
+                statusSpName = "Surat Peringatan 1";
+                (statussp = "sp1"), (idSp = "2");
+              }
+
+              if (terlambat.length == parseInt(sysdata[3].name)) {
+                statusSpName = "Surat Peringatan 2";
+                statussp = "sp2";
+                idSp = "3";
+              }
+
+              if (terlambat.length == parseInt(sysdata[1].name)) {
+                var status = "Pending";
+                var alasan = "Absen datang terlambat";
+                var approveStatus = "Pending";
+                var titleAbsen = "Absen Datang Terlambat";
+
+                const [cekDataSp] =
+                  await connection.query(`SELECT * FROM employee_letter
+                   WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') 
+                   AND alasan LIKE '%${alasan}%'
+                   AND eff_date >=CURDATE() AND CURDATE()<=exp_date AND title='${titleAbsen}' ORDER BY id DESC`);
+
+                if (cekDataSp.length > 0) {
+                  // suda dapat sp1
+                  if (cekDataSp[0]["letter_id"] == "2") {
+                    if (terlambat.length >= parseInt(sysdata[3].name)) {
+                      // SP 2
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtgl2}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else {
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
+                    }
+                  } else if (cekDataSp[0]["letter_id"] == "3") {
+                    if (terlambat.length >= parseInt(sysdata[4].name)) {
+                      // SP 3
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else {
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
+                    }
+                  }
+                } else {
+                  // SP 1
+                  deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                    `;
+                  const [dataSp] = await connection.query(
+                    `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                  );
+                  nomorSp = `SP${year}${convertBulan}`;
+                  if (dataSp.length > 0) {
+                    var text = dataSp[0]["nomor"];
+                    var nomor = parseInt(text.substring(9, 14)) + 1;
+                    var nomorStr = String(nomor).padStart(4, "0");
+                    nomorSp = nomorSp + nomorStr;
+                  } else {
+                    var nomor = 1;
+                    var nomorStr = String(nomor).padStart(4, "0");
+                    nomorSp = nomorSp + nomorStr;
+                  }
+
+                  const [data] =
+                    await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${fixtgl}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                  const [insertDetail] = await connection.query(
+                    `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                  );
+                  //  const [sysdataSP] = await connection.query(` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026)`);
+                  // if (sysdataSP.length>0){
+
+                  //   if (sysdataSP[0].name!=null){
+
+                  //     utility.insertNotifikasiAbsensiSp(sysdataSP[0].name,'Absensi Terlambat',statusAbsen,employee[0].emId,'','',employee[0].full_name,namaDatabaseDynamic,namaDatabasMaster)
+
+                  //   }
+
+                  // }
+
+                  const [sysdataSP] = await connection.query(
+                    ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                  );
+                  if (sysdataSP.length > 0) {
+                    if (sysdataSP[0].name != null) {
+                      utility.insertNotifikasiAbsensiSp(
+                        sysdataSP[0].name,
+                        "Absensi Terlambat",
+                        statusAbsen,
+                        employee[0].em_id,
+                        "",
+                        sysdataSP[0].nomor,
+                        employee[0].full_name,
+                        namaDatabaseDynamic,
+                        namaDatabasMaster,
+                        statusSpName
+                      );
+                    }
+                    if (sysdataSP[1].name != null) {
+                      utility.insertNotifikasiAbsensiSp(
+                        sysdataSP[1].name,
+                        "Absensi Terlambat",
+                        statusAbsen,
+                        employee[0].em_id,
+                        "",
+                        "",
+                        employee[0].full_name,
+                        namaDatabaseDynamic,
+                        namaDatabasMaster,
+                        statusSpName
+                      );
+                    }
+                  }
+                }
+              } else {
+              }
             }
           }
         } else {
@@ -9197,20 +9741,6 @@ module.exports = {
               );
 
               const fixtgl = utility.dateConvert(tanggalSekarangsp1);
-              // utility.insertNotifikasi(sysdata[2].name,'Absensi Pulang Cepat',statusAbsen,"",employee[0].full_name,namaDatabaseDynamic,namaDatabasMaster)
-
-              //    var queryPulangCepaat=`WITH RankedAttendance AS (
-              //     SELECT *,
-              //            ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY id) AS row_num
-              //     FROM ${namaDatabaseDynamic}.attendance
-              // )
-              // SELECT *
-              // FROM RankedAttendance
-              // JOIN ${namaDatabaseDynamic}.emp_shift ON RankedAttendance.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance.atten_date
-              // LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
-              // WHERE row_num = 1 AND IFNULL(work_schedule.time_out,'18:00') < RankedAttendance.signout_time
-              // AND RankedAttendance.em_id='${em_id}'  AND RankedAttendance.signout_time!='00:00:00' `
-
               var startPeriode =
                 req.query.start_periode == undefined
                   ? "2024-02-03"
@@ -9292,57 +9822,7 @@ module.exports = {
               }
               queryPulangCepaat = `SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL`;
 
-              // if (montStart<monthEnd){
-
-              //     var queryTerlambat=`
-
-              //     WITH RankedAttendance1 AS (
-              //       SELECT *,
-              //       (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE
-              //         em_id='${em_id}' AND leave_status='Approve2'   AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
-              //              ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY id) AS row_num
-              //       FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}'  AND signout_time != '00:00:00' ORDER BY id DESC
-              //   ),ankedAttendance1 AS (
-              //     SELECT *,
-              //     (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE
-              //       em_id='${em_id}' AND leave_status='Approve2'   AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
-              //            ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY id) AS row_num
-              //     FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}'  AND signout_time != '00:00:00' ORDER BY id DESC
-
-              // )
-
-              // SELECT RankedAttendance1 .*, work_schedule.time_out AS jam_pulang, work_schedule.time_in AS jam_kerja
-              //   FROM RankedAttendance1
-              //   JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1 .em_id = emp_shift.em_id
-              //   AND emp_shift.atten_date = RankedAttendance1.atten_date
-
-              //   LEFT JOIN work_schedule ON emp_shift.work_id = work_schedule.id
-              //   WHERE RankedAttendance1 .row_num = 1
-              //   AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
-              //   AND RankedAttendance1 .em_id='${em_id}'  AND RankedAttendance1.signout_time!='00:00:00'   AND  RankedAttendance1.atten_date>='${startPeriode}' AND RankedAttendance1.atten_date<='${endPeriode}'
-
-              //   UNION ALL
-              //   SELECT RankedAttendance2 .*, work_schedule.time_out AS jam_pulang, work_schedule.time_in AS jam_kerja
-              //   FROM RankedAttendance2
-              //   JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance2 .em_id = emp_shift.em_id
-              //   AND emp_shift.atten_date = RankedAttendance2.atten_date
-
-              //   LEFT JOIN work_schedule ON emp_shift.work_id = work_schedule.id
-              //   WHERE RankedAttendance2 .row_num = 1
-              //   AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance2 .signout_time
-              //   AND RankedAttendance2 .em_id='${em_id}'  AND RankedAttendance2.signout_time!='00:00:00'   AND  RankedAttendance2.atten_date>='${startPeriode}' AND RankedAttendance.atten_date<='${endPeriode}'
-
-              //   `
-
-              //     ;
-
-              // }
-              // queryPulangCepaat=`SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL`
-
               const [pulangCepat] = await connection.query(queryPulangCepaat);
-
-              // const [pulangCepat] = await connection.query( ` SELECT * FROM ${namaDatabaseDynamic}.attendance JOIN ${namaDatabaseDynamic}.emp_shift  ON emp_shift.atten_date=attendance.atten_date
-              // AND attendance.em_id=emp_shift.em_id JOIN work_schedule ON work_schedule.id=emp_shift.work_id  WHERE attendance.em_id='${em_id}' AND work_schedule.time_out > attendance.signout_time  AND attendance.signout_time!='00:00:00' `);
 
               utility.insertNotifikasiAbsensi(
                 sysdata[2].name,
@@ -9378,231 +9858,660 @@ module.exports = {
                 idSp = "4";
               }
 
-              if (pulangCepat.length >= sysdata[1].name) {
-                var status = "Pending";
-                var alasan = "Absen Pulang cepat";
-                var approveStatus = "Pending";
-
-                const [cekDataSp] = await connection.query(
-                  `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') AND alasan LIKE '%${alasan}%'`
-                );
-
-                if (cekDataSp.length > 0) {
-                  // suda dapat sp1
-                  if (cekDataSp[0]["letter_id"] == "2") {
-                    if (pulangCepat.length >= parseInt(sysdata[3].name)) {
-                      // SP 2
-                      deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                          `;
-
-                      const [dataSp] = await connection.query(
-                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
-                      );
-                      nomorSp = `SP${year}${convertBulan}`;
-                      if (dataSp.length > 0) {
-                        var text = dataSp[0]["nomor"];
-                        var nomor = parseInt(text.substring(9, 14)) + 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorSp = nomorSp + nomorStr;
-                      } else {
-                        var nomor = 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorSp = nomorSp + nomorStr;
-                      }
-
-                      const [data] =
-                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
-                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
-
-                      const [insertDetail] = await connection.query(
-                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
-                      );
-
-                      const [sysdataSP] = await connection.query(
-                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                      );
-                      if (sysdataSP.length > 0) {
-                        if (sysdataSP[0].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
-                            sysdataSP[0].name,
-                            "Absensi Pulang Cepat",
-                            statusAbsen,
-                            employee[0].em_id,
-                            nomorSp,
-                            nomorSp,
-                            employee[0].full_name,
-                            namaDatabaseDynamic,
-                            namaDatabasMaster,
-                            statusSpName
-                          );
-                        }
-                        if (sysdataSP[1].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
-                            sysdataSP[1].name,
-                            "Absensi Pulang Cepat",
-                            statusAbsen,
-                            employee[0].em_id,
-                            nomorSp,
-                            nomorSp,
-                            employee[0].full_name,
-                            namaDatabaseDynamic,
-                            namaDatabasMaster,
-                            statusSpName
-                          );
-                        }
-                      }
-                    } else {
-                      deskription = `Anda sudah pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
-                        `;
-                    }
-                  }
-
-                  if (cekDataSp[0]["letter_id"] == "3") {
-                    if (pulangCepat.length >= parseInt(sysdata[4].name)) {
-                      // SP 3
-                      deskription = `Anda tercatat melakukan absensi datang pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                          `;
-
-                      const [dataSp] = await connection.query(
-                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
-                      );
-                      nomorSp = `SP${year}${convertBulan}`;
-                      if (dataSp.length > 0) {
-                        var text = dataSp[0]["nomor"];
-                        var nomor = parseInt(text.substring(9, 14)) + 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorSp = nomorSp + nomorStr;
-                      } else {
-                        var nomor = 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorSp = nomorSp + nomorStr;
-                      }
-
-                      const [data] =
-                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
-                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
-
-                      const [insertDetail] = await connection.query(
-                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
-                      );
-
-                      const [sysdataSP] = await connection.query(
-                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                      );
-                      if (sysdataSP.length > 0) {
-                        if (sysdataSP[0].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
-                            sysdataSP[0].name,
-                            "Absensi Pulang Cepat",
-                            statusAbsen,
-                            employee[0].em_id,
-                            nomorSp,
-                            nomorSp,
-                            employee[0].full_name,
-                            namaDatabaseDynamic,
-                            namaDatabasMaster,
-                            statusSpName
-                          );
-                        }
-                        if (sysdataSP[1].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
-                            sysdataSP[1].name,
-                            "Absensi Pulang Cepat",
-                            statusAbsen,
-                            employee[0].em_id,
-                            nomorSp,
-                            nomorSp,
-                            employee[0].full_name,
-                            namaDatabaseDynamic,
-                            namaDatabasMaster,
-                            statusSpName
-                          );
-                        }
-                      }
-                    } else {
-                      deskription = `Anda sudah absensi pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
-                        `;
-                    }
-                  }
-
-                  // if (cekDataSp[0]['staus']=="Pending" || cekDataSp[0]['staus']=="pending" ){
-                  //   deskription=`Anda tercatat melakukan absensi pulang cepat  ${pulangCepat.length}x. Kami akan mengeluarkan Surat Peringatan. Mohon perhatikan waktu absensi anda di lain kesempatan
-                  //   `
-
-                  // }else{
-
-                  //   deskription=`Anda tercatat melakukan absensi pulang cepat  ${pulangCepat.length}x.
-                  //   dan sudah menerima Surat Peringatan nomor ${cekDataSp[0].nomor}. mohon perhatikan waktu absensi anda di lain kesempatan
-                  //   `
-
-                  // }
-
-                  //logic Lembur
-                } else {
-                  deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
-                `;
-
-                  const [dataSp] = await connection.query(
-                    `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
-                  );
-
-                  nomorSp = `SP${year}${convertBulan}`;
-
-                  if (dataSp.length > 0) {
-                    var text = dataSp[0]["nomor"];
-                    var nomor = parseInt(text.substring(9, 14)) + 1;
-                    var nomorStr = String(nomor).padStart(4, "0");
-                    nomorSp = nomorSp + nomorStr;
-                  } else {
-                    var nomor = 1;
-                    var nomorStr = String(nomor).padStart(4, "0");
-                    nomorSp = nomorSp + nomorStr;
-                  }
-
+              var nilai = "Y";
+              if (nilai == "Y") {
+                if (pulangCepat.length > sysdata[1].name) {
                   var status = "Pending";
-                  var alasan = "Absen pulang cepat";
+                  var alasan = "Absen Pulang cepat";
                   var approveStatus = "Pending";
-                  var titleNew = "Absen Pulang Cepat";
-
-                  const [data] =
-                    await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
-                    VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${fixtgl}') `);
-
-                  const [insertDetail] = await connection.query(
-                    `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                  const [cekDataSp] = await connection.query(
+                    `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' 
+                    AND status= Approved AND CURDATE()<=exp_date`
                   );
+                  if (cekDataSp.length > 0) {
+                    // suda dapat sp1
+                    if (cekDataSp[0]["letter_id"] == "2") {
+                      statusSpName = "Surat Peringatan 2";
+                      statussp = "sp2";
+                      idSp = "3";
+                      if (pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name) ) {
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
 
-                  const [sysdataSP] = await connection.query(
-                    ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                  );
-                  if (sysdataSP.length > 0) {
-                    if (sysdataSP[0].name != null) {
-                      utility.insertNotifikasiAbsensiSp(
-                        sysdataSP[0].name,
-                        "Absensi Pulang Cepat",
-                        statusAbsen,
-                        employee[0].em_id,
-                        nomorSp,
-                        nomorSp,
-                        employee[0].full_name,
-                        namaDatabaseDynamic,
-                        namaDatabasMaster,
-                        statusSpName
-                      );
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
+                    } else if (cekDataSp[0]["letter_id"] == "3") {
+                      statusSpName = "Surat Peringatan 3";
+                      statussp = "sp3";
+                      idSp = "4";
+                      if (pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name)) {
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
                     }
-                    if (sysdataSP[1].name != null) {
-                      utility.insertNotifikasiAbsensiSp(
-                        sysdataSP[1].name,
-                        "Absensi Pulang Cepat",
-                        statusAbsen,
-                        employee[0].em_id,
-                        nomorSp,
-                        nomorSp,
-                        employee[0].full_name,
-                        namaDatabaseDynamic,
-                        namaDatabasMaster,
-                        statusSpName
-                      );
+                  } else {
+                    statusSpName = "Surat Peringatan 1";
+                      statussp = "sp1";
+                      idSp = "2";
+                    if (pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name)) {
+                      deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                  `;
+
+                    const [dataSp] = await connection.query(
+                      `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
+                    );
+
+                    nomorSp = `SP${year}${convertBulan}`;
+
+                    if (dataSp.length > 0) {
+                      var text = dataSp[0]["nomor"];
+                      var nomor = parseInt(text.substring(9, 14)) + 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    } else {
+                      var nomor = 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    }
+
+                    var status = "Pending";
+                    var alasan = "Absen pulang cepat";
+                    var approveStatus = "Pending";
+                    var titleNew = "Absen Pulang Cepat";
+
+                    const [data] =
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                      VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${fixtgl}') `);
+
+                    const [insertDetail] = await connection.query(
+                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                    );
+
+                    const [sysdataSP] = await connection.query(
+                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                    );
+                    if (sysdataSP.length > 0) {
+                      if (sysdataSP[0].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[0].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                      if (sysdataSP[1].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[1].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                    }
+                    }
+                  }
+                } else {
+                  if (pulangCepat.length == parseInt(sysdata[1].name)) {
+                    var status = "Pending";
+                  var alasan = "Absen Pulang cepat";
+                  var approveStatus = "Pending";
+                  const [cekDataSp] = await connection.query(
+                    `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' 
+                    AND status= Approved AND CURDATE()<=exp_date`
+                  );
+                  if (cekDataSp.length > 0) {
+                    // suda dapat sp1
+                    if (cekDataSp[0]["letter_id"] == "2") {
+                      statusSpName = "Surat Peringatan 2";
+                      statussp = "sp2";
+                      idSp = "3";
+                     
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      
+                    } else if (cekDataSp[0]["letter_id"] == "3") {
+                      statusSpName = "Surat Peringatan 3";
+                      statussp = "sp3";
+                      idSp = "4";
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      
+                    }
+                  } else {
+                    statusSpName = "Surat Peringatan 1";
+                      statussp = "sp1";
+                      idSp = "2";
+                      deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                  `;
+
+                    const [dataSp] = await connection.query(
+                      `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
+                    );
+
+                    nomorSp = `SP${year}${convertBulan}`;
+
+                    if (dataSp.length > 0) {
+                      var text = dataSp[0]["nomor"];
+                      var nomor = parseInt(text.substring(9, 14)) + 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    } else {
+                      var nomor = 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    }
+
+                    var status = "Pending";
+                    var alasan = "Absen pulang cepat";
+                    var approveStatus = "Pending";
+                    var titleNew = "Absen Pulang Cepat";
+
+                    const [data] =
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                      VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${fixtgl}') `);
+
+                    const [insertDetail] = await connection.query(
+                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                    );
+
+                    const [sysdataSP] = await connection.query(
+                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                    );
+                    if (sysdataSP.length > 0) {
+                      if (sysdataSP[0].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[0].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                      if (sysdataSP[1].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[1].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                    }
+                    
+                  }
+                  }
+                }
+              } else {
+                if (pulangCepat.length >= sysdata[1].name) {
+                  var status = "Pending";
+                  var alasan = "Absen Pulang cepat";
+                  var approveStatus = "Pending";
+
+                  const [cekDataSp] = await connection.query(
+                    `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') AND alasan LIKE '%${alasan}%'`
+                  );
+
+                  if (cekDataSp.length > 0) {
+                    // suda dapat sp1
+                    if (cekDataSp[0]["letter_id"] == "2") {
+                      if (pulangCepat.length == parseInt(sysdata[3].name)) {
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
+                    }
+
+                    if (cekDataSp[0]["letter_id"] == "3") {
+                      if (pulangCepat.length >= parseInt(sysdata[4].name)) {
+                        // SP 3
+                        deskription = `Anda tercatat melakukan absensi datang pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah absensi pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
+                    }
+                  } else {
+                    deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                  `;
+
+                    const [dataSp] = await connection.query(
+                      `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
+                    );
+
+                    nomorSp = `SP${year}${convertBulan}`;
+
+                    if (dataSp.length > 0) {
+                      var text = dataSp[0]["nomor"];
+                      var nomor = parseInt(text.substring(9, 14)) + 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    } else {
+                      var nomor = 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    }
+
+                    var status = "Pending";
+                    var alasan = "Absen pulang cepat";
+                    var approveStatus = "Pending";
+                    var titleNew = "Absen Pulang Cepat";
+
+                    const [data] =
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                      VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${fixtgl}') `);
+
+                    const [insertDetail] = await connection.query(
+                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                    );
+
+                    const [sysdataSP] = await connection.query(
+                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                    );
+                    if (sysdataSP.length > 0) {
+                      if (sysdataSP[0].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[0].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                      if (sysdataSP[1].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[1].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
                     }
                   }
                 }
@@ -18420,10 +19329,10 @@ GROUP BY TBL.full_name`;
 
   async masukProd3(req, res) {
     console.log("---------masuk prod3----------------");
-  
+
     const database = req.query.database;
     const valueBody = req.body;
-  
+
     const ms = Date.now();
     const d = new Date(ms);
     const year = d.getFullYear();
@@ -18437,7 +19346,7 @@ GROUP BY TBL.full_name`;
     const convertYear = String(year).substring(2, 4);
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${month}`;
     console.log(namaDatabaseDynamic);
-  
+
     try {
       const connection = await model.createConnection1(namaDatabaseDynamic);
       await connection.beginTransaction();
@@ -18451,23 +19360,21 @@ GROUP BY TBL.full_name`;
         message: "Successfully inserted data into prod3",
         data: [],
       });
-  
     } catch (err) {
       console.error("Error occurred:", err);
-  
+
       if (err.connection) {
         await err.connection.rollback();
         await err.connection.end();
       }
-  
+
       return res.status(400).send({
         status: false,
         message: "Gagal memproses data",
         data: [],
       });
     }
-  }
-  
+  },
 };
 
 // var query = `SELECT employee.first_name, employee.last_name, leave_types.name, emp_leave.* FROM emp_leave LEFT JOIN employee ON employee.em_id=emp_leave.em_id LEFT JOIN leave_types ON leave_types.type_id=emp_leave.typeid WHERE emp_leave.em_delegation='${em_id}' AND emp_leave.leave_status='Pending'`
