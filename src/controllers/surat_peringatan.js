@@ -481,7 +481,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                           status == "Approved" ||
                           status == "Approve"
                         ) {
-                          var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].judul}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
+                          var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].alasan}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
                           console.log(employee[0]);
   
                           utility.insertNotifikasiGlobal(
