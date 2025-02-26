@@ -328,13 +328,6 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
             });
             return;
           }
-          if (results.length == 0) {
-            return res.status(400).send({
-              status: false,
-              message: "Terjadi kesalahan",
-              data: [],
-            });
-          }
           connection.commit((err) => {
             if (err) {
               console.error("Error committing transaction:", err);
