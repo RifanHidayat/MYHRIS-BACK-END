@@ -36,13 +36,17 @@ module.exports = {
             return;
           }
           var querySuratPeringatan = 
-          `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, 
+          `SELECT letter.name AS sp,
+          e1.full_name AS nama,
+          e1.job_title AS posisi, 
+          e2.full_name AS yang_menerbitkan,
 employee_letter.* , 
 CASE 
            WHEN elv.employee_letter_id IS NOT NULL THEN 1 
            ELSE 0 
          END AS is_view 
-FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id 
+FROM employee_letter JOIN employee e1 ON employee_letter.em_id=e1.em_id
+LEFT JOIN employee e2 ON employee_letter.diterbitkan_oleh = e2.em_id
 LEFT JOIN letter ON letter.id=employee_letter.letter_id 
 LEFT JOIN employee_letter_view elv 
     ON elv.employee_letter_id = employee_letter.id 
