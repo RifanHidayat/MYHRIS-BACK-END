@@ -34,13 +34,18 @@ module.exports = {
             return;
           }
 
-          var queryTeguranLisan = `SELECT letter.name AS sp,employee.full_name AS nama,employee.job_title AS posisi, 
+          var queryTeguranLisan = `SELECT letter.name AS sp,
+          e1.full_name AS nama,
+          e1.job_title AS posisi,
+          e2.full_name AS yang_menerbitkan, 
+          
 teguran_lisan.* , 
 CASE 
            WHEN elv.teguran_lisan_id IS NOT NULL THEN 1 
            ELSE 0 
          END AS is_view 
-FROM teguran_lisan JOIN employee ON teguran_lisan.em_id=employee.em_id 
+FROM teguran_lisan JOIN employee e1 ON teguran_lisan.em_id=e1.em_id 
+LEFT JOIN employee e2 ON teguran_lisan.diterbitkan_oleh=e2.em_id 
 LEFT JOIN letter ON letter.id=teguran_lisan.letter_id 
 LEFT JOIN teguran_lisan_view elv 
     ON elv.teguran_lisan_id = teguran_lisan.id 
