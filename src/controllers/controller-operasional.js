@@ -3499,7 +3499,7 @@ module.exports = {
         req.body.approve2_id == undefined ||
         req.body.approve2_id == ""
           ? req.body.approve_id
-          : req.body.approve_id;
+          : req.body.approve2_id;
       var leaveTypes =
         req.body.leave_type == undefined ? "" : req.body.leave_type;
       var typeId = req.body.typeid == undefined ? "" : req.body.typeid;
@@ -8756,7 +8756,7 @@ module.exports = {
                 SELECT *, 
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
               
-                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
+                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                 FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
             )
             SELECT RankedAttendance1.* 
@@ -8776,12 +8776,12 @@ module.exports = {
                   SELECT *, 
                   (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
                 
-                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
+                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                   FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
               ),RankedAttendance2 AS (
                 SELECT *,
                 (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
-                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
+                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                 FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
             )
 
@@ -9442,8 +9442,8 @@ module.exports = {
           SELECT *, 
           (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
         
-                 ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
-          FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
+                 ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
+          FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
       )
       SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
@@ -9451,6 +9451,7 @@ module.exports = {
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1  AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
         AND RankedAttendance1.em_id='${em_id}'   
+        AND RankedAttendance1.signout_time != '00:00:00'
         AND  RankedAttendance1.atten_date>='${startPeriode}' AND RankedAttendance1.atten_date<='${endPeriode}'`;
 
               if (
@@ -9463,12 +9464,12 @@ module.exports = {
             SELECT *, 
             (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
           
-                   ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
+                   ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
             FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
         ),RankedAttendance2 AS (
           SELECT *,
           (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
-                 ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id) AS row_num
+                 ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
           FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
           
       ) 
@@ -9494,6 +9495,7 @@ module.exports = {
               }
               queryPulangCepaat = `SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL`;
 
+              console.log('ini query pulang cepat ', queryPulangCepaat);
               const [pulangCepat] = await connection.query(queryPulangCepaat);
 
               utility.insertNotifikasiAbsensi(

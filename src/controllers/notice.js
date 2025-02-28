@@ -37,7 +37,7 @@ module.exports = {
     END AS is_view
 FROM notice n
 LEFT JOIN notice_view v ON v.notice_id = n.id
-WHERE n.branch_id LIKE '%${branchId}%';
+WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_date >= CURDATE()
 `;
 
     console.log("url accouncemnt", url);
