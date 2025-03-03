@@ -1275,7 +1275,7 @@ WHERE e.em_id = '${req.body.em_id}'
             }
 
             connection.query(
-              `SELECT (adjust_cuti+total_day-terpakai) as sisa_cuti,assign_leave.* FROM assign_leave WHERE dateyear='${tahun}' AND em_id='${emId}'`,
+              `SELECT * FROM ${finalDatabase}.assign_leave WHERE em_id='${emId}'`,
               (err, total) => {
                 if (err) {
                   console.error("Error executing SELECT statement:", err);
@@ -1302,16 +1302,14 @@ WHERE e.em_id = '${req.body.em_id}'
                     });
                     return;
                   }
-                  console.log(
-                    `SELECT (total_day-terpakai) as sisa_cuti FROM assign_leave WHERE dateyear='${tahun}' AND em_id='${emId}'`
-                  );
                   connection.end();
                   console.log("Transaction completed successfully!");
+                  console.log("ini total cuti", total);
                   return res.status(200).send({
                     status: true,
                     message: "Data berhasil di ambil",
 
-                    sisa_cuti: total.length > 0 ? total[0].sisa_cuti : 0,
+                    sisa_cuti: total[0].sisa_cuti,
                     data: pulangCepat,
                     filter: "approve",
                   });

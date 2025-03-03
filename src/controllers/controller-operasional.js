@@ -8527,11 +8527,11 @@ module.exports = {
 
     //    poolDynamic.getConnection(function (err, connection) {
 
-    if (startDate != "") {
-      queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC ;`;
-    } else {
-      queryCek = `SELECT * FROM attendance WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.tanggal_absen}' ORDER By id DESC`;
-    }
+    // if (startDate != "") {
+    //   queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC ;`;
+    // } else {
+      queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.tanggal_absen}' ORDER By id DESC`;
+    // }
 
     try {
       // Memulai transaksi
@@ -8677,14 +8677,19 @@ module.exports = {
             jam1.setMinutes(jam1.getMinutes() + 1);
             const jam2 = new Date(`${dateNow}T${jamAbsen}`); // 2:30 PM
 
-            if (jam2 > jam1) {
-              const selisihWaktu = jam1.getTime() - jam2.getTime();
-              // Menghitung selisih dalam menit
-              const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
-              title = "Absen Datang Terlambat";
-              deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
-              isNotif = true;
-              statusAbsen = "terlambat";
+            var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = ${dateNow} AND leave_status = 'Approve2' AND time_plan <= ${jamAbsen}`;
+            const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+
+            if (cekIzin.length == 0){
+              if (jam2 > jam1) {
+                const selisihWaktu = jam1.getTime() - jam2.getTime();
+                // Menghitung selisih dalam menit
+                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+                title = "Absen Datang Terlambat";
+                deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
+                isNotif = true;
+                statusAbsen = "terlambat";
+              }
             }
           }
           await connection.query(
@@ -9388,16 +9393,21 @@ module.exports = {
               jam1.setMinutes(jam1.getMinutes() + 1);
               const jam2 = new Date(`${dateNow}T${jamAbsen}`); // jam pulang
 
-              if (jam2 < jam1) {
-                const selisihWaktu = jam1.getTime() - jam2.getTime();
+              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = ${dateNow} AND leave_status = 'Approve2' AND time_plan <= ${jamAbsen}`;
+              const [cekIzin] = await connection.query(queryCekIzinTerlambat);
 
-                // Menghitung selisih dalam menit
-                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
-
-                title = "Absen Pulang Cepat";
-                deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
-                isNotif = true;
-                statusAbsen = "pulang_cepat";
+              if (cekIzin == 0){
+                if (jam2 < jam1) {
+                  const selisihWaktu = jam1.getTime() - jam2.getTime();
+  
+                  // Menghitung selisih dalam menit
+                  const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+  
+                  title = "Absen Pulang Cepat";
+                  deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
+                  isNotif = true;
+                  statusAbsen = "pulang_cepat";
+                }
               }
             }
 
