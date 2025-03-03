@@ -1470,7 +1470,7 @@ module.exports = {
     const convertYear = tahun.substring(2, 4);
     const convertBulan = array[1];
 
-    const namaDatabaseDynamic = `${database}_hrm2502`;
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startDate = req.body.start_date;
     var endDate = req.body.end_date;
@@ -1557,9 +1557,15 @@ module.exports = {
                     }
                   }
 
-                  var script = `SELECT places_coordinate.trx, attendance.* FROM ${namaDatabaseDynamic}.attendance LEFT JOIN ${database}_hrm.places_coordinate ON attendance.place_in=places_coordinate.place WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                  AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC LIMIT 1`;
-
+                  var script =`SELECT places_coordinate.trx, attendance.* 
+FROM  ${namaDatabaseDynamic}.attendance 
+LEFT JOIN ${database}_hrm.places_coordinate 
+  ON attendance.place_in = places_coordinate.place 
+WHERE em_id = '${em_id}' 
+  AND CONCAT(atten_date, ' ', signin_time) BETWEEN '${startDate} ${startTime}' AND '${endDate} ${endTime}'
+  AND atttype = '1' 
+ORDER BY id DESC 
+LIMIT 1`;
                   // if (sysdata.length>0){
 
                   //   const array2 = sysdata[0].name.split(",");
