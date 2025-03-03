@@ -169,7 +169,7 @@ bodyValue.tgl_ajuan=dateNow
                               return;
                             }
 
-                            connection.query(`SELECT * FROM sysdata WHERE WHERE kode='034'`,
+                            connection.query(`SELECT * FROM sysdata WHERE kode='034'`,
                          (err, sysdata) => {
                             if (err) {
                               console.error('Error executing SELECT statement:', err);
@@ -186,7 +186,7 @@ bodyValue.tgl_ajuan=dateNow
                             }
 
                     utility.insertNotifikasi(employee[0].em_report_to,'Approval Tugas Luar','TugasLuar',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
-                    utility.insertNotifikasi(sysdata[0].em_report_to,'Pengajuan  Tugas Luar','TugasLuar',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
+                    utility.insertNotifikasi(sysdata[0].name,'Pengajuan  Tugas Luar','TugasLuar',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
                          
                     if (sysdata.length>0){
                               if (sysdata[0].name==null){

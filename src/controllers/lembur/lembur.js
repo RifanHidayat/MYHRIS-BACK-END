@@ -1,14 +1,14 @@
-const config = require("../configs/database");
+const config = require("./../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require("sha1");
 const e = require("express");
-const utility = require("./../utils/utility");
+const utility = require("./../../utils/utility");
 // const faceApiService = require('./faceapiService');
 
 var request = require("request");
 
-const model = require("../utils/models");
+const model = require("../../utils/models");
 const { emit } = require("nodemon");
 
 pool.on("error", (err) => {

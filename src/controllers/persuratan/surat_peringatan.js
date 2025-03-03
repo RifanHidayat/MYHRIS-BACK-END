@@ -1,14 +1,14 @@
-const config = require("../configs/database");
+const config = require("../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require("sha1");
-const utility = require("./../utils/utility");
+const utility = require("../../utils/utility");
 const e = require("express");
 // const faceApiService = require('./faceapiService');
 
 var request = require("request");
 
-const model = require("../utils/models");
+const model = require("../../utils/models");
 require("dotenv").config();
 
 var ipServer = process.env.API_URL;
