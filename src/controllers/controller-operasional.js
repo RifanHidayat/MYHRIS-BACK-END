@@ -32,7 +32,6 @@ pool.on("error", (err) => {
 const SftpClient = require("ssh2-sftp-client");
 const sftp = new SftpClient();
 const { emit } = require("process");
-const lembur = require("./lembur");
 const configSftp = {
   host: "imagehris.siscom.id",
   port: 3322, // Default SFTP port is 22
@@ -7013,6 +7012,7 @@ module.exports = {
     (SELECT NAME FROM sysdata WHERE kode='001') AS periode_awal,
     (SELECT NAME FROM sysdata WHERE kode='040') AS durasi_absen_masuk,
     (SELECT NAME FROM sysdata WHERE kode='041') AS durasi_absen_keluar,
+    (SELECT NAME FROM sysdata WHERE kode= '038') AS tipe_alpha,
     a.em_tracking  AS is_tracking,
     branch_id,
     a.file_face,
