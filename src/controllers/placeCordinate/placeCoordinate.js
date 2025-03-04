@@ -1,3 +1,5 @@
+const models = require("../../utils/models");
+
 module.exports = {
   async PalceCoordinate(req, res) {
     console.log("---------place coodinate----------------");
@@ -33,7 +35,7 @@ module.exports = {
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     try {
-      const connection = await model.createConnection(database);
+      const connection = await models.createConnection(database);
       connection.connect((err) => {
         if (err) {
           console.error("Error connecting to the database:", err);

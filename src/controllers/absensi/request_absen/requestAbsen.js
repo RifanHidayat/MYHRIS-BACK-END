@@ -1,3 +1,4 @@
+const ipServer = process.env.API_URL;
 module.exports = {
     employeeAttendance(req, res) {
         console.log("-----Employee attemdamce  ----------");

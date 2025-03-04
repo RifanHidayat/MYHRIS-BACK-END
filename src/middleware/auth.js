@@ -55,8 +55,6 @@ module.exports = {
                 timeout: 60 * 60 * 1000,
                   }
               
-             
-              const mysql = require("mysql");
               const poolDynamic = mysql.createPool(configDynamic);
         
             poolDynamic.getConnection(function (err, connection) {
