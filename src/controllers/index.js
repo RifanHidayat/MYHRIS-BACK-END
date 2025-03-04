@@ -19,9 +19,13 @@ const peraturanPerusahaan = require('./persuratan/peraturan_perusahaan');
 const employee= require('./employee');
 const suratPeringatan= require('./persuratan/surat_peringatan');
 const teguranLisan= require('./persuratan/teguran_lisan');
-const notice= require('./notice');
+const notice= require('./pengumuman/notice');
 const pinjamanAsset= require('./peminjaman_asset');
 const cabang= require('./cabang');
+const info = require('./settings/info');
+const placeCoordinate = require('./placeCordinate/placeCoordinate');
+const placeCoordinatePengaju = require('./placeCordinate/placeCoordinatePengaju');
+const requestAbsen = require('./absensi/request_absen/requestAbsen');
 module.exports ={
 	operasional,
 	login,
@@ -37,5 +41,9 @@ module.exports ={
 	,suratPeringatan 
 	,pinjamanAsset,cabang,
 	teguranLisan,
-	notice
+	notice,
+	info,
+	placeCoordinate,
+	placeCoordinatePengaju,
+	requestAbsen
 };
