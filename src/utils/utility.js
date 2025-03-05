@@ -236,6 +236,47 @@ module.exports = {
       }
     });
   },
+  pushNotifikasiApproval2(
+    token,
+    titile,
+    message,
+    url,
+    emIdPengajuan,
+    idx,
+    nomorAjuan
+  ) {
+    if (token == "" || token == null) {
+    } else {
+      var token = `${token}`;
+      var title = `${titile}`;
+      var message = message;
+      var nomorAjuan = nomorAjuan;
+
+      var message = {
+        data: {
+          route: url,
+          em_id_pengajuan: emIdPengajuan,
+          idx: idx.toString(),
+        },
+
+        notification: {
+          title: `${title}`,
+          body: `${message}`,
+        },
+        token: token,
+      };
+
+      console.log(message);
+
+      FCM.send(message, function (err, response) {
+        if (err) {
+          console.log("error found notif", err);
+        } else {
+          console.log("response here notif", response);
+        }
+      });
+    }
+  },
 
   async insertNotifikasi(
     emIds,
@@ -246,151 +287,164 @@ module.exports = {
     nomorAjuan,
     namaPegajuan,
     databasePeriode,
-    databseMaster
+    databaseMaster
   ) {
-    function pushNotifikasiApproval(
-      token,
-      titile,
-      message,
-      url,
-      emIdPengajuan,
-      idx,
-      nomorAjuan
-    ) {
-      if (token == "" || token == null) {
-      } else {
-        var token = `${token}`;
-        var title = `${titile}`;
-        var message = message;
-        var nomorAjuan = nomorAjuan;
-
-        var message = {
-          data: {
-            route: url,
-            em_id_pengajuan: emIdPengajuan,
-            idx: idx.toString(),
-          },
-
-          notification: {
-            title: `${title}`,
-            body: `${message}`,
-          },
-          token: token,
-        };
-
-        console.log(message);
-
-        FCM.send(message, function (err, response) {
-          if (err) {
-            console.log("error found notif", err);
-          } else {
-            console.log("response here notif", response);
+    console.log("masuk ke fungsi notifikasi ", databasePeriode);
+    console.log("emIds ", emIds);
+  
+    const listData = emIds.toString().split(",");
+  
+    let connection;
+  
+    try {
+      connection = await (await model.createConnection1(databaseMaster)).getConnection();
+      await connection.beginTransaction();
+  
+      for (const emId of listData) {
+        if (emId) {
+          console.log("Memproses em_id:", emId);
+  
+          const queryEmployee = `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`;
+          const [employees] = await connection.query(queryEmployee, [emId]);
+  
+          if (employees.length === 0) {
+            console.warn(`Employee dengan ID ${emId} tidak ditemukan.`);
+            continue;
           }
-        });
+  
+          const employee = employees[0];
+          const deskripsi = `${namaPegajuan} mengajukan ${
+            url === "TugasLuar" ? "Tugas Luar" : url
+          } dengan nomor ${nomorAjuan}`;
+  
+          const queryInsert = `
+            INSERT INTO ${databasePeriode}.notifikasi 
+            (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan, idx) 
+            VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 2, 0, ?, ?)
+          `;
+  
+          const insertValues = [
+            employee.em_id,
+            title,
+            deskripsi,
+            url,
+            emIdPengajuan,
+            idx,
+          ];
+  
+          await connection.query(queryInsert, insertValues);
+  
+          // Memanggil notifikasi approval
+          this.pushNotifikasiApproval2(
+            employee.token_notif,
+            title,
+            deskripsi,
+            url,
+            emIdPengajuan,
+            idx,
+            nomorAjuan
+          );
+        }
+      }
+  
+      await connection.commit();
+      console.log("Transaction completed successfully!");
+  
+    } catch (err) {
+      console.error("Error occurred:", err);
+  
+      if (connection) {
+        await connection.rollback();
+      }
+  
+    } finally {
+      if (connection) {
+        connection.release();
       }
     }
+  },
 
-    console.log("masuk ke funcsi notifikasi ", databasePeriode);
-    console.log("emids ", emIds);
-
-    var listData = emIds.toString().split(",");
-
+  async insertNotifikasiApproval(
+    emIds,
+    title,
+    url,
+    emIdPengajuan,
+    idx,
+    nomorAjuan,
+    namaPegajuan,
+    databasePeriode,
+    databaseMaster
+  ) {
+    console.log("masuk ke fungsi notifikasi ", databasePeriode);
+    console.log("emIds ", emIds);
+  
+    const listData = emIds.toString().split(",");
+  
+    let connection;
+  
     try {
-      const connection = await model.createConnection1(databseMaster);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
+      connection = await (await model.createConnection1(databaseMaster)).getConnection();
+      await connection.beginTransaction();
+  
+      for (const emId of listData) {
+        if (emId) {
+          console.log("Memproses em_id:", emId);
+  
+          const queryEmployee = `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`;
+          const [employees] = await connection.query(queryEmployee, [emId]);
+  
+          if (employees.length === 0) {
+            console.warn(`Employee dengan ID ${emId} tidak ditemukan.`);
+            continue;
+          }
+  
+          const employee = employees[0];
+          var deskripsi = `${employee.full_name} mengajukan ${
+            url == "TugasLuar" ? "Tugas Luar" : url
+          } dengan nomor  ${nomorAjuan}`;
+          var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
+                VALUES ('${employee.em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
+          console.log(query);
+  
+          const insertValues = [
+            employee.em_id,
+            title,
+            deskripsi,
+            url,
+            emIdPengajuan,
+            idx,
+          ];
+  
+          await connection.query(queryInsert);
+  
+          // Memanggil notifikasi approval
+          this.pushNotifikasiApproval2(
+            employee.token_notif,
+            title,
+            deskripsi,
+            url,
+            emIdPengajuan,
+            idx,
+            nomorAjuan
+          );
         }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          console.log("masuk sini new");
-          for (var i = 0; i < listData.length; i++) {
-            if (listData[i] == "" || listData[i] == null) {
-            } else {
-              console.log("masuk sini");
-
-              var queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`;
-
-              connection.query(queryEmployee, (err, e) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    // return res.status(400).send({
-                    //   status: true,
-                    //   message: 'Data gagal terkirim',
-                    //   data:results
-
-                    // });
-                  });
-                  return;
-                }
-                // var deskripsi=`Hello ${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, Saya ${namaPegajuan} - ${emIdPengajuan} mengajukan ${url=="TugasLuar"?"Tugas Luar":url} dengan nomor ajuan ${nomorAjuan}`
-                var deskripsi = `${namaPegajuan} mengajukan ${
-                  url == "TugasLuar" ? "Tugas Luar" : url
-                } dengan nomor  ${nomorAjuan}`;
-
-                var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-                 VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
-                console.log(query);
-                connection.query(query, (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      // return res.status(400).send({
-                      //   status: true,
-                      //   message: 'Data gagal terkirim',
-                      //   data:results
-
-                      // });
-                    });
-                    return;
-                  }
-                  pushNotifikasiApproval(
-                    e[0].token_notif,
-                    title,
-                    deskripsi,
-                    url,
-                    emIdPengajuan,
-                    idx
-                  );
-                });
-              });
-            }
-          }
-
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                // connection.end();
-                // return res.status(400).send({
-                //   status: true,
-                //   message: 'Data gagal terkirim',
-                //   data:[]
-
-                // });
-              });
-              return;
-            }
-            // connection.end();
-            console.log("Transaction completed successfully!");
-            // return res.status(200).send({
-            //   status: true,
-            //   message: 'data berhasil terkirm',
-
-            // });
-          });
-        });
-      });
-    } catch (e) {}
+      }
+  
+      await connection.commit();
+      console.log("Transaction completed successfully!");
+  
+    } catch (err) {
+      console.error("Error occurred:", err);
+  
+      if (connection) {
+        await connection.rollback();
+      }
+  
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
   },
 
   async insertNotifikasiGlobal(
@@ -407,297 +461,86 @@ module.exports = {
   ) {
     function pushNotifikasiApprovalGlobal(
       token,
-      titile,
+      title,
       message,
       url,
       emIdPengajuan,
       idx,
       nomorAjuan
     ) {
-      if (token == "" || token == null) {
-      } else {
-        var token = `${token}`;
-        var title = `${titile}`;
-        var message = message;
-        var nomorAjuan = nomorAjuan;
-
-        var message = {
+      if (token) {
+        const notificationMessage = {
           data: {
             route: url,
             em_id_pengajuan: emIdPengajuan,
             idx: idx.toString(),
           },
-
           notification: {
-            title: `${title}`,
-            body: `${message}`,
+            title: title,
+            body: message,
           },
           token: token,
         };
-
-        console.log(message);
-
-        FCM.send(message, function (err, response) {
+        FCM.send(notificationMessage, (err, response) => {
           if (err) {
-            console.log("error found notif", err);
+            console.log("Error sending notification:", err);
           } else {
-            console.log("response here notif", response);
+            console.log("Notification sent successfully:", response);
           }
         });
       }
     }
-
-    console.log("masuk ke funcsi notifikasi ", databasePeriode);
-    console.log("emids ", emIds);
-
-    var listData = emIds.toString().split(",");
-
+  
+    console.log("Initializing notification process", databasePeriode);
+  
+    const listData = emIds.toString().split(",");
+  
     try {
-      const connection = await model.createConnection1(databseMaster);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
+      const pool = await model.createConnection1(databseMaster);
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+  
+      const employeeQueries = listData
+        .filter((emId) => emId)
+        .map((emId) =>
+          connection
+            .promise()
+            .query(
+              `SELECT * FROM ${databseMaster}.employee WHERE em_id='${emId}'`
+            )
+        );
+  
+      const employeeResults = await Promise.all(employeeQueries);
+      const insertQueries = [];
+  
+      for (const [e] of employeeResults) {
+        if (e.length > 0) {
+          const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
+            VALUES ('${e[0].em_id}','${title}','${description}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
+  
+          insertQueries.push(connection.promise().query(query));
+  
+          pushNotifikasiApprovalGlobal(
+            e[0].token_notif,
+            title,
+            description,
+            url,
+            emIdPengajuan,
+            idx,
+            nomorAjuan
+          );
         }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          console.log("masuk sini new");
-          for (var i = 0; i < listData.length; i++) {
-            if (listData[i] == "" || listData[i] == null) {
-            } else {
-              console.log("masuk sini");
-
-              var queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`;
-
-              connection.query(queryEmployee, (err, e) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    // return res.status(400).send({
-                    //   status: true,
-                    //   message: 'Data gagal terkirim',
-                    //   data:results
-
-                    // });
-                  });
-                  return;
-                }
-                // var deskripsi=`Hello ${e[0].em_gender=='PRIA'?"Bapak":e[0].em_gender=='Wanita'?'Ibu':""} ,${e[0].full_name}, Saya ${namaPegajuan} - ${emIdPengajuan} mengajukan ${url=="TugasLuar"?"Tugas Luar":url} dengan nomor ajuan ${nomorAjuan}`
-                var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-                  VALUES ('${e[0].em_id}','${title}','${description}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
-                console.log(query);
-                connection.query(query, (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      // return res.status(400).send({
-                      //   status: true,
-                      //   message: 'Data gagal terkirim',
-                      //   data:results
-
-                      // });
-                    });
-                    return;
-                  }
-                  pushNotifikasiApprovalGlobal(
-                    e[0].token_notif,
-                    title,
-                    description,
-                    url,
-                    emIdPengajuan,
-                    idx
-                  );
-                });
-              });
-            }
-          }
-
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                // return res.status(400).send({
-                //   status: true,
-                //   message: 'Data gagal terkirim',
-                //   data:[]
-
-                // });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            // return res.status(200).send({
-            //   status: true,
-            //   message: 'data berhasil terkirm',
-
-            // });
-          });
-        });
-      });
-    } catch (e) {}
-  },
-
-  async insertNotifikasiApproval(
-    emIds,
-    title,
-    url,
-    emIdPengajuan,
-    idx,
-    nomorAjuan,
-    namaPegajuan,
-    databasePeriode,
-    databseMaster
-  ) {
-    function pushNotifikasiApproval(
-      token,
-      titile,
-      message,
-      url,
-      emIdPengajuan,
-      idx,
-      nomorAjuan
-    ) {
-      if (token == "" || token == null) {
-      } else {
-        var token = `${token}`;
-        var title = `${titile}`;
-        var message = message;
-        var nomorAjuan = nomorAjuan;
-
-        var message = {
-          data: {
-            route: url,
-            em_id_pengajuan: emIdPengajuan,
-            idx: idx.toString(),
-          },
-
-          notification: {
-            title: `${title}`,
-            body: `${message}`,
-          },
-          token: token,
-        };
-
-        console.log(message);
-
-        FCM.send(message, function (err, response) {
-          if (err) {
-            console.log("error found notif", err);
-          } else {
-            console.log("response here notif", response);
-          }
-        });
       }
+  
+      await Promise.all(insertQueries);
+      await connection.promise().commit();
+      console.log("Transaction completed successfully!");
+    } catch (err) {
+      console.error("Error during transaction:", err);
+      if (connection) await connection.promise().rollback();
+    } finally {
+      if (connection) connection.end();
     }
-
-    console.log("masuk ke funcsi notifikasi ", databasePeriode);
-    console.log("emids ", emIds);
-
-    var listData = emIds.toString().split(",");
-
-    try {
-      const connection = await model.createConnection1(databseMaster);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          console.log("masuk sini new");
-          for (var i = 0; i < listData.length; i++) {
-            if (listData[i] == "" || listData[i] == null) {
-            } else {
-              console.log("masuk sini");
-
-              var queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`;
-
-              connection.query(queryEmployee, (err, e) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    // return res.status(400).send({
-                    //   status: true,
-                    //   message: 'Data gagal terkirim',
-                    //   data:results
-
-                    // });
-                  });
-                  return;
-                }
-                var deskripsi = `${e[0].full_name} mengajukan ${
-                  url == "TugasLuar" ? "Tugas Luar" : url
-                } dengan nomor  ${nomorAjuan}`;
-                var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-                      VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
-                console.log(query);
-                connection.query(query, (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      // return res.status(400).send({
-                      //   status: true,
-                      //   message: 'Data gagal terkirim',
-                      //   data:results
-
-                      // });
-                    });
-                    return;
-                  }
-                  pushNotifikasiApproval(
-                    e[0].token_notif,
-                    title,
-                    deskripsi,
-                    url,
-                    emIdPengajuan,
-                    idx
-                  );
-                });
-              });
-            }
-          }
-
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                // return res.status(400).send({
-                //   status: true,
-                //   message: 'Data gagal terkirim',
-                //   data:[]
-
-                // });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            // return res.status(200).send({
-            //   status: true,
-            //   message: 'data berhasil terkirm',
-
-            // });
-          });
-        });
-      });
-    } catch (e) {}
   },
   notifikasiChat(
     token,
@@ -746,345 +589,194 @@ module.exports = {
     nomorAjuan,
     namaPegajuan,
     databasePeriode,
-    databseMaster
-  ) {
-    var cekData = {
-      emIds: emIds,
-    title: title,
-    url: url,
-    emIdPengajuan: emIdPengajuan,
-    idx: idx,
-    nomorAjuan: nomorAjuan,
-    namaPegajuan: namaPegajuan,
-    databasePeriode: databasePeriode,
-    databseMaster: databseMaster
+    databaseMaster
+) {
+    try {
+        console.log("Membuat koneksi ke database...");
+
+        const pool = await model.createConnection1(databaseMaster);
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        console.log("Mulai transaksi untuk notifikasi absensi");
+
+        // Mendapatkan data pegawai yang mengajukan
+        const [employeeData] = await connection.query(
+            `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`,
+            [emIdPengajuan]
+        );
+
+        if (employeeData.length === 0) {
+            throw new Error("Data pegawai pengajuan tidak ditemukan");
+        }
+        
+        const employee = employeeData[0];
+        const listData = emIds.toString().split(",").filter(id => id); // Hanya ID yang valid
+
+        for (const emId of listData) {
+            // Mendapatkan data karyawan yang akan menerima notifikasi
+            const [receivers] = await connection.query(
+                `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`,
+                [emId]
+            );
+
+            if (receivers.length === 0) {
+                console.warn(`Data pegawai dengan em_id ${emId} tidak ditemukan`);
+                continue;
+            }
+
+            const receiver = receivers[0];
+            let deskripsi = `${employee.full_name} `;
+
+            if (url === "terlambat") {
+                deskripsi += "absen terlambat";
+            } else {
+                deskripsi += "absen pulang cepat";
+            }
+
+            const queryInsertNotifikasi = `
+                INSERT INTO ${databasePeriode}.notifikasi 
+                (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan)
+                VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 2, 0, ?)
+            `;
+
+            await connection.query(queryInsertNotifikasi, [
+                receiver.em_id,
+                title,
+                deskripsi,
+                url,
+                emIdPengajuan
+            ]);
+
+            this.pushNotifikasiApproval2(
+                receiver.token_notif,
+                title,
+                deskripsi,
+                url,
+                emIdPengajuan,
+                idx
+            );
+        }
+
+        await connection.commit();
+        console.log("Transaksi notifikasi absensi berhasil disimpan!");
+        
+
+    } catch (error) {
+        console.error("Gagal menyimpan notifikasi absensi:", error.message);
+    } finally {
+
+    }
+},
+
+async insertNotifikasiAbsensiSp(
+  emIds,
+  title,
+  url,
+  emIdPengajuan,
+  idx,
+  nomorAjuan,
+  namaPegajuan,
+  databasePeriode,
+  databseMaster,
+  nameSp
+) {
+  console.log("database master ", databseMaster);
+  console.log("database periode ", databasePeriode);
+
+  function pushNotifikasiApproval(token, title, message, url, emIdPengajuan, idx, nomorAjuan) {
+    if (!token) return;
+
+    const messageData = {
+      data: {
+        route: url,
+        em_id_pengajuan: "",
+        idx: idx.toString(),
+      },
+      notification: {
+        title,
+        body: message,
+      },
+      token,
     };
 
-    console.log("cek data ", cekData);
-    console.log("database master ", databseMaster);
-    console.log("database periode ", databasePeriode);
-    function pushNotifikasiApproval(
-      token,
-      titile,
-      message,
-      url,
-      emIdPengajuan,
-      idx,
-      nomorAjuan
-    ) {
-      if (token == "" || token == null) {
-      } else {
-        var token = `${token}`;
-        var title = `${titile}`;
-        var message = message;
-        var nomorAjuan = nomorAjuan;
-        var message = {
-          data: {
-            route: url,
-            em_id_pengajuan: "",
-            idx: idx.toString(),
-          },
-          notification: {
-            title: `${title}`,
-            body: `${message}`,
-          },
-          token: token,
-        };
-        console.log(message);
-        FCM.send(message, function (err, response) {
-          if (err) {
-            console.log("error found notif", err);
-          } else {
-            console.log("response here notif", response);
-          }
-        });
+    console.log(messageData);
+
+    FCM.send(messageData, (err, response) => {
+      if (err) console.log("error found notif", err);
+      else console.log("response here notif", response);
+    });
+  }
+
+  const listData = emIds.toString().split(",").filter(Boolean);
+  console.log(listData);
+
+  try {
+    const connection = await model.createConnection1(databseMaster);
+    connection.connect((err) => {
+      if (err) {
+        console.error("Error connecting to the database:", err);
+        return;
       }
-    }
-    var listData = emIds.toString().split(",");
-    try {
-      console.log(listData);
-      const connection = await model.createConnection1(databseMaster);
-      connection.connect((err) => {
+
+      connection.beginTransaction((err) => {
         if (err) {
-          console.error("Error connecting to the database:", err);
+          console.error("Error beginning transaction:", err);
+          connection.end();
           return;
         }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          console.log("masuk sini new notifikasi absensi");
-          var queryGetEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${emIdPengajuan}'`;
-          connection.query(queryGetEmployee, (err, employe) => {
+        console.log("Processing notifikasi absensi");
+
+        listData.forEach((emId) => {
+          const queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${emId}'`;
+          connection.query(queryEmployee, (err, employees) => {
             if (err) {
               console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                // return res.status(400).send({
-                //   status: true,
-                //   message: 'Data gagal terkirim',
-                //   data:results
-                // });
-              });
+              connection.rollback(() => connection.end());
               return;
             }
-            for (var i = 0; i < listData.length; i++) {
-              if (listData[i] == "" || listData[i] == null) {
-              } else {
-                console.log("masuk sini");
-                var queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`;
-                connection.query(queryEmployee, (err, e) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      // return res.status(400).send({
-                      //   status: true,
-                      //   message: 'Data gagal terkirim',
-                      //   data:results
-                      // });
-                    });
-                    return;
-                  }
-                  var deskripsi = `Hello ${
-                    e[0].em_gender == "PRIA"
-                      ? "Bapak"
-                      : e[0].em_gender == "Wanita"
-                      ? "Ibu"
-                      : ""
-                  } ,${
-                    e[0].full_name
-                  }, Saya ${namaPegajuan} - ${emIdPengajuan}  ${
-                    url == "terlambat"
-                      ? "Absen Datang terlambat"
-                      : "Absen Pulang Cepat"
-                  } `;
-                  if (url == "terlambat") {
-                    deskripsi = `${employe[0].full_name} absen terlambat`;
-                  } else {
-                    deskripsi = `${employe[0].full_name} absen pulang cepat`;
-                  }
-                  var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan)
-                      VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}')`;
-                  console.log(query);
-                  connection.query(query, (err, results) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        // return res.status(400).send({
-                        //   status: true,
-                        //   message: 'Data gagal terkirim',
-                        //   data:results
-                        // });
-                      });
-                      return;
-                    }
-                    pushNotifikasiApproval(
-                      e[0].token_notif,
-                      title,
-                      deskripsi,
-                      url,
-                      emIdPengajuan,
-                      idx
-                    );
-                  });
-                });
-              }
+
+            const employee = employees[0];
+            const salutation = employee.em_gender === "PRIA" ? "Bapak" : employee.em_gender === "Wanita" ? "Ibu" : "";
+
+            let deskripsi = `${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`;
+
+            if (url === "terlambat") {
+              deskripsi = `Hi ${employee.full_name}, karyawan dengan ${namaPegajuan} akan diberikan surat peringatan Absen Datang terlambat.`;
+            } else if (url === "tidak_masuk_kerja") {
+              deskripsi = `Hi ${employee.full_name}, karyawan dengan ${namaPegajuan} akan diberikan surat peringatan tidak masuk kerja.`;
             }
-            connection.commit((err) => {
+
+            const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan)
+              VALUES ('${employee.em_id}', '${title}', '${deskripsi}', '${url}', CURDATE(), CURTIME(), 2, 0, '${emIdPengajuan}')`;
+            console.log(query);
+
+            connection.query(query, (err) => {
               if (err) {
-                console.error("Error committing transaction:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  // return res.status(400).send({
-                  //   status: true,
-                  //   message: 'Data gagal terkirim',
-                  //   data:[]
-                  // });
-                });
+                console.error("Error executing INSERT statement:", err);
+                connection.rollback(() => connection.end());
                 return;
               }
-              connection.end();
-              console.log("Transaction completed successfully!");
-              // return res.status(200).send({
-              //   status: true,
-              //   message: 'data berhasil terkirm',
-              // });
-            });
-          })
-          
-        });
-      });
-    } catch (e) {}
-  },
 
-  async insertNotifikasiAbsensiSp(
-    emIds,
-    title,
-    url,
-    emIdPengajuan,
-    idx,
-    nomorAjuan,
-    namaPegajuan,
-    databasePeriode,
-    databseMaster,
-    nameSp
-  ) {
-    console.log("database master ", databseMaster);
-    console.log("database periode ", databasePeriode);
-    function pushNotifikasiApproval(
-      token,
-      titile,
-      message,
-      url,
-      emIdPengajuan,
-      idx,
-      nomorAjuan
-    ) {
-      if (token == "" || token == null) {
-      } else {
-        var token = `${token}`;
-        var title = `${titile}`;
-        var message = message;
-        var nomorAjuan = nomorAjuan;
-        var message = {
-          data: {
-            route: url,
-            em_id_pengajuan: "",
-            idx: idx.toString(),
-          },
-          notification: {
-            title: `${title}`,
-            body: `${message}`,
-          },
-          token: token,
-        };
-        console.log(message);
-        FCM.send(message, function (err, response) {
-          if (err) {
-            console.log("error found notif", err);
-          } else {
-            console.log("response here notif", response);
-          }
-        });
-      }
-    }
-    var listData = emIds.toString().split(",");
-    try {
-      console.log(listData);
-      const connection = await model.createConnection1(databseMaster);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          console.log("masuk sini new notifikasi absensi");
-          for (var i = 0; i < listData.length; i++) {
-            if (listData[i] == "" || listData[i] == null) {
-            } else {
-              console.log("masuk sini");
-              var queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${listData[i]}'`;
-              connection.query(queryEmployee, (err, e) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    // return res.status(400).send({
-                    //   status: true,
-                    //   message: 'Data gagal terkirim',
-                    //   data:results
-                    // });
-                  });
-                  return;
-                }
-                var deskripsi = `${
-                  e[0].em_gender == "PRIA"
-                    ? "Bapak"
-                    : e[0].em_gender == "Wanita"
-                    ? "Ibu"
-                    : ""
-                } ,${
-                  e[0].full_name
-                }, karyawan dengan ${namaPegajuan} - ${emIdPengajuan}  ${
-                  url == "terlambat"
-                    ? "akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleranssi yang di berikan"
-                    : " akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"
-                } `;
-                if (url == "terlambat") {
-                  //  deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
-                  deskripsi = `Hi ${
-                    e[0].full_name
-                  }, mau kasih info, karyawan dengan ${namaPegajuan} ${
-                    url == "terlambat"
-                      ? "akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan"
-                      : " akan di berik4an surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"
-                  }`;
-                  deskripsi = `${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`;
-                } else if (url == "tidak_masuk_kerja") {
-                  deskripsi = `Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan} ,Akan diberikan surat peringatan tidak masuk kerja karna telah melebihi toleransi yang di berikan`;
-                } else {
-                  deskripsi = `${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`;
-                  // deskripsi=`Hi ${e[0].full_name}, mau kasih info, karyawan dengan ${namaPegajuan}  ${url=="terlambat"?"akan diberikan surat peringatan Absen Datang terlambat karna telah melebihi toleransi yang di berikan":" akan di berikan surat peringatan Absen Pulang Cepat karna telah melebihi toleransi yang di berikan"}`
-                }
-                var query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan)
-                    VALUES ('${e[0].em_id}','${title}','${deskripsi}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}')`;
-                console.log(query);
-                connection.query(query, (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      // return res.status(400).send({
-                      //   status: true,
-                      //   message: 'Data gagal terkirim',
-                      //   data:results
-                      // });
-                    });
-                    return;
-                  }
-                  pushNotifikasiApproval(
-                    e[0].token_notif,
-                    title,
-                    deskripsi,
-                    url,
-                    emIdPengajuan,
-                    idx
-                  );
-                });
-              });
-            }
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                // return res.status(400).send({
-                //   status: true,
-                //   message: 'Data gagal terkirim',
-                //   data:[]
-                // });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            // return res.status(200).send({
-            //   status: true,
-            //   message: 'data berhasil terkirm',
-            // });
+              pushNotifikasiApproval(employee.token_notif, title, deskripsi, url, emIdPengajuan, idx);
+            });
           });
         });
+
+        connection.commit((err) => {
+          if (err) {
+            console.error("Error committing transaction:", err);
+            connection.rollback(() => connection.end());
+            return;
+          }
+          connection.end();
+          console.log("Transaction completed successfully!");
+        });
       });
-    } catch (e) {}
-  },
+    });
+  } catch (e) {
+    console.error("Error during notifikasi processing:", e);
+  }
+},
+
 };

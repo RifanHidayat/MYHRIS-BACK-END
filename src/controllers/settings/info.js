@@ -1,10 +1,12 @@
+const models = require("../../utils/models");
+
 module.exports = {
   async info_sisa_kontrak(req, res) {
     console.log("-----sisa kontrak---------");
     var database = req.query.database;
     var branchId = req.headers.branch_id;
 
-    const connection = await model.createConnection(database);
+    const connection = await models.createConnection(database);
     var reminder = req.body.reminder;
 
     console.log();

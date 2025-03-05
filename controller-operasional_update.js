@@ -28,6 +28,7 @@ pool.on("error", (err) => {
 });
 const SftpClient = require('ssh2-sftp-client');
 const { data } = require("@tensorflow/tfjs-node");
+const models = require("./src/utils/models");
 const configSftp = {
   host: 'imagehris.siscom.id',
   port: 3322, // Default SFTP port is 22
@@ -2979,7 +2980,7 @@ async slip_gaji(req, res) {
       timeout: 60 * 60 * 1000,
     };
     const mysql = require('mysql2/promise');
-    const poolDynamic = mysql.createPool(configDynamic);
+    const poolDynamic = await models.createConnection1(database);
 
     const connection = await poolDynamic.getConnection();
     var em_id = req.body.em_id;
