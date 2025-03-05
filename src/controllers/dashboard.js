@@ -118,12 +118,17 @@ module.exports = {
         });
       }
 
+      const { time_in, time_out } = records[0];
+
     console.log("Transaction work schedule completed successfully!");
     await connection.commit();
     return res.status(200).send({
         status: true,
         message: "Data berhasil diambil",
-        data: records,
+        data: {
+          time_in,
+          time_out
+        }
     });
           
     } catch (e) {

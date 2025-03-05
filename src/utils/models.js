@@ -54,8 +54,8 @@ module.exports = {
              timezone: "+00:00",
              database:`${database}_hrm`,
              connectionLimit: 20,
-             connectTimeout: 10000, // 1 jam dalam milidetik
-             acquireTimeout: 30000,  // 1 jam
+             connectTimeout: 10000, 
+             acquireTimeout: 30000,  
            waitForConnections: true,
    queueLimit: 50, // Tidak membatasi antrean koneksi
           });
@@ -78,10 +78,9 @@ module.exports = {
                 waitForConnections: true, // Menunggu antrean jika koneksi penuh
             });
     
-            // Menguji koneksi dengan Promise
             const connection = await pool.getConnection();
             console.log("Koneksi database berhasil!");
-            connection.release(); // Lepaskan koneksi kembali ke pool
+            connection.release();
     
             return pool;
         } catch (error) {

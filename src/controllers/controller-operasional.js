@@ -13434,6 +13434,7 @@ a.leave_type,
 a.ajuan,
 a.apply_id,
 a.typeid,
+c.cut_leave,
 c.input_time,
       d.name AS nama_divisi, a.nomor_ajuan, c.name as nama_penagjuan,  b.em_report_to as em_report_to,  
      b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category FROM ${namaDatabaseDynamic}.emp_leave a 
