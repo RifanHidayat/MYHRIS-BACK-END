@@ -101,10 +101,10 @@ module.exports = {
                     var data = records[0].places.split(",");
 
                     connection.query(
-                      ` SELECT * FROM places_coordinate WHERE trx ='${tugasLuar[0].nomor_ajuan.substring(
+                      ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(
                         0,
                         2
-                      )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0'`,
+                      )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`,
                       (err, palceCoordinate) => {
                         if (err) {
                           console.error(
@@ -147,7 +147,7 @@ module.exports = {
                     );
                   } else {
                     connection.query(
-                      ` SELECT * FROM places_coordinate WHERE  em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0'`,
+                      ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`,
                       (err, palceCoordinate) => {
                         if (err) {
                           console.error(

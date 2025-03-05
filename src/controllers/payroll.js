@@ -9,7 +9,8 @@ const utility=require('./../utils/utility')
 
 var request = require('request');
 
-const model = require('../utils/models');
+// const model = require('../utils/models');
+const models = require("../utils/models");
 
 
 pool.on("error", (err) => {
@@ -31,19 +32,8 @@ module.exports = {
 
           
           var month=req.body.bulan
-          const configDynamic = {
-            multipleStatements: true,
-            host: ipServer,//my${database}.siscom.id (ip local)
-            user: 'pro',
-            password: 'Siscom3519',
-            database: `${database}_hrm`,
-            connectionLimit: 10000000,
-            connectTimeout: 60 * 60 * 1000,
-            acquireTimeout: 60 * 60 * 1000,
-            timeout: 60 * 60 * 1000,
-          };
-          const mysql = require('mysql2/promise');
-          const poolDynamic = mysql.createPool(configDynamic);
+
+          const poolDynamic =await models.createConnection1(database);
       
           const connection = await poolDynamic.getConnection();
          
@@ -154,19 +144,8 @@ module.exports = {
 
           
           var month=req.body.bulan
-          const configDynamic = {
-            multipleStatements: true,
-            host: ipServer,//my${database}.siscom.id (ip local)
-            user: 'pro',
-            password: 'Siscom3519',
-            database: `${database}_hrm`,
-            connectionLimit: 10000000,
-            connectTimeout: 60 * 60 * 1000,
-            acquireTimeout: 60 * 60 * 1000,
-            timeout: 60 * 60 * 1000,
-          };
-          const mysql = require('mysql2/promise');
-          const poolDynamic = mysql.createPool(configDynamic);
+          
+          const poolDynamic = models.createConnection1(database);
       
           const connection = await poolDynamic.getConnection();
          
@@ -201,19 +180,8 @@ module.exports = {
 
       
       var month=req.body.bulan
-      const configDynamic = {
-        multipleStatements: true,
-        host: ipServer,//my${database}.siscom.id (ip local)
-        user: 'pro',
-        password: 'Siscom3519',
-        database: `${database}_hrm`,
-        connectionLimit: 10000000,
-        connectTimeout: 60 * 60 * 1000,
-        acquireTimeout: 60 * 60 * 1000,
-        timeout: 60 * 60 * 1000,
-      };
-      const mysql = require('mysql2/promise');
-      const poolDynamic = mysql.createPool(configDynamic);
+    
+      const poolDynamic = models.createConnection1(database);
   
       const connection = await poolDynamic.getConnection();
      
@@ -315,19 +283,8 @@ module.exports = {
       
             var database=req.query.database
             var month=req.body.bulan
-            const configDynamic = {
-              multipleStatements: true,
-              host:ipServer,//my${database}.siscom.id (ip local)
-              user: 'pro',
-              password: 'Siscom3519',
-              database: `${database}_hrm`,
-              connectionLimit: 10000000,
-              connectTimeout: 60 * 60 * 1000,
-              acquireTimeout: 60 * 60 * 1000,
-              timeout: 60 * 60 * 1000,
-            };
-            const mysql = require('mysql2/promise');
-            const poolDynamic = mysql.createPool(configDynamic);
+           
+            const poolDynamic = models.createConnection1(database);
         
             const connection = await poolDynamic.getConnection();
             var em_id = req.body.em_id;
@@ -469,19 +426,7 @@ module.exports = {
   
             
             var month=req.body.bulan
-            const configDynamic = {
-              multipleStatements: true,
-              host: ipServer,//my${database}.siscom.id (ip local)
-              user: 'pro',
-              password: 'Siscom3519',
-              database: `${database}_hrm`,
-              connectionLimit: 10000000,
-              connectTimeout: 60 * 60 * 1000,
-              acquireTimeout: 60 * 60 * 1000,
-              timeout: 60 * 60 * 1000,
-            };
-            const mysql = require('mysql2/promise');
-            const poolDynamic = mysql.createPool(configDynamic);
+            const poolDynamic = models.createConnection1(database);
         
             const connection = await poolDynamic.getConnection();
            
@@ -508,19 +453,7 @@ module.exports = {
   
             var type='pph21'
             var month=req.body.bulan
-            const configDynamic = {
-              multipleStatements: true,
-              host: ipServer,//my${database}.siscom.id (ip local)
-              user: 'pro',
-              password: 'Siscom3519',
-              database: `${database}_hrm`,
-              connectionLimit: 10000000,
-              connectTimeout: 60 * 60 * 1000,
-              acquireTimeout: 60 * 60 * 1000,
-              timeout: 60 * 60 * 1000,
-            };
-            const mysql = require('mysql2/promise');
-            const poolDynamic = mysql.createPool(configDynamic);
+            const poolDynamic = models.createConnection1(database);
         
             const connection = await poolDynamic.getConnection();
         
@@ -549,19 +482,8 @@ module.exports = {
   
             var type='slip_gaji'
             var month=req.body.bulan
-            const configDynamic = {
-              multipleStatements: true,
-              host: ipServer,//my${database}.siscom.id (ip local)
-              user: 'pro',
-              password: 'Siscom3519',
-              database: `${database}_hrm`,
-              connectionLimit: 10000000,
-              connectTimeout: 60 * 60 * 1000,
-              acquireTimeout: 60 * 60 * 1000,
-              timeout: 60 * 60 * 1000,
-            };
-            const mysql = require('mysql2/promise');
-            const poolDynamic = mysql.createPool(configDynamic);
+            
+            const poolDynamic = models.createConnection1(database);
         
             const connection = await poolDynamic.getConnection();
         
