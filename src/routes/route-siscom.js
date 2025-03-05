@@ -20,6 +20,10 @@ const {
     peraturanPerusahaan,employee,suratPeringatan,pinjamanAsset,cabang, 
     teguranLisan,
     notice,
+    info,
+    placeCoordinate,
+    placeCoordinatePengaju,
+    requestAbsen
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -28,7 +32,7 @@ router.post("/hapus_foto_user", login.deleteFoto);
 router.get("/employee", operasional.allData);
 router.get("/absensi", operasional.allData);
 router.get("/banner_dashboard", operasional.allData);
-router.get("/getMenu", operasional.getMenuDashboard);
+router.get("/getMenu", dashboard.getMenuDashboard);
 router.get("/notice", notice.notice);
 router.post("/notice/count/save", notice.updateNotice);
 router.post("/notice-polling", notice.detailNoticePolling);
@@ -36,17 +40,17 @@ router.post("/notice-polling-save", notice.savePolling);
 router.get("/notice-polling-employee", notice.detailNoticePollingEmployee);
 router.get("/leave_types", operasional.allData);
 
-router.get("/places_coordinate",absensi.PalceCoordinate);
+router.get("/places_coordinate",placeCoordinate.PalceCoordinate);
 router.post("/attendance",absensi.historyAttendance);
 router.post("/attendance-offiline",absensi.kirimAbsensiOffline);
-router.get("/places_coordinate_pengajuan",absensi.PalceCoordinatePengajuan);
+router.get("/places_coordinate_pengajuan",placeCoordinatePengaju.PalceCoordinatePengajuan);
 router.get("/faq", operasional.allData);
 router.get("/all_department", operasional.allData);
 router.get("/sysdata", operasional.allData);
 router.get("/cost", operasional.allData);
 router.get("/overtime", operasional.overtime);
-router.get("/menu_dashboard", operasional.showMenuDashboard);
-router.get("/menu_dashboard_utama", operasional.showMenuDashboardUtama);
+router.get("/menu_dashboard", dashboard.showMenuDashboard);
+router.get("/menu_dashboard_utama", dashboard.showMenuDashboardUtama);
 router.get("/banner_from_finance", operasional.banner_from_finance);
 router.get("/setting_shift", operasional.setting_shift);
 
@@ -86,7 +90,7 @@ router.post('/cari_informasi_employee', operasional.cari_informasi_employee);
 router.post('/informasi_wa_atasan', operasional.informasi_wa_atasan);
 router.post('/informasi_employee_ultah', operasional.informasi_employee_ultah);
 router.post('/info_aktifitas_employee', operasional.info_aktifitas_employee);
-router.post('/info_sisa_kontrak', operasional.info_sisa_kontrak);
+router.post('/info_sisa_kontrak', info.info_sisa_kontrak);
 // router.post('/push_notification', operasional.push_notification);
 
 router.post("/emp_leave_lastrow", operasional.emp_leave_lastrow);
@@ -199,10 +203,10 @@ router.post('/validate-login-session', login.isAuth);
 
 
 
-router.post('/employee-attendance', operasional.employeeAttendance);
-router.post('/save-employee-attendance', operasional.saveEmployeeAttendance);
-router.post('/get-employee-attendance', operasional.getEmployeeAttendance);
-router.post('/delete-employee-attendance', operasional.UpdateEmployeeAttendance);
+router.post('/employee-attendance', requestAbsen.employeeAttendance);
+router.post('/save-employee-attendance', requestAbsen.saveEmployeeAttendance);
+router.post('/get-employee-attendance', requestAbsen.getEmployeeAttendance);
+router.post('/delete-employee-attendance', requestAbsen.UpdateEmployeeAttendance);
 router.post('/approval-employee-attendance', operasional.ApprovalAbsensi);
 router.post('/load_cuti_melahirkan', operasional.loadCutiMelahirkan);
 router.post('/masuk_prod3', operasional.masukProd3);
