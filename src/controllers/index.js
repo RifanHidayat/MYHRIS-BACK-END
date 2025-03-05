@@ -4,10 +4,9 @@ const dashboard = require('./dashboard');
 const absensi = require('./absensi/absensi');
 const payroll = require('./payroll');
 const izin = require('./izin/izin');
-const notifikasi = require('./push_notifikasi');
 const claim = require('./claim');
 const klaim = require('./klaim');
-const tracking = require('./tracking');
+const tracking = require('./tracking/tracking');
 const wfh = require('./absensi/wfh');
 const loan = require('./loan');
 const chatting = require('./chatting/chatting');
@@ -21,11 +20,12 @@ const suratPeringatan= require('./persuratan/surat_peringatan');
 const teguranLisan= require('./persuratan/teguran_lisan');
 const notice= require('./pengumuman/notice');
 const pinjamanAsset= require('./peminjaman_asset');
-const cabang= require('./cabang');
+const cabang= require('./cabang/cabang');
 const info = require('./settings/info');
 const placeCoordinate = require('./placeCordinate/placeCoordinate');
 const placeCoordinatePengaju = require('./placeCordinate/placeCoordinatePengaju');
 const requestAbsen = require('./absensi/request_absen/requestAbsen');
+const notifikasi  = require('./notifikasi/push_notifikasi');
 module.exports ={
 	operasional,
 	login,

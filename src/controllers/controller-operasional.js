@@ -7877,21 +7877,21 @@ module.exports = {
     var queryCek = "";
     var queryEmployee = `SELECT IFNULL(branch.zona_waktu,0) AS zona_waktu FROM employee LEFT JOIN branch ON employee.branch_id=branch.id  WHERE employee.em_id='${req.body.em_id}' ORDER BY id DESC `;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabasMaster}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
+    // const configDynamic = {
+    //   multipleStatements: true,
+    //   host: ipServer, //my${database}.siscom.id (ip local)
+    //   user: "pro",
+    //   password: "Siscom3519",
+    //   database: `${namaDatabasMaster}`,
+    //   connectionLimit: 1000,
+    //   connectTimeout: 60 * 60 * 1000,
+    //   acquireTimeout: 60 * 60 * 1000,
+    //   timeout: 60 * 60 * 1000,
+    // };
 
-    const mysql = require("mysql2/promise");
-    const poolDynamic = mysql.createPool(configDynamic);
-    const connection = await poolDynamic.getConnection();
+    // const mysql = require("mysql2/promise");
+    // const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await (await model.createConnection1(namaDatabasMaster)).getConnection();
 
     //    poolDynamic.getConnection(function (err, connection) {
 
@@ -8045,10 +8045,10 @@ module.exports = {
             jam1.setMinutes(jam1.getMinutes() + 1);
             const jam2 = new Date(`${dateNow}T${jamAbsen}`); // 2:30 PM
 
-            // var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = ${dateNow} AND leave_status = 'Approve2' AND time_plan <= ${jamAbsen}`;
-            // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+            var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${req.body.tanggal_absen}' AND leave_status = 'Approve2' AND time_plan >= '${jamAbsen}'`;
+            const [cekIzin] = await connection.query(queryCekIzinTerlambat);
 
-            // if (cekIzin.length == 0){
+            if (cekIzin.length == 0){
               if (jam2 > jam1) {
                 const selisihWaktu = jam1.getTime() - jam2.getTime();
                 // Menghitung selisih dalam menit
@@ -8057,7 +8057,7 @@ module.exports = {
                 deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
                 isNotif = true;
                 statusAbsen = "terlambat";
-              // }
+              }
             }
           }
           await connection.query(
@@ -8251,7 +8251,7 @@ module.exports = {
                       );
                       if (sysdataSP.length > 0) {
                         if (sysdataSP[0].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
+                          utility.insertNotifikasi(
                             sysdataSP[0].name,
                             "Absensi Terlambat",
                             statusAbsen,
@@ -8265,7 +8265,7 @@ module.exports = {
                           );
                         }
                         if (sysdataSP[1].name != null) {
-                          utility.insertNotifikasiAbsensiSp(
+                          utility.insertNotifikasi(
                             sysdataSP[1].name,
                             "Absensi Terlambat",
                             statusAbsen,
@@ -8761,10 +8761,10 @@ module.exports = {
               jam1.setMinutes(jam1.getMinutes() + 1);
               const jam2 = new Date(`${dateNow}T${jamAbsen}`); // jam pulang
 
-              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = ${dateNow} AND leave_status = 'Approve2' AND time_plan <= ${jamAbsen}`;
-              const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+              // var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}'`;
+              // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
 
-              if (cekIzin == 0){
+              // if (cekIzin == 0){
                 if (jam2 < jam1) {
                   const selisihWaktu = jam1.getTime() - jam2.getTime();
   
@@ -8775,7 +8775,7 @@ module.exports = {
                   deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
                   isNotif = true;
                   statusAbsen = "pulang_cepat";
-                }
+                // }
               }
             }
 
@@ -13434,6 +13434,7 @@ a.leave_type,
 a.ajuan,
 a.apply_id,
 a.typeid,
+c.cut_leave,
 c.input_time,
       d.name AS nama_divisi, a.nomor_ajuan, c.name as nama_penagjuan,  b.em_report_to as em_report_to,  
      b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category FROM ${namaDatabaseDynamic}.emp_leave a 
@@ -14533,7 +14534,7 @@ a.typeid,
     var getbulan = req.body.bulan;
     var gettahun = req.body.tahun;
     var status = req.body.status;
-    var branchId = req.headers.branch_id;
+    var branchId = req.body.branch_id == '' ? req.headers.branch_id : req.body.branch_id;
 
     var database = req.query.database;
 
@@ -14576,27 +14577,27 @@ a.typeid,
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
 
-    var query1 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${namaDatabaseDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${namaDatabaseDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note`;
-    var query2 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${namaDatabaseDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${namaDatabaseDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%')  GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note`;
+    var query1 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${namaDatabaseDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${namaDatabaseDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note`;
+    var query2 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${namaDatabaseDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${namaDatabaseDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%')  GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query1 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${startPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${startPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
+      query1 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${startPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${startPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
       AND C.atten_date >='${startPeriode}' AND C.atten_date<='${endPeriode}' 
       GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note
       UNION ALL
-      SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${endPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${endPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%')
+      SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${endPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${endPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%')
       AND C.atten_date >='${startPeriode}' AND C.atten_date<='${endPeriode}' 
        GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note
       `;
 
-      query2 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${startPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND  CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${startPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
+      query2 = `SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${startPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND  CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${startPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
         AND C.atten_date >='${startPeriode}' AND C.atten_date<='${endPeriode}' 
         GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note
       
       
       
       UNION ALL
-       SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${endPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id=${branchId} AND  CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${endPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
+       SELECT A.full_name, A.job_title, C.id as id_absen, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.signin_longlat, C.signout_longlat, C.signin_note, C.place_in FROM ${endPeriodeDynamic}.attendance C RIGHT JOIN ${database}_hrm.employee A ON A.em_id=C.em_id WHERE A.branch_id='${branchId}' AND  CONCAT(C.atten_date,C.signin_time)=(SELECT MAX(CONCAT(atten_date,signin_time)) FROM ${endPeriodeDynamic}.attendance WHERE em_id=C.em_id) AND A.dep_id='${status}' AND A.status='ACTIVE' AND (A.em_report_to LIKE '%${emId}%' OR A.em_report2_to LIKE '%${emId}%') 
        AND C.atten_date >='${startPeriode}' AND C.atten_date<='${endPeriode}' 
        GROUP BY A.full_name, A.job_title, C.em_id, C.atten_date, C.signin_time, C.signout_time, C.place_in, C.signin_note
        `;
@@ -15350,7 +15351,7 @@ a.typeid,
     console.log("-----load laporan pengajuan----------");
     var database = req.query.database;
     var emId = req.headers.em_id == undefined ? "000000123" : req.headers.em_id;
-    var branchId = req.headers.branch_id;
+    var branchId = req.body.branch_id == '' ? req.headers.branch_id : req.body.branch_id;
 
     var status = req.body.status;
     var type = req.body.type;
@@ -15382,23 +15383,23 @@ a.typeid,
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
 
-    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
-    var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId}  GROUP BY b.full_name`;
-    var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
-    var query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND b.dep_id='${status}'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND a.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND b.dep_id='${status}'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
     console.log(req.query);
 
@@ -17460,32 +17461,39 @@ GROUP BY TBL.full_name`;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${month}`;
     console.log(namaDatabaseDynamic);
 
+    let connection;
     try {
-      const connection = await model.createConnection1(namaDatabaseDynamic);
-      await connection.beginTransaction();
-      const queryInsert = `INSERT INTO prod3 SET ?`;
-      const results = await connection.query(queryInsert, [valueBody]);
-      await connection.commit();
-      await connection.end();
-      console.log("Transaction completed successfully!");
-      return res.status(200).send({
-        status: true,
-        message: "Successfully inserted data into prod3",
-        data: [],
-      });
+        // Mendapatkan koneksi dengan memanggil fungsi .getConnection()
+        connection = await (await model.createConnection1(namaDatabaseDynamic)).getConnection();
+
+        await connection.beginTransaction();
+
+        const queryInsert = `INSERT INTO prod3 SET ?`;
+        const [results] = await connection.query(queryInsert, [valueBody]);
+
+        await connection.commit();
+        console.log("Transaction completed successfully!");
+
+        return res.status(200).send({
+            status: true,
+            message: "Successfully inserted data into prod3",
+            data: results,
+        });
     } catch (err) {
-      console.error("Error occurred:", err);
+        console.error("Error occurred:", err);
 
-      if (err.connection) {
-        await err.connection.rollback();
-        await err.connection.end();
-      }
+        if (connection) {
+            await connection.rollback();
+        }
 
-      return res.status(400).send({
-        status: false,
-        message: "Gagal memproses data",
-        data: [],
-      });
+        return res.status(400).send({
+            status: false,
+            message: "Gagal memproses data",
+            data: [],
+        });
+    } finally {
+        if (connection) connection.release();
     }
-  },
+},
+
 };

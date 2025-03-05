@@ -1,4 +1,4 @@
-const config = require("../configs/database");
+const config = require("../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require('sha1');
@@ -13,7 +13,7 @@ const admin = require('firebase-admin');
 
 var request = require('request');
 
-const model = require('../utils/models');
+const model = require('../../utils/models');
 
 pool.on("error", (err) => {
   console.error(err);

@@ -75,7 +75,6 @@ cron1.schedule('* * * * * *', () => {
 
 async function kirimNotif(){
   const cachedData = myCache.get('employees');
-  const connection = await model.createConnection1(apiKey);
   if (cachedData) {
 
         const cachedDataSysdata = myCache.get('sysdata');
