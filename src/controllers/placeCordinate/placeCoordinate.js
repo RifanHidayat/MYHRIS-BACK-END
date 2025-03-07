@@ -97,8 +97,6 @@ module.exports = {
                   }
 
                   if (tugasLuar.length > 0) {
-                    records = results;
-                    var data = records[0].places.split(",");
 
                     connection.query(
                       ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(

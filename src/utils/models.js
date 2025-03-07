@@ -71,17 +71,13 @@ module.exports = {
                 password: 'Siscom3519',
                 timezone: "+00:00",
                 database: database,
-                connectionLimit: 20, // Maksimum koneksi dalam pool
+                connectionLimit: 1, // Maksimum koneksi dalam pool
                 queueLimit: 50, // Batas antrean koneksi
                 connectTimeout: 10000, // Timeout koneksi baru (10 detik)
                 acquireTimeout: 30000,  // Timeout saat mendapatkan koneksi dari pool (30 detik)
                 waitForConnections: true, // Menunggu antrean jika koneksi penuh
             });
-    
-            const connection = await pool.getConnection();
-            console.log("Koneksi database berhasil!");
-            connection.release();
-    
+            console.log("Pool koneksi database berhasil dibuat!");
             return pool;
         } catch (error) {
             console.error("Gagal membuat koneksi database:", error.message);

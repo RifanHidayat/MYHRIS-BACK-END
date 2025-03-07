@@ -26,6 +26,7 @@ const placeCoordinate = require('./placeCordinate/placeCoordinate');
 const placeCoordinatePengaju = require('./placeCordinate/placeCoordinatePengaju');
 const requestAbsen = require('./absensi/request_absen/requestAbsen');
 const notifikasi  = require('./notifikasi/push_notifikasi');
+const dailyTask = require('./task/daily_task');
 module.exports ={
 	operasional,
 	login,
@@ -45,5 +46,6 @@ module.exports ={
 	info,
 	placeCoordinate,
 	placeCoordinatePengaju,
-	requestAbsen
+	requestAbsen,
+	dailyTask
 };
