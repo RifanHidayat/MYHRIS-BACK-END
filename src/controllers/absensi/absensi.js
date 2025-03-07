@@ -1202,7 +1202,10 @@ LIMIT 1`;
         data: result,
       });
     } catch (e) {
-      await conn.rollback();
+      if (conn) {
+        
+        await conn.rollback();
+      }
       console.error("Error:", e.message);
       return res.status(500).send({
         status: false,
@@ -1211,7 +1214,7 @@ LIMIT 1`;
       });
     } finally {
       if (conn) conn.release();
-      if (connection) await connection.end();
+      // if (connection) await connection.end();
     }
   },
 
