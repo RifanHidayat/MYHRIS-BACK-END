@@ -813,7 +813,7 @@ module.exports = {
                     }
                   }
 
-                  var script =`SELECT places_coordinate.trx, attendance.* 
+                  var script = `SELECT places_coordinate.trx, attendance.* 
 FROM  ${namaDatabaseDynamic}.attendance 
 LEFT JOIN ${database}_hrm.places_coordinate 
   ON attendance.place_in = places_coordinate.place 
@@ -1093,7 +1093,6 @@ LIMIT 1`;
   async historyAttendance(req, res) {
     console.log("---------history absensi new----------------");
     var database = req.query.database;
-    // var attenDate=req.query_date;
     var em_id = req.body.em_id;
     var em_id = req.body.em_id;
 
@@ -1152,224 +1151,69 @@ LIMIT 1`;
     console.log("month start  ", montStart);
 
     // If you want the month as a 1-based index (1 = January, 2 = February, ..., 12 = December)
-
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
 
-          connection.query(
-            `SELECT * FROM ${database}_hrm.sysdata WHERE KODE='013'`,
-            (err, sysdata) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
+      const [sysdata] = await conn.query(
+        `SELECT * FROM ${database}_hrm.sysdata WHERE KODE='013'`
+      );
+      console.log("data ", sysdata);
 
-              console.log("data ", sysdata);
+      const statusApproval =
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2";
 
-              var query = `WITH RECURSIVE DateRange AS (
-            SELECT DATE_FORMAT('${startPeriode}' ,'%Y-%m-01') AS DATE
-            UNION ALL
-            SELECT DATE + INTERVAL 1 DAY
-            FROM DateRange
-            WHERE DATE + INTERVAL 1 DAY <= LAST_DAY(DATE_FORMAT('${startPeriode}' ,'%Y-%m-01'))
-        )
-        SELECT
-         DateRange.date,
-        (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS lembur ,
-        (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS tugas_luar ,
-        (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS cuti ,
-        (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }'  LIMIT 1) AS sakit ,
-        (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }'  LIMIT 1) AS izin ,
-        (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS dinas_luar ,
-        (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
-        
-        IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
-        IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:01:00')AS jam_pulang,
-        holiday.name  AS hari_libur,attendance.*
-        FROM DateRange 
-        LEFT JOIN ${namaDatabaseDynamic}.attendance ON attendance.atten_date=DateRange.date AND em_id='${em_id}'
-        LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-        WHERE DateRange.date <=CURDATE()  AND DateRange.date>='${startPeriode}'
-        ORDER BY DateRange.date DESC;`;
+      const query = `
+    WITH RECURSIVE DateRange AS (
+      SELECT DATE_FORMAT('${startPeriode}', '%Y-%m-01') AS DATE
+      UNION ALL
+      SELECT DATE + INTERVAL 1 DAY
+      FROM DateRange
+      WHERE DATE + INTERVAL 1 DAY <= LAST_DAY(DATE_FORMAT('${startPeriode}', '%Y-%m-01'))
+    )
+    SELECT
+      DateRange.date,
+      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor 
+        WHERE em_id = ? AND atten_date = DateRange.date AND ajuan = '1' AND status = ? 
+        LIMIT 1) AS lembur,
+      holiday.name AS hari_libur,
+      attendance.*
+    FROM DateRange 
+    LEFT JOIN ${namaDatabaseDynamic}.attendance ON attendance.atten_date = DateRange.date AND em_id = ?
+    LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date = DateRange.date 
+    LEFT JOIN ${database}_hrm.holiday ON holiday.id = holiday_date.holiday_id
+    WHERE DateRange.date <= CURDATE() AND DateRange.date >= ?
+    ORDER BY DateRange.date DESC;
+  `;
 
-              var query1 = `
+      const [result] = await conn.query(query, [
+        em_id,
+        statusApproval,
+        em_id,
+        startPeriode,
+      ]);
+      await conn.commit();
 
-        WITH RECURSIVE DateRange AS (
-          SELECT DATE_FORMAT('${endPeriode} ','%Y-%m-01') AS DATE
-          UNION ALL
-          SELECT DATE + INTERVAL 1 DAY
-          FROM DateRange
-          WHERE DATE + INTERVAL 1 DAY <= LAST_DAY(DATE_FORMAT('${endPeriode}' ,'%Y-%m-01'))
-      )
-      SELECT
-       DateRange.date,
-      (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS lembur ,
-      (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS tugas_luar ,
-      (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS cuti ,
-      (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS sakit ,
-      (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS izin ,
-      (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
-                sysdata[0].name == "1" || sysdata[0].name == 1
-                  ? "Approve"
-                  : "Approve2"
-              }' LIMIT 1) AS dinas_luar ,
-      (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
-      IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
-      IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:00:00')AS jam_pulang,
-       
-      holiday.name  AS hari_libur,attendance.*
-      FROM DateRange 
-      LEFT JOIN ${endPeriodeDynamic}.attendance ON attendance.atten_date=DateRange.date AND em_id='${em_id}'
-      LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-      WHERE (DateRange.date <=CURDATE()  AND DateRange.date<='${endPeriode}')
-      ORDER BY DateRange.date DESC;
-
-
-        
-        `;
-
-              console.log(query);
-
-              connection.query(query, (err, result) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: false,
-                      message: "gagal ambil data",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-
-                connection.query(query1, (err, result2) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-                  let resultFinal = [];
-                  resultFinal = result2;
-                  if (
-                    montStart < monthEnd ||
-                    date1.getFullYear() < date2.getFullYear()
-                  ) {
-                    for (var i = 0; i < result.length; i++) {
-                      result2.push(result[i]);
-                    }
-                  }
-
-                  // resultFinal.sort((a, b) => new Date(a.atten_date) - new Date(b.atten_date));
-
-                  connection.commit((err) => {
-                    if (err) {
-                      console.error("Error committing transaction:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "Kombinasi email & password Anda Salah",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-                    connection.end();
-                    console.log("Transaction completed successfully!");
-
-                    return res.status(200).send({
-                      status: true,
-                      message: "Kombinasi email & password Anda Salah",
-                      data: result2,
-                    });
-                  });
-                });
-              });
-            }
-          );
-        });
+      return res.status(200).send({
+        status: true,
+        message: "Data berhasil diambil",
+        data: result,
       });
     } catch (e) {
-      return res.status(400).send({
-        status: true,
+      await conn.rollback();
+      console.error("Error:", e.message);
+      return res.status(500).send({
+        status: false,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) conn.release();
+      if (connection) await connection.end();
     }
   },
-
 
   async kirimAbsensiOffline(req, res) {
     console.log("kirim absen offline");
