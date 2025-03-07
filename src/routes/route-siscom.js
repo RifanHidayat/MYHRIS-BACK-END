@@ -23,7 +23,8 @@ const {
     info,
     placeCoordinate,
     placeCoordinatePengaju,
-    requestAbsen
+    requestAbsen,
+    dailyTask
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -321,6 +322,11 @@ router.get('/cabang',cabang.cabang);
 // router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
 // router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
 // router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
+
+
+router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
+router.post('/getTaskDaily',dailyTask.getDailyTask);
+router.post('/insertTaskDaily',dailyTask.insertDailyTask);
 
 
 
