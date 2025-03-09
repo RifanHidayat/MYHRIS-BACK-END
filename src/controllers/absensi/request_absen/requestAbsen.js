@@ -1,3 +1,6 @@
+const models = require("../../../utils/models");
+
+const ipServer = process.env.API_URL;
 module.exports = {
     employeeAttendance(req, res) {
         console.log("-----Employee attemdamce  ----------");
@@ -154,7 +157,7 @@ module.exports = {
         const databaseMaster = `${database}_hrm`;
     
         try {
-          const connection = await model.createConnection(database);
+          const connection = await models.createConnection(database);
           connection.connect((err) => {
             if (err) {
               console.error("Error connecting to the database:", err);
@@ -571,8 +574,8 @@ module.exports = {
         // });
       },
     
-      getEmployeeAttendance(req, res) {
-        console.log("-----Employee attemdamce  ----------");
+      async getEmployeeAttendance(req, res) {
+        console.log("get employ attt");
         var database = req.query.database;
         var em_id = req.body.em_id;
         const getbulan = req.body.bulan;
@@ -625,38 +628,32 @@ module.exports = {
     
         // var query= `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`
     
-        const configDynamic = {
-          multipleStatements: true,
-          host: ipServer, //myhris.siscom.id (ip local)
-          user: "pro",
-          password: "Siscom3519",
-          database: `${namaDatabaseDynamic}`,
-          timezone: "+00:00",
-          connectionLimit: 1000,
-          connectTimeout: 60 * 60 * 1000,
-          acquireTimeout: 60 * 60 * 1000,
-          timeout: 60 * 60 * 1000,
-        };
-        const mysql = require("mysql");
-        const poolDynamic = mysql.createPool(configDynamic);
-    
-        poolDynamic.getConnection(function (err, connection) {
-          if (err) {
-            res.send({
-              status: false,
-              message: "Database tidak tersedia",
-            });
-          } else {
-            connection.query(query, function (error, results) {
-              if (error != null) console.log(error);
-              res.send({
-                status: true,
-                message: "Berhasil ambil data!",
-                data: results,
-              });
-            });
-            connection.release();
+        const connection = await models.createConnection1(namaDatabaseDynamic);
+      
+        let conn;
+        try {
+          conn = await connection.getConnection();
+          await conn.beginTransaction();
+          const [results] = await conn.query(query); 
+          await conn.commit()
+          return res.status(200).send({
+            status: true,
+            message: "Data berhasil diambil",
+            data: results,
+          });
+        } catch (e) {
+          if (conn){
+            await conn.rollback();
           }
-        });
+          console.error("Error:", e.message);
+          return res.status(500).send({
+            status: false,
+            message: "Gagal ambil data",
+            data: [],
+          });
+        } finally {
+          if (conn) conn.release();
+          // if (connection) connection.end();
+        }
       },
 }

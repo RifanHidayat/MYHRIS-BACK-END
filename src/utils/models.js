@@ -1,5 +1,6 @@
-const utility=require('./utility')
-
+const utility=require('./utility');
+const mysql2 = require('mysql2/promise');
+let pools = {};
 module.exports = {
     query: function (query, databaseDynamic, callback) {
         const mysql = require("mysql");
@@ -28,7 +29,7 @@ module.exports = {
             user: 'root',
             password: 'Siscom3519',
             database: `${databaseDynamic}`,
-            connectionLimit: 10000000,
+            connectionLimit: 100000,
         });
         poolQuery.query(query, [body], function (error, results, fields) {
             if (error) {
@@ -52,31 +53,41 @@ module.exports = {
              password: 'Siscom3519',
              timezone: "+00:00",
              database:`${database}_hrm`,
-             connectionLimit: 0,
-             connectTimeout: 3600000, // 1 jam dalam milidetik
-             acquireTimeout: 3600000,  // 1 jam
+             connectionLimit: 20,
+             connectTimeout: 10000, 
+             acquireTimeout: 30000,  
            waitForConnections: true,
-   connectionLimit: 20, // Sesuaikan dengan kapasitas server
-   queueLimit: 0, // Tidak membatasi antrean koneksi
+   queueLimit: 50,
+   idleTimeout: 60000 // Tidak membatasi antrean koneksi
           });
           return  connection;
     },
-    createConnection1: async function(database){
-        const mysql = require("mysql");
-       
-        const connection = new mysql.createConnection({
-            multipleStatements: true,
-            host: process.env.API_URL,//myhris.siscom.id (ip)
-             user: 'pro',
-             password: 'Siscom3519',
-             timezone: "+00:00",
-             database:`${database}`,
-            connectionLimit: 10000000,
-            connectTimeout: 60 * 60 * 1000,
-            acquireTimeout: 60 * 60 * 1000,
-            timeout: 60 * 60 * 1000,
-          });
-          return  connection;
+    createConnection1: async function(database) {
+        if (!pools[database]){
+            try {
+                console.log(`Membuat koneksi ke database ${database}`);
+                pools[database] = mysql2.createPool({
+                    multipleStatements: true,
+                    host: process.env.API_URL, 
+                    user: 'pro',
+                    password: 'Siscom3519',
+                    timezone: "+00:00",
+                    database: database,
+                    connectionLimit: 50,
+                    queueLimit: 100,
+                    connectTimeout: 10000, // Timeout koneksi baru (10 detik)
+                    acquireTimeout: 30000,  // Timeout saat mendapatkan koneksi dari pool (30 detik)
+                    waitForConnections: true, 
+                    idleTimeout: 60000// Menunggu antrean jika koneksi penuh
+                });
+                console.log("Pool koneksi database berhasil dibuat!");
+               
+            } catch (error) {
+                console.error("Gagal membuat koneksi database:", error.message);
+                throw error;
+            }
+        }
+        return pools[database];
     },
     createConnection2: async function(database){
         const mysql = require("mysql");
@@ -88,10 +99,12 @@ module.exports = {
              password: 'Siscom3519',
              timezone: "+00:00",
              database:`${database}_hrm`,
-            connectionLimit: 10000000,
-            connectTimeout: 60 * 60 * 1000,
-            acquireTimeout: 60 * 60 * 1000,
-            timeout: 60 * 60 * 1000,
+             connectionLimit: 20,
+             connectTimeout: 10000, 
+             acquireTimeout: 30000,
+             waitForConnections: true,
+           queueLimit: 50,
+           idleTimeoutMillis: 6000
           });
           return  connection;
     },

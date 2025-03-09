@@ -23,7 +23,8 @@ const {
     info,
     placeCoordinate,
     placeCoordinatePengaju,
-    requestAbsen
+    requestAbsen,
+    dailyTask
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -98,7 +99,6 @@ router.post("/emp_labor_lastrow", operasional.emp_labor_lastrow);
 router.post("/emp_klaim_lastrow", operasional.emp_klaim_lastrow);
 router.post("/emp_request_lastrow", operasional.emp_request_lastrow);
 
-
 router.post('/attendance-break',auth.isAuth, operasional.kirimAbsenIstiraha);
 router.post('/kirimAbsen',auth.isAuth, operasional.runTransaction);
 router.post('/kirimPengajuanTMK', auth.isAuth,operasional.kirimTidakMasukKerja);
@@ -108,6 +108,7 @@ router.post('/atas-perintah',auth.isAuth,lembur.atasPerintah);
 router.post('/berhubungan-dengan', lembur.berhubunganDengan);
 router.post('/lembur/detail',auth.isAuth,lembur.detailTask);
 router.post('/tugas-luar',auth.isAuth,tugasLuar.store);
+//belum
 router.post('/klaim',auth.isAuth,klaim.store);
 
 router.post('/edit-lembur',auth.isAuth,lembur.updateLembur);
@@ -321,6 +322,11 @@ router.get('/cabang',cabang.cabang);
 // router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
 // router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
 // router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
+
+
+router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
+router.post('/getTaskDaily',dailyTask.getDailyTask);
+router.post('/insertTaskDaily',dailyTask.insertDailyTask);
 
 
 
