@@ -740,80 +740,42 @@ module.exports = {
 
     var script = "";
     let records;
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [absensi] = await conn.query(
+        `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' ORDER BY id DESC`
+      );
+      const [sysdata] = await conn.query(
+        `SELECT * FROM ${database}_hrm.sysdata WHERE kode='018'`
+      );
+
+      if (sysdata.length > 0) {
+        const array1 = sysdata[0].name.split(",");
+
+        if (
+          array1[0].toString().trim() == "00:00" &&
+          array1[1].toString().trim() == "00:00"
+        ) {
+          startTime = absensi[0]["signin_time"];
+          startDate = absensi[0]["atten_date"];
+
+          endTime = absensi[0]["signin_time"];
+
+          var date = new Date(startDate);
+          date.setDate(date.getDate() + 1);
+
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based, so we add 1
+          const day = String(date.getDate()).padStart(2, "0");
+
+          endDate = `${year}-${month}-${day}`;
         }
+      }
 
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-
-          connection.query(
-            `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' ORDER BY id DESC`,
-            (err, absensi) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: true,
-                    message: "gaga ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              connection.query(
-                `SELECT * FROM ${database}_hrm.sysdata WHERE kode='018'`,
-                (err, sysdata) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: true,
-                        message: "gaga ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-
-                  if (sysdata.length > 0) {
-                    const array1 = sysdata[0].name.split(",");
-
-                    if (
-                      array1[0].toString().trim() == "00:00" &&
-                      array1[1].toString().trim() == "00:00"
-                    ) {
-                      startTime = absensi[0]["signin_time"];
-                      startDate = absensi[0]["atten_date"];
-
-                      endTime = absensi[0]["signin_time"];
-
-                      var date = new Date(startDate);
-                      date.setDate(date.getDate() + 1);
-
-                      const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(
-                        2,
-                        "0"
-                      ); // Months are 0-based, so we add 1
-                      const day = String(date.getDate()).padStart(2, "0");
-
-                      endDate = `${year}-${month}-${day}`;
-                    }
-                  }
-
-                  var script = `SELECT places_coordinate.trx, attendance.* 
+      var script = `SELECT places_coordinate.trx, attendance.* 
 FROM  ${namaDatabaseDynamic}.attendance 
 LEFT JOIN ${database}_hrm.places_coordinate 
   ON attendance.place_in = places_coordinate.place 
@@ -822,203 +784,111 @@ WHERE em_id = '${em_id}'
   AND atttype = '1' 
 ORDER BY id DESC 
 LIMIT 1`;
-                  // if (sysdata.length>0){
 
-                  //   const array2 = sysdata[0].name.split(",");
+      console.log("-----view last absen 1 2----------");
+      const absensiNow = await conn.query(script);
 
-                  //   var dataJam=array2[2];
-
-                  //   console.log("data jam ",dataJam)
-
-                  //   if (dataJam>0){
-                  //     startTime=absensi[0]['signin_time']
-                  //     startDate=absensi[0]['atten_date']
-
-                  //     var combineDate=`${startDate}T${startTime}`
-                  //     let customDate = new Date(combineDate);
-
-                  //     customDate.setHours(customDate.getHours() + 3);
-                  //     endTime=`${customDate.getHours().toString().padStart(2,'0')} ${customDate.getMinutes.toString().padStart(2,'0')}`;
-
-                  //     endDate= new Date(`${customDate.getFullYear()}-${customDate.getMonth().toString().padStart(2,'0')}-${customDate.getDate().toString().padStart(2,'0')}`);
-
-                  //  script=`SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND '${startDate} ${startTime}'<=NOW()  AND  NOW() <= '${endDate} ${endTime}' ORDER BY id DESC LIMIT 1`
-                  //   }
-
-                  // }
-
-                  console.log("-----view last absen 1 2---------- new", script);
-                  connection.query(`${script}`, (err, absensiNow) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "gaga ambil data",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-                    var wfh = "";
-                    var absenOffline = "";
-                    if (pola == "2" || pola == 2) {
-                      wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+      var wfh = "";
+      var absenOffline = "";
+      if (pola == "2" || pola == 2) {
+        wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                   AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
-                    } else {
-                      wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+      } else {
+        wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                   AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
-                    }
-
-                    //(CONCAT(${absensiNow[0].atten_date}, ' ', ${absensiNow[0].signin_time})
-
-                    if (absensiNow.length > 0) {
-                      if (pola == "2" || pola == 2) {
-                        absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan,emp_labor.sampai_jam as signout_time  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND  (CONCAT('${absensiNow[0].atten_date}', ' ', '${absensiNow[0].signin_time}') >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+      }
+      if (absensiNow.length > 0) {
+        if (pola == "2" || pola == 2) {
+          absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan,emp_labor.sampai_jam as signout_time  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND  (CONCAT('${absensiNow[0].atten_date}', ' ', '${absensiNow[0].signin_time}') >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                       AND (CONCAT(atten_date, ' ', dari_jam) <= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' OR status='Approve' ) ORDER BY id DESC LIMIT 1`;
-                      } else {
-                        absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.sampai_jam as signout_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT('${absensiNow[0].atten_date}', ' ', '${absensiNow[0].signin_time}') >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+        } else {
+          absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.sampai_jam as signout_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT('${absensiNow[0].atten_date}', ' ', '${absensiNow[0].signin_time}') >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                       AND (CONCAT(atten_date, ' ', dari_jam) <= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
-                      }
-                    } else {
-                      if (pola == "2" || pola == 2) {
-                        absenOffline = `SELECT emp_labor.atten_date, emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan,emp_labor.sampai_jam as signout_time  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+        }
+      } else {
+        if (pola == "2" || pola == 2) {
+          absenOffline = `SELECT emp_labor.atten_date, emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan,emp_labor.sampai_jam as signout_time  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                      AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
-                      } else {
-                        absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.sampai_jam as signout_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
+        } else {
+          absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.sampai_jam as signout_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
                      AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
-                      }
-                    }
-
-                    console.log("query absen offline ", absenOffline);
-                    connection.query(
-                      `${script};${wfh};${absenOffline}`,
-                      (err, results) => {
-                        if (err) {
-                          console.error(
-                            "Error executing SELECT statement:",
-                            err
-                          );
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: true,
-                              message: "gaga ambil data",
-                              data: [],
-                            });
-                          });
-                          return;
-                        }
-
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error("Error committing transaction:", err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message: "Gagal ambil data",
-                                data: [],
-                              });
-                            });
-                            return;
-                          }
-                          connection.end();
-                          console.log("Transaction completed successfully!");
-
-                          if (results[0].length > 0) {
-                            if (results[0][0].signin_time != "00:00:00") {
-                              if (results[0][0].signout_time != "00:00:00") {
-                                if (results[2].length > 0) {
-                                  results[0] = [];
-                                  console.log(script);
-                                }
-                              } else {
-                                if (results[2].length > 0) {
-                                  var date1 = new Date(
-                                    `${results[2][0].atten_date} ${results[2][0].signout_time}`
-                                  );
-
-                                  console.log(
-                                    `${results[2].atten_date} ${results[2].signout_time}`
-                                  );
-                                  const timeDifference = Math.abs(
-                                    new Date() - date1
-                                  ); // Use Math.abs to ensure a positive value
-
-                                  // Convert the time difference to hours and minutes
-                                  const hours = Math.floor(
-                                    timeDifference / (1000 * 60 * 60)
-                                  ); // Convert to hours
-                                  const minutes = Math.floor(
-                                    (timeDifference % (1000 * 60 * 60)) /
-                                      (1000 * 60)
-                                  ); // Convert to minutes
-
-                                  console.log(
-                                    `Time difference: ${hours} hours and ${minutes} minutes`
-                                  );
-                                  if (hours > 24) {
-                                    results[2] = [];
-                                  } else {
-                                    console.log(
-                                      "The date is within 24 hours from now."
-                                    );
-                                  }
-                                }
-                              }
-                            }
-
-                            if (results[1].length > 0) {
-                              return res.status(200).send({
-                                status: true,
-                                message: "Berhasil ambil data!",
-                                data: [],
-                                wfh: results[1],
-                                offiline: results[2],
-                              });
-                            } else {
-                              return res.status(200).send({
-                                status: true,
-                                message: "Berhasil ambil data!",
-                                data: results[0],
-                                wfh: results[1],
-                                offiline: results[2],
-                              });
-                            }
-                          } else {
-                            return res.status(200).send({
-                              status: true,
-                              message: "Berhasil ambil data!",
-                              data: results[0],
-                              wfh: results[1],
-                              offiline: results[2],
-                            });
-                          }
-
-                          // return res.status(200).send({
-                          //   status: true,
-                          //   message: 'Data berhasil di ambil',
-                          //   data:records
-
-                          // });
-                        });
-                      }
-                    );
-                  });
-                }
-              );
+        }
+      }
+      const [results] = await conn.query(`${script};${wfh};${absenOffline}`);
+      await conn.commit();
+      if (results[0].length > 0) {
+        if (results[0][0].signin_time != "00:00:00") {
+          if (results[0][0].signout_time != "00:00:00") {
+            if (results[2].length > 0) {
+              results[0] = [];
+              console.log(script);
             }
-          );
+          } else {
+            if (results[2].length > 0) {
+              var date1 = new Date(
+                `${results[2][0].atten_date} ${results[2][0].signout_time}`
+              );
+
+              console.log(
+                `${results[2].atten_date} ${results[2].signout_time}`
+              );
+              const timeDifference = Math.abs(new Date() - date1); // Use Math.abs to ensure a positive value
+
+              // Convert the time difference to hours and minutes
+              const hours = Math.floor(timeDifference / (1000 * 60 * 60)); // Convert to hours
+              const minutes = Math.floor(
+                (timeDifference % (1000 * 60 * 60)) / (1000 * 60)
+              ); // Convert to minutes
+
+              console.log(
+                `Time difference: ${hours} hours and ${minutes} minutes`
+              );
+              if (hours > 24) {
+                results[2] = [];
+              } else {
+                console.log("The date is within 24 hours from now.");
+              }
+            }
+          }
+        }
+        if (results[1].length > 0) {
+          return res.status(200).send({
+            status: true,
+            message: "Berhasil ambil data!",
+            data: [],
+            wfh: results[1],
+            offiline: results[2],
+          });
+        } else {
+          return res.status(200).send({
+            status: true,
+            message: "Berhasil ambil data!",
+            data: results[0],
+            wfh: results[1],
+            offiline: results[2],
+          });
+        }
+      } else {
+        return res.status(200).send({
+          status: true,
+          message: "Berhasil ambil data!",
+          data: results[0],
+          wfh: results[1],
+          offiline: results[2],
         });
-      });
+      }
     } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error : ", e);
       return res.status(400).send({
         status: true,
         message: e,
         data: [],
       });
+    } finally {
+      if (conn) await conn.release();
     }
   },
 
@@ -1203,7 +1073,6 @@ LIMIT 1`;
       });
     } catch (e) {
       if (conn) {
-        
         await conn.rollback();
       }
       console.error("Error:", e.message);
@@ -1342,257 +1211,92 @@ LIMIT 1`;
 
     const namaDatabaseDynamic = `${database}_hrm${tahunConver}${bulan}`;
     const databaseMaster = `${database}_hrm`;
+    const connection = await model.createConnection1(databaseMaster);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [sysdata] = await conn.query(
+        `SELECT * FROM sysdata WHERE KODE='013'`
+      );
+      const [results] = await conn.query(
+        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='4' AND em_id='${em_id}' AND atten_date='${req.body}' AND (status='Approve' OR status='Pending')`
+      );
 
-          connection.query(
-            `SELECT * FROM ${database}_hrm.sysdata WHERE KODE='013'`,
-            (err, sysdata) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              var query = `SELECT * FROM employee WHERE em_id='${emId}'`;
-              connection.query(query, (err, employee) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: false,
-                      message: "gagal ambil data",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                connection.query(
-                  `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='4' AND em_id='${em_id}' AND atten_date='${req.body}' AND (status='Approve' OR status='Pending')`,
-                  (err, results) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "Data sudah tersedia",
-                          data: results,
-                        });
-                      });
-                      return;
-                    }
-
-                    if (results.length > 0) {
-                      return res.status(400).send({
-                        status: true,
-                        message: "Data sudah tersedia",
-                        data: results,
-                      });
-                    }
-                    var date = new Date("2024-09-16 14:02:02");
-                    var timestampInSeconds = Math.floor(date / 1000);
-                    if (signingTime == "00:00:00" || signingTime == "") {
-                      var date = new Date(`${attenDate} ${signoutTime}`);
-                      timestampInSeconds = Math.floor(date / 1000);
-                    } else {
-                      var date = new Date(`${attenDate} ${signingTime}`);
-                      timestampInSeconds = Math.floor(date / 1000);
-                    }
-
-                    connection.query(
-                      ` SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND idx='${timestampInSeconds}'  `,
-                      (err, dataOffline) => {
-                        if (err) {
-                          console.error(
-                            "Error executing SELECT statement:",
-                            err
-                          );
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: true,
-                              message: "Data gagal terkirim",
-                              data: results,
-                            });
-                          });
-                          return;
-                        }
-
-                        if (dataOffline.length > 0) {
-                          return res.status(400).send({
-                            status: true,
-                            message: "Data gagal terkirim",
-                            data: results,
-                          });
-                        }
-                        connection.query(
-                          ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='5' ORDER BY id DESC `,
-                          (err, data) => {
-                            if (err) {
-                              console.error(
-                                "Error executing SELECT statement:",
-                                err
-                              );
-                              connection.rollback(() => {
-                                connection.end();
-                                return res.status(400).send({
-                                  status: true,
-                                  message: "Data gagal terkirim",
-                                  data: results,
-                                });
-                              });
-                              return;
-                            }
-                            if (data.length > 0) {
-                              var text = data[0]["nomor_ajuan"];
-                              nomor = parseInt(text.substring(8, 13)) + 1;
-                              var nomorStr = String(nomor).padStart(4, "0");
-                              nomorAjuan =
-                                `RO20${tahunConver}${bulan}` + nomorStr;
-                            } else {
-                              nomor = 1;
-                              var nomorStr = String(nomor).padStart(4, "0");
-                              nomorAjuan = `RO20${tahun}${bulan}` + nomorStr;
-                            }
-                            connection.query(
-                              `INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,
-          signin_note,signout_note,ajuan,em_delegation,signin_pict,signout_pict,place_in,place_out,approve_status,signin_longlat,signout_longlat,signin_addr,signout_addr,uraian,idx)
-        VALUES ('${nomorAjuan}','${em_id}','${attenDate}','${signingTime}','${signoutTime}',CURDATE(),'${status}','1','${signinNote}','${signoutOutNote}','5','','${nameFileMasuk}','${nameFileKeluar}','${placeIn}','${placeOut}','Pending','${signinLonglat}','${signOutLonglat}','${signinAddr}','${signoutAddr}','${signinNote}','${timestampInSeconds}')`,
-                              (err, results) => {
-                                if (err) {
-                                  console.error(
-                                    "Error executing SELECT statement:",
-                                    err
-                                  );
-                                  connection.rollback(() => {
-                                    connection.end();
-                                    return res.status(400).send({
-                                      status: true,
-                                      message: "Data gagal terkirim",
-                                      data: results,
-                                    });
-                                  });
-                                  return;
-                                }
-
-                                connection.query(
-                                  `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan='${nomorAjuan}' AND ajuan='5'`,
-                                  (err, transaksi) => {
-                                    if (err) {
-                                      console.error(
-                                        "Error executing SELECT statement:",
-                                        err
-                                      );
-                                      connection.rollback(() => {
-                                        connection.end();
-                                        return res.status(400).send({
-                                          status: true,
-                                          message: "Data gagal terkirim",
-                                          data: results,
-                                        });
-                                      });
-                                      return;
-                                    }
-                                    connection.query(
-                                      `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${em_id}'`,
-                                      (err, employee) => {
-                                        if (err) {
-                                          console.error(
-                                            "Error executing SELECT statement:",
-                                            err
-                                          );
-                                          connection.rollback(() => {
-                                            connection.end();
-                                            return res.status(400).send({
-                                              status: true,
-                                              message: "Data gagal terkirim",
-                                              data: results,
-                                            });
-                                          });
-                                          return;
-                                        }
-
-                                        utility.insertNotifikasi(
-                                          employee[0].em_report_to,
-                                          "Approval Absensi",
-                                          "Absensi",
-                                          employee[0].em_id,
-                                          transaksi[0].id,
-                                          transaksi[0].nomor_ajuan,
-                                          employee[0].full_name,
-                                          namaDatabaseDynamic,
-                                          databaseMaster
-                                        );
-
-                                        connection.commit((err) => {
-                                          if (err) {
-                                            console.error(
-                                              "Error committing transaction:",
-                                              err
-                                            );
-                                            connection.rollback(() => {
-                                              connection.end();
-                                              return res.status(400).send({
-                                                status: true,
-                                                message:
-                                                  "Kombinasi email & password Anda Salah",
-                                                data: [],
-                                              });
-                                            });
-                                            return;
-                                          }
-                                          connection.end();
-                                          console.log(
-                                            "Transaction completed successfully!"
-                                          );
-
-                                          return res.status(200).send({
-                                            status: true,
-                                            message: "sucess insert data",
-                                          });
-                                        });
-                                      }
-                                    );
-                                  }
-                                );
-                              }
-                            );
-                          }
-                        );
-                      }
-                    );
-                  }
-                );
-              });
-            }
-          );
+      if (results.length > 0) {
+        return res.status(400).send({
+          status: true,
+          message: "Data sudah tersedia",
+          data: results,
         });
-      });
+      }
+      let date;
+      var timestampInSeconds = Math.floor(date / 1000);
+      if (signingTime == "00:00:00" || signingTime == "") {
+        date = new Date(`${attenDate} ${signoutTime}`);
+        timestampInSeconds = Math.floor(date / 1000);
+      } else {
+        date = new Date(`${attenDate} ${signingTime}`);
+        timestampInSeconds = Math.floor(date / 1000);
+      }
+
+      const [dataOffline] = await conn.query(` SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND idx='${timestampInSeconds}'  `);
+
+          
+
+          if (dataOffline.length > 0) {
+            return res.status(400).send({
+              status: true,
+              message: "Data gagal terkirim",
+              data: results,
+            });
+          }
+          const [data] = conn.query(` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='5' ORDER BY id DESC `);
+
+              
+              if (data.length > 0) {
+                var text = data[0]["nomor_ajuan"];
+                nomor = parseInt(text.substring(8, 13)) + 1;
+                var nomorStr = String(nomor).padStart(4, "0");
+                nomorAjuan = `RO20${tahunConver}${bulan}` + nomorStr;
+              } else {
+                nomor = 1;
+                var nomorStr = String(nomor).padStart(4, "0");
+                nomorAjuan = `RO20${tahun}${bulan}` + nomorStr;
+              }
+            const [kirim] = await conn.query(`INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,
+          signin_note,signout_note,ajuan,em_delegation,signin_pict,signout_pict,place_in,place_out,approve_status,signin_longlat,signout_longlat,signin_addr,signout_addr,uraian,idx)
+        VALUES ('${nomorAjuan}','${em_id}','${attenDate}','${signingTime}','${signoutTime}',CURDATE(),'${status}','1','${signinNote}','${signoutOutNote}','5','','${nameFileMasuk}','${nameFileKeluar}','${placeIn}','${placeOut}','Pending','${signinLonglat}','${signOutLonglat}','${signinAddr}','${signoutAddr}','${signinNote}','${timestampInSeconds}')`);
+            const [transaksi] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan='${nomorAjuan}' AND ajuan='5'`);
+            const [employee] = await conn.query(`SELECT * FROM ${databaseMaster}.employee WHERE em_id='${em_id}'`);
+            utility.insertNotifikasi(
+              employee[0].em_report_to,
+              "Approval Absensi",
+              "Absensi",
+              employee[0].em_id,
+              transaksi[0].id,
+              transaksi[0].nomor_ajuan,
+              employee[0].full_name,
+              namaDatabaseDynamic,
+              databaseMaster
+            );
+            await conn.commit();
+            return res.status(200).send({
+              status: true,
+              message: "sucess insert data",
+            });
     } catch (e) {
+      if (conn){
+        await conn.rollback();
+      }
+      console.error('errr', e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) await conn.release();
     }
   },
 };

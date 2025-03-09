@@ -31,7 +31,7 @@ const transporter = nodemailer.createTransport({
 
 module.exports = {
   async menu(req, res) {
-    console.log('--------------load menu--------------');
+    console.log("--------------load menu--------------");
     var database = req.query.database;
     var email = req.query.email;
     var periode = req.body.periode;
@@ -42,33 +42,31 @@ module.exports = {
       await connection.getConnection();
       await connection.beginTransaction();
 
-
-          const query = `
+      const query = `
             SELECT * FROM menu_dashboard_user 
             JOIN menu_dashboard ON menu_dashboard.id = menu_dashboard_user.menu_id  
             WHERE menu_dashboard_user.em_id = ?
         `;
 
-        const [records] = await connection.query(query, [emId]);
-        if (records.length === 0) {
-          return res.status(404).send({
-              status: false,
-              message: "Data tidak ditemukan",
-              data: [],
-          });
+      const [records] = await connection.query(query, [emId]);
+      if (records.length === 0) {
+        return res.status(404).send({
+          status: false,
+          message: "Data tidak ditemukan",
+          data: [],
+        });
       }
 
       await connection.commit();
       console.log("Transaction completed successfully!");
       return res.status(200).send({
-          status: true,
-          message: "Data berhasil diambil",
-          data: records,
+        status: true,
+        message: "Data berhasil diambil",
+        data: records,
       });
-      
     } catch (e) {
       console.error("Error occurred:", e);
-  
+
       if (connection) {
         await connection.rollback();
       }
@@ -103,37 +101,38 @@ module.exports = {
 
     let connection;
     try {
-      console.log('---------------work schedule---------------');
-      connection = await (await model.createConnection1(`${database}_hrm`)).getConnection();
+      console.log("---------------work schedule---------------");
+      connection = await (
+        await model.createConnection1(namaDatabaseDynamic)
+      ).getConnection();
       await connection.beginTransaction();
-      
+
       var query = `SELECT work_schedule.time_in,work_schedule.time_out FROM ${namaDatabaseDynamic}.emp_shift JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id AND atten_date='${date}' AND em_id='${emId}'`;
       const [records] = await connection.query(query);
 
       if (records.length === 0) {
         return res.status(404).send({
-            status: false,
-            message: "Data tidak ditemukan",
-            data: [],
+          status: false,
+          message: "Data tidak ditemukan",
+          data: [],
         });
       }
 
       const { time_in, time_out } = records[0];
 
-    console.log("Transaction work schedule completed successfully!");
-    await connection.commit();
-    return res.status(200).send({
+      console.log("Transaction work schedule completed successfully!");
+      await connection.commit();
+      return res.status(200).send({
         status: true,
         message: "Data berhasil diambil",
         data: {
           time_in,
-          time_out
-        }
-    });
-          
+          time_out,
+        },
+      });
     } catch (e) {
-      console.error('error get workschedule', e)
-      if(connection){
+      console.error("error get workschedule", e);
+      if (connection) {
         await connection.rollback();
       }
       return res.status(400).send({
@@ -141,7 +140,9 @@ module.exports = {
         message: e,
         data: [],
       });
-    } 
+    } finally {
+      if (connection) await connection.release;
+    }
   },
 
   async kirimEmail(req, res) {
@@ -326,172 +327,188 @@ module.exports = {
     const database = req.query.database;
     const dbmaster = `${database}_hrm`;
 
+    const connection = await model.createConnection1(dbmaster);
+    let conn;
     try {
-        const connection = await model.createConnection1(dbmaster);
-        const [modul] = await connection.query(
-            `SELECT * FROM modul WHERE status = ?`, [1]
-        );
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [modul] = await conn.query(`SELECT * FROM modul WHERE status = ?`, [
+        1,
+      ]);
 
-        if (!modul.length) {
-            return res.status(404).send({
-                status: false,
-                message: "Modul tidak ditemukan",
-                data: [],
-            });
-        }
-
-        const [menu] = await connection.query(`SELECT * FROM menu`);
-
-        let finalData = modul.map((mod, index) => {
-            let menuConvert = menu
-                .filter(m => m.id_modul === mod.id_modul)
-                .map(m => ({
-                    id_menu: m.id_menu,
-                    nama_menu: m.nama_menu,
-                    gambar: m.gambar,
-                    url: m.url,
-                }));
-
-            return {
-                index,
-                nama_modul: mod.nama_modul,
-                status: false,
-                menu: menuConvert,
-            };
+      if (!modul.length) {
+        return res.status(404).send({
+          status: false,
+          message: "Modul tidak ditemukan",
+          data: [],
         });
-
-        return res.status(200).send({
-            status: true,
-            message: "Berhasil ambil data!",
-            data: finalData,
-        });
-
-    } catch (error) {
-        console.error("Error getMenuDashboard:", error);
-        return res.status(500).send({
-            status: false,
-            message: "Terjadi kesalahan saat mengambil data",
-            data: [],
-        });
-    }
-},
-
-async showMenuDashboard(req, res) {
-  console.log("-----show menu dashboard----------");
-  const database = req.query.database;
-  const emId = req.query.em_id;
-  const dbmaster = `${database}_hrm`;
-
-  try {
-      // Buat pool koneksi
-      const poolDynamic = await model.createConnection1(dbmaster);
-
-      // Query untuk mendapatkan data menu dashboard
-      const query = `
-          SELECT * FROM menu_dashboard_user 
-          JOIN menu_dashboard ON menu_dashboard.id = menu_dashboard_user.menu_id  
-          WHERE menu_dashboard_user.em_id = ? AND menu_dashboard.default = '1'
-      `;
-      
-      const [menuResults] = await poolDynamic.query(query, [emId]);
-
-      let results = menuResults;
-      
-      // Jika data menu_dashboard_user tidak ditemukan, ambil default menu_dashboard
-      if (results.length === 0) {
-          const defaultQuery = 'SELECT * FROM menu_dashboard WHERE `default` = 1';
-          const [defaultResults] = await poolDynamic.query(defaultQuery);
-          results = defaultResults;
       }
 
-      // Modul statis
-      const modulStatic = [
-          { status: 0, nama_modul: "Menu Utama" },
-          { status: 1, nama_modul: "Payroll" },
-      ];
+      const [menu] = await conn.query(`SELECT * FROM menu`);
 
-      // Mapping data menu dengan modul statis
-      const finalData = modulStatic.map((modul, index) => {
-          const menuConvert = results
-              .filter(menu => menu.status === modul.status)
-              .map(menu => ({
-                  id: menu.id,
-                  nama: menu.nama,
-                  url: menu.url,
-                  gambar: menu.gambar,
-              }));
+      let finalData = modul.map((mod, index) => {
+        let menuConvert = menu
+          .filter((m) => m.id_modul === mod.id_modul)
+          .map((m) => ({
+            id_menu: m.id_menu,
+            nama_menu: m.nama_menu,
+            gambar: m.gambar,
+            url: m.url,
+          }));
 
-          return {
-              index,
-              nama_modul: modul.nama_modul,
-              status: false,
-              menu: menuConvert,
-          };
-      });
-
-      // Mengembalikan respon berhasil
-      return res.status(200).send({
-          status: true,
-          message: "Berhasil ambil data!",
-          data: finalData,
-      });
-
-  } catch (error) {
-      console.error("Error showMenuDashboard:", error);
-      return res.status(500).send({
+        return {
+          index,
+          nama_modul: mod.nama_modul,
           status: false,
-          message: "Terjadi kesalahan saat mengambil data",
-          data: [],
+          menu: menuConvert,
+        };
       });
-  }
-},
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data: finalData,
+      });
+    } catch (error) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error getMenuDashboard:", error);
+      return res.status(500).send({
+        status: false,
+        message: "Terjadi kesalahan saat mengambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+  },
 
-
-async  showMenuDashboardUtama(req, res) {
+  async showMenuDashboard(req, res) {
     console.log("-----show menu dashboard----------");
     const database = req.query.database;
     const emId = req.query.em_id;
     const dbmaster = `${database}_hrm`;
 
+    const connection = await model.createConnection1(dbmaster);
+    let conn;
     try {
-        const connection = await model.createConnection1(dbmaster);
-        // Query utama untuk menu berdasarkan em_id
-        const [userMenuResults] = await connection.query(
-            `SELECT * FROM menu_dashboard_utama_user 
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+
+      const query = `
+          SELECT * FROM menu_dashboard_user 
+          JOIN menu_dashboard ON menu_dashboard.id = menu_dashboard_user.menu_id  
+          WHERE menu_dashboard_user.em_id = ? AND menu_dashboard.default = '1'
+      `;
+
+      const [menuResults] = await conn.query(query, [emId]);
+
+      let results = menuResults;
+
+      // Jika data menu_dashboard_user tidak ditemukan, ambil default menu_dashboard
+      if (results.length === 0) {
+        const defaultQuery = "SELECT * FROM menu_dashboard WHERE `default` = 1";
+        const [defaultResults] = await conn.query(defaultQuery);
+        results = defaultResults;
+      }
+
+      // Modul statis
+      const modulStatic = [
+        { status: 0, nama_modul: "Menu Utama" },
+        { status: 1, nama_modul: "Payroll" },
+      ];
+
+      // Mapping data menu dengan modul statis
+      const finalData = modulStatic.map((modul, index) => {
+        const menuConvert = results
+          .filter((menu) => menu.status === modul.status)
+          .map((menu) => ({
+            id: menu.id,
+            nama: menu.nama,
+            url: menu.url,
+            gambar: menu.gambar,
+          }));
+
+        return {
+          index,
+          nama_modul: modul.nama_modul,
+          status: false,
+          menu: menuConvert,
+        };
+      });
+
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data: finalData,
+      });
+    } catch (error) {
+      console.error("Error showMenuDashboard:", error);
+      if (conn) {
+        await conn.rollback();
+      }
+      return res.status(500).send({
+        status: false,
+        message: "Terjadi kesalahan saat mengambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+  },
+
+  async showMenuDashboardUtama(req, res) {
+    console.log("-----show menu dashboard----------");
+    const database = req.query.database;
+    const emId = req.query.em_id;
+    const dbmaster = `${database}_hrm`;
+
+    const connection = await model.createConnection1(dbmaster);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [userMenuResults] = await conn.query(
+        `SELECT * FROM menu_dashboard_utama_user 
              JOIN menu_dashboard_utama 
              ON menu_dashboard_utama.id = menu_dashboard_utama_user.menu_id 
              WHERE menu_dashboard_utama_user.em_id = ?`,
-            [emId]
-        );
+        [emId]
+      );
 
-        // Jika data ditemukan, kirimkan hasilnya
-        if (userMenuResults.length > 0) {
-            return res.status(200).send({
-                status: true,
-                message: "Berhasil ambil data!",
-                data: userMenuResults,
-            });
-        }
-
-        // Jika data tidak ditemukan, ambil default data dari menu_dashboard_utama
-        const [defaultMenuResults] = await connection.query(
-            `SELECT * FROM menu_dashboard_utama`
-        );
-
+      // Jika data ditemukan, kirimkan hasilnya
+      if (userMenuResults.length > 0) {
         return res.status(200).send({
-            status: true,
-            message: "Berhasil ambil data!",
-            data: defaultMenuResults,
+          status: true,
+          message: "Berhasil ambil data!",
+          data: userMenuResults,
         });
+      }
 
+      // Jika data tidak ditemukan, ambil default data dari menu_dashboard_utama
+      const [defaultMenuResults] = await conn.query(
+        `SELECT * FROM menu_dashboard_utama`
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data: defaultMenuResults,
+      });
     } catch (error) {
-        console.error("Error showMenuDashboardUtama:", error);
-        return res.status(500).send({
-            status: false,
-            message: "Terjadi kesalahan saat mengambil data",
-            data: [],
-        });
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error showMenuDashboardUtama:", error);
+      return res.status(500).send({
+        status: false,
+        message: "Terjadi kesalahan saat mengambil data",
+        data: [],
+      });
+    }finally {
+      if (conn) await conn.release();
     }
-}
-
+  },
 };
