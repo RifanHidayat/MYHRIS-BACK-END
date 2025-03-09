@@ -19,7 +19,7 @@ module.exports = {
   async notice(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -39,107 +39,70 @@ FROM notice n
 LEFT JOIN notice_view v ON v.notice_id = n.id
 WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_date >= CURDATE()
 `;
-
-    console.log("url accouncemnt", url);
-
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        connection.query(url, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: results,
-            });
-          });
-        });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
+      console.log("Transaction completed successfully!");
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error executing SELECT statement:", e);
+      return res.status(400).send({
+        status: true,
+        message: "gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async updateNotice(req, res) {
-      var database = req.query.database;
-      var emId = req.body.em_id;
-      var letterId = req.body.notice_id;
-    
-      try {
-        const connection = await model.createConnection(database);
-        connection.connect((err) => {
-          if (err) {
-            console.error("Error connecting to the database:", err);
-            return res.status(500).send({ status: false, message: "Koneksi gagal" });
-          }
-    
-          const queryInsert = `
+    var database = req.query.database;
+    var emId = req.body.em_id;
+    var letterId = req.body.notice_id;
+
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await coon.beginTransaction();
+      const queryInsert = `
             INSERT INTO notice_view (notice_id, em_id) 
             VALUES (?, ?)`;
-  
-          console.log('ini em_id ',emId);
-          connection.query(queryInsert, [letterId, emId], (err, result) => {
-            connection.end();
-            // console.log(queryInsert);
-            if (err) {
-              console.error("Error inserting into notice_view:", err);
-              return res.status(400).send({ status: false, message: "Gagal update status" });
-            }
-    
-            return res.status(200).send({ status: true, message: "Surat peringatan sudah dibaca" });
-          });
-        });
-      } catch (e) {
-        return res.status(500).send({ status: false, message: "Terjadi kesalahan server" });
+
+      console.log("ini em_id ", emId);
+      const [results] = await conn.query(queryInsert, [letterId, emId]);
+      await conn.commit();
+      return res
+        .status(200)
+        .send({ status: true, message: "Surat peringatan sudah dibaca" });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    },
+      console.error("Error inserting into notice_view:", e);
+      return res
+        .status(400)
+        .send({ status: false, message: "Gagal update status" });
+    } finally {
+      if (conn) await conn.release();
+    }
+  },
 
   async savePolling(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -156,84 +119,34 @@ WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_d
     url = `INSERT INTO  notice_question_polling_employee (em_id,notice_question_id,notice_question_polling_id) VALUES ('${emId}','${idPertanyaan}','${idPolling}')`;
 
     console.log("url accouncemnt", url);
-
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        connection.query(deleteurl, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
-            });
-            return;
-          }
-          connection.query(url, (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "gagal ambil data",
-                  data: [],
-                });
-              });
-              return;
-            }
-            records = results;
-            if (records.length == 0) {
-              return res.status(400).send({
-                status: true,
-                message: "Kombinasi email & password Anda Salah",
-                data: [],
-              });
-            }
-            connection.commit((err) => {
-              if (err) {
-                console.error("Error committing transaction:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: true,
-                    message: "Kombinasi email & password Anda Salah",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              connection.end();
-              console.log("Transaction completed successfully!");
-              return res.status(200).send({
-                status: true,
-                message: "Kombinasi email & password Anda Salah",
-                data: results,
-              });
-            });
-          });
-        });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await coon.beginTransaction();
+      const [result] = await conn.query(deleteurl);
+      const [results] = await conn.query(url);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: results,
       });
-    });
+    }catch(e){
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error inserting into notice_view:", e);
+      return res
+        .status(400)
+        .send({ status: false, message: "Gagal update status" });
+    }finally{
+      if (conn) await conn.release();
+    }
   },
   async detailNoticePolling(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -251,103 +164,48 @@ WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_d
         WHERE notice_question_polling_id=notice_question_polling.id)  AS total_karyawan FROM  notice_question_polling WHERE notice_question_id='${questionId}'`;
 
     console.log("url accouncemnt", url);
-
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] =
+        await conn.query(`SELECT * FROM notice_question_polling_employee WHERE notice_question_id='${questionId}' AND em_id='${emId}'
+            `);
+      if (results.length > 0) {
+        isCheckedEmployee = true;
+        idPolling = results[0]["notice_question_polling_id"];
+      } else {
+        isCheckedEmployee == false;
+        idPolling = "0";
       }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        console.log();
-
-        connection.query(
-          `SELECT * FROM notice_question_polling_employee WHERE notice_question_id='${questionId}' AND em_id='${emId}'
-            `,
-          (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "gagal ambil data",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            console.log(results);
-            if (results.length > 0) {
-              isCheckedEmployee = true;
-              idPolling = results[0]["notice_question_polling_id"];
-            } else {
-              isCheckedEmployee == false;
-              idPolling = "0";
-            }
-
-            connection.query(url, (err, results) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: true,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              records = results;
-              if (records.length == 0) {
-                return res.status(400).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: [],
-                });
-              }
-              connection.commit((err) => {
-                if (err) {
-                  console.error("Error committing transaction:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: true,
-                      message: "Kombinasi email & password Anda Salah",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-
-                connection.end();
-                console.log("Transaction completed successfully!");
-                return res.status(200).send({
-                  status: true,
-                  message: "salah",
-                  is_polling: isCheckedEmployee,
-                  id_polling: idPolling,
-                  data: results,
-                });
-              });
-            });
-          }
-        );
+      const [result] = await conn.query(url);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "salah",
+        is_polling: isCheckedEmployee,
+        id_polling: idPolling,
+        data: result,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error connecting to the database:", e);
+      return res.status(400).send({
+        status: true,
+        message: "gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async detailNoticePollingEmployee(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -363,65 +221,29 @@ WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_d
 
     console.log("url accouncemnt", url);
 
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        connection.query(url, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: results,
-            });
-          });
-        });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error connecting to the database:", e);
+      return res.status(400).send({
+        status: true,
+        message: "gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-
-
 };
