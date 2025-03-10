@@ -43,7 +43,7 @@ module.exports = {
   async allData(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -67,64 +67,30 @@ module.exports = {
       url = query_global;
     }
 
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        connection.query(url, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: results,
-            });
-          });
-        });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error executing SELECT statement:", e);
+      return res.status(400).send({
+        status: true,
+        message: "gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
     // let name_url = req.originalUrl;
     // var getTableName = name_url.substring(name_url.lastIndexOf("/") + 1);
 
@@ -160,7 +126,7 @@ module.exports = {
   async overtime(req, res) {
     var database = req.query.database;
     console.log("database ", database);
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let name_url = req.originalUrl;
     var getTableName = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -181,105 +147,38 @@ module.exports = {
     } else {
       url = query_global;
     }
-
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        connection.query(
-          `SELECT * FROM ${database}_hrm.overtime  WHERE aktif='Y'`,
-          (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "gagal ambil data",
-                  data: [],
-                });
-              });
-              return;
-            }
-            records = results;
-            if (records.length == 0) {
-              return res.status(400).send({
-                status: true,
-                message: "Kombinasi email & password Anda Salah",
-                data: [],
-              });
-            }
-            connection.commit((err) => {
-              if (err) {
-                console.error("Error committing transaction:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: true,
-                    message: "Kombinasi email & password Anda Salah",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              connection.end();
-              console.log("Transaction completed successfully!");
-              return res.status(200).send({
-                status: true,
-                message: "Kombinasi email & password Anda Salah",
-                data: results,
-              });
-            });
-          }
-        );
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM ${database}_hrm.overtime  WHERE aktif='Y'`
+      );
+      console.log("Transaction completed successfully!");
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: results,
       });
-    });
-    // let name_url = req.originalUrl;
-    // var getTableName = name_url.substring(name_url.lastIndexOf("/") + 1);
-
-    // var query_global = `SELECT * FROM ${getTableName}`;
-    // var query_departemen = `SELECT * FROM department`;
-    // var query_place = `SELECT * FROM places_coordinate WHERE isActive='1'`;
-
-    // var url;
-    // if (getTableName == "all_department") {
-    //   url = query_departemen;
-    // } else if (getTableName == "places_coordinate") {
-    //   url = query_place;
-    // } else {
-    //   url = query_global;
-    // }
-
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);
-    //   connection.query(
-    //     url,
-    //     function (error, results) {
-    //       connection.release();
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil ambil data!",
-    //         data: results,
-    //       });
-    //     }
-    //   );
-
-    // })hrm;
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error executing SELECT statement:", e);
+      return res.status(400).send({
+        status: true,
+        message: "Kombinasi email & password Anda Salah",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async cari_informasi_employee(req, res) {
     console.log("-----function cari informasi employee----------");
     var database = req.query.database;
-    const connection = await model.createConnection(database);
     var dep_id = req.body.dep_id;
     var branchId = req.headers.branch_id;
 
@@ -295,64 +194,32 @@ module.exports = {
       console.log(query2);
     }
     //-----begin check koneksi----
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        //-------end check koneksi-----
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-        connection.query(url, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: [],
-                });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Kombinasi email & password Anda Salah",
-              data: results,
-            });
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+
     // var dep_id = req.body.dep_id;
 
     // var query1 = `SELECT * FROM ${database}_hrm.employee WHERE status='ACTIVE'`;
@@ -646,301 +513,39 @@ module.exports = {
       });
     });
   },
-  //   async suratKontrakPdf(req, res) {
-  //     const fs = require('fs');
-
-  //     async function downloadImage(url) {
-  //       const response = await axios.get(url, { responseType: 'arraybuffer' });
-  //       return Buffer.from(response.data, 'binary');
-  //     }
-
-  //     // Membuat dokumen PDF baru
-  //     const PDFDocument = require('pdfkit');
-  //     const doc = new PDFDocument({
-  //       size: 'A4', // Set page size to A4
-  //       margin: 20 // Optional, sets global margin for all pages
-  //     });
-
-  //     doc.pipe(fs.createWriteStream('positioned_text.pdf'));
-
-  //     const lineWidth = 1; // Line thickness
-
-  //     const startX = 50; // Starting X position (left margin)
-  //     const startY = 200; // Starting Y position (vertical position)
-  //     const endX = 550;  // Ending X position (right margin)
-
-  //     const marginTop =150;  // Top margin
-  //     const marginLeft = 40; // Left margin
-  //     const marginRight = 40; // Right margin
-
-  // // Adjust width to account for horizontal margin
-  // const textWidth = doc.page.width - marginLeft - marginRight;
-  //     // Set header untuk file PDF
-  //     res.setHeader('Content-Type', 'application/pdf');
-  //     res.setHeader('Content-Disposition', 'inline; filename="output.pdf"');
-
-  //     // Mengarahkan output ke response (bukan ke file)
-  //     doc.pipe(res);
-
-  //     // Menambahkan konten PDF
-  //     doc.fontSize(25).text('PT SINAR ARTHA MULIA',  {
-  //       align: 'center',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin)
-  //       y:200,
-
-  //     });
-  //     doc.fontSize(12).text('MECHANICAL ELECTRICAL AND AIR CONDITIONING CONTRACTORS.', {
-  //       align: 'center',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin)
-
-  //     });
-  //     doc.fontSize(10).text('komplek artha Gading Niaga G NO. 11 Kelapa Gading Barat, Kelapa Gading  - Jakarta Utara 14240',{
-  //       align: 'center',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin)
-
-  //     });
-
-  //     doc.fillColor('white').fontSize(15).text('-',{});
-
-  //     doc.fillColor('black').fontSize(15).text('Pasal 1',{
-  //       align: 'center',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin)
-
-  //     });
-
-  //     doc.fillColor('black').fontSize(15).text('Surat Kerja',{
-  //       align: 'center',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin)
-
-  //     });
-  //     doc.fillColor('white').fontSize(15).text('-',{});
-  //     doc.fillColor('white').fontSize(15).text('-',{});
-
-  //     doc.fillColor('black').fontSize(12).text('Perjanjian Kerja mengikat 2(dua) belah , yaitu:',{
-  //       align: 'left',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin),
-  //       height:10,
-
-  //     });
-  //     doc.fillColor('black').fontSize(12).text('          Nama :',{
-  //       align: 'left',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin),
-  //       height:20,
-
-  //     });
-  //     doc.fillColor('black').fontSize(12).text('          NIK:',{
-  //       align: 'left',  // Menyusun teks di tengah secara horizontal
-  //       valign: 'top',    // Menyusun teks di bagian atas halaman (vertikal, bisa diubah)
-  //       width: doc.page.width - 40, // Lebar area teks (opsional untuk memberi margin),
-  //       height:20,
-
-  //     });
-
-  //     doc.fillColor('white').fontSize(15).text('-',{});
-  //     doc.fontSize(15).text('',{});
-  //     doc.fontSize(15).text('',{});
-
-  //     doc.strokeColor('black').lineWidth(lineWidth);
-  //     // Draw the line
-  //     // doc.moveTo(startX, 90).lineTo(endX, 90).stroke();
-  //     // doc.moveTo(startX, 92).lineTo(endX, 92).stroke();
-
-  //     // const textWidthPasal = doc.widthOfString("Pasal 1");
-  //     // const xPasal = (doc.page.width - textWidthPasal) / 2;  // Horizontal center
-  //     // doc.fontSize(15).text('PASAL 1', xPasal,120,);
-
-  //     // Menyelesaikan dokumen PDF
-
-  //     doc.end();
-
-  //   // async suratKontrakPdf(req,res) {
-  //   //   try {
-  //   //     const puppeteer = require('puppeteer');
-  //   //     // Mengambil data dari database
-  //   //    // const users = await getDataFromDatabase();
-
-  //   //     // Membuat HTML dengan data yang diambil dari database
-  //   //     let userListHtml = '';
-
-  //   //     const htmlContent = `
-  //   //       <html>
-  //   //         <head>
-  //   //           <title>Users List</title>
-  //   //           <style>
-  //   //             body { font-family: Arial, sans-serif; padding: 20px; }
-  //   //             table { width: 100%; border-collapse: collapse; }
-  //   //             th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
-  //   //             th { background-color: #f2f2f2; }
-  //   //           </style>
-  //   //         </head>
-  //   //         <body>
-  //   //           <h1>User List</h1>
-  //   //           <table>
-  //   //             <tr>
-  //   //               <th>Name</th>
-  //   //               <th>Email</th>
-  //   //             </tr>
-  //   //            Rifan
-  //   //           </table>
-  //   //         </body>
-  //   //       </html>
-  //   //     `;
-
-  //   //     // Meluncurkan browser Puppeteer
-  //   //     const browser = await puppeteer.launch();
-  //   //     const page = await browser.newPage();
-
-  //   //     // Set halaman dengan HTML yang telah dihasilkan
-  //   //     await page.setContent(htmlContent);
-
-  //   //     // Membuat PDF dari HTML
-  //   //     await page.pdf({ path: 'users-list.pdf', format: 'A4' });
-
-  //   //     // Menutup browser
-  //   //     await browser.close();
-
-  //   //     console.log('PDF Created Successfully!');
-  //   //   } catch (err) {
-  //   //     console.error('Error generating PDF:', err);
-  //   //   } finally {
-  //   //    // connection.end();  // Menutup koneksi database
-  //   //   }
-  //   // },
-
-  //   },
   async informasi_employee_ultah(req, res) {
     console.log("-----informasi employee ulang tahun----------");
     var dateNow = req.body.dateNow;
 
     var database = req.query.database;
     var branchId = req.headers.branch_id;
-    const connection = await model.createConnection(database);
-
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
     var query1 = `SELECT em_id,full_name, job_title, em_birthday, em_mobile, em_image FROM employee WHERE DATE_FORMAT(em_birthday, '%m')=DATE_FORMAT('${dateNow}', '%m') AND employee.status='ACTIVE' AND branch_id=${branchId} ORDER BY DATE_FORMAT(em_birthday, "%d") ASC`;
-    //-----begin check koneksi----
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        //-------end check koneksi-----
-
-        connection.query(query1, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: false,
-                message: "Terjadi kesahalan",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: false,
-              message: "Terjadi kesalahan",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesalahan",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            console.log("Transaction completed successfully!");
-            res.status(200).send({
-              status: true,
-              message: "Successfuly get data",
-              data: results,
-            });
-            connection.end();
-          });
-        });
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(query1);
+      await conn.commit();
+      console.log("Transaction completed successfully!");
+      res.status(200).send({
+        status: true,
+        message: "Successfuly get data",
+        data: results,
       });
-    });
-
-    // var query1 = `SELECT em_id FROM ${database}_hrm.employee WHERE DATE_FORMAT(em_birthday, '%m-%d')=DATE_FORMAT('${dateNow}', '%m-%d')`;
-    // var query1 = `SELECT em_id,full_name, job_title, em_birthday, em_mobile, em_image FROM ${database}_hrm.employee WHERE DATE_FORMAT(em_birthday, '%m')=DATE_FORMAT('${dateNow}', '%m') AND ${database}_hrm.employee.status='ACTIVE' ORDER BY DATE_FORMAT(em_birthday, "%d") ASC`;
-
-    // let proses1 = new Promise(function (myResolve, myReject) {
-    //   pool.getConnection(function (err, connection) {
-    //     if (err) console.log(err);
-    //     connection.query(
-    //       query1,
-    //       function (error, results) {
-    //         connection.release();
-    //         if (error != null) console.log(error)
-    //         myResolve(results);
-    //       }
-    //     );
-    //   });
-    // });
-    // proses1.then(
-    //   function (value) {
-
-    //     var listReport = value;
-
-    //     var query2 = `SELECT full_name, job_title, em_birthday, em_mobile, em_image FROM ${database}_hrm.employee WHERE em_id=?`;
-    //     const getInfo = (t) => {
-    //       return new Promise((resolve, reject) => {
-    //         pool.getConnection(function (err, connection) {
-    //           if (err) console.log(err);
-    //           connection.query(
-    //             query2, [t],
-    //             function (error, results) {
-    //               connection.release();
-    //               if (error != null) console.log(error)
-    //               resolve(results[0])
-    //             }
-    //           );
-    //         });
-
-    //       })
-    //     }
-
-    //     var response = [];
-
-    //     listReport.map((value) => {
-    //       response.push(getInfo(value['em_id']))
-    //     })
-
-    //     Promise.all(response)
-    //       .then(response => {
-    //         res.send({
-    //           status: true,
-    //           message: "Berhasil ambil data employee ultah!",
-    //           data: response,
-    //         });
-    //       });
-
-    //   },
-    // );
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error executing SELECT statement:", e);
+      return res.status(400).send({
+        status: false,
+        message: "Terjadi kesahalan",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   informasi_wa_atasan(req, res) {
@@ -1263,99 +868,45 @@ module.exports = {
     var startDate = req.query.start_periode;
     var endDate = req.query.end_periode;
     var array = endDate.split("-");
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     var databseDinamik = `${database}_hrm${array[0].substring(
       2,
       4
     )}${array[1].padStart(2, "0")}`;
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
 
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);
-    //   connection.query(
-    //     `SELECT * FROM ${convert2} WHERE ${value}='${cari}';`,
-    //     function (error, results) {
+      query = `SELECT * FROM ${convert2} WHERE ${value}='${cari}' `;
 
-    //       if (error != null) console.log(error)
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil ambil data!",
-    //         data: results,
-    //       });
-    //     }
-    //   );
-    //   connection.release();
-    // });
-
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
+      if (convert2 == "assign_leave") {
+        query = `
+      SELECT 
+      em_id,
+      (saldo_cut_off+saldo_cuti_bulan_lalu+saldo_cuti_tahun_lalu+perolehan_cuti-expired_cuti) as total_day,IFNULL((terpakai+terpakai_cuti_tahun_lalu) ,0 )   as terpakai FROM ${databseDinamik}.${convert2} WHERE ${value}='${cari}'  ORDER BY em_id ASC `;
       }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        query = `SELECT * FROM ${convert2} WHERE ${value}='${cari}' `;
 
-        if (convert2 == "assign_leave") {
-          // query = `SELECT em_id,(total_day+adjust_cuti) as total_day,(terpakai) as terpakai FROM ${convert2} WHERE ${value}='${cari}'  ORDER BY dateyear DESC `;
-          query = `
-        SELECT 
-        em_id,
-        (saldo_cut_off+saldo_cuti_bulan_lalu+saldo_cuti_tahun_lalu+perolehan_cuti-expired_cuti) as total_day,IFNULL((terpakai+terpakai_cuti_tahun_lalu) ,0 )   as terpakai FROM ${databseDinamik}.${convert2} WHERE ${value}='${cari}'  ORDER BY em_id ASC `;
-        }
-
-        //-------end check koneksi-----
-
-        console.log(query);
-
-        connection.query(query, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: false,
-                message: "Terjadi kesahalan",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(400).send({
-              status: false,
-              message: "Terjadi kesalahan",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesalahan",
-                  data: [],
-                });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Successfuly get data",
-              data: results,
-            });
-          });
-        });
+      const [result] = await conn.query(query);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Successfuly get data",
+        data: result,
       });
-    });
+    } catch {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Terjadi kesalahan",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
   async whereTwo(req, res) {
     console.log("-----where two----------");
@@ -1456,118 +1007,63 @@ module.exports = {
   async setting_shift(req, res) {
     console.log("-----setting shift----------");
     var database = req.query.database;
-    const connection = await model.createConnection(database);
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        //-------end check koneksi-----
-
-        connection.query(
-          `SELECT * FROM shift WHERE default_shift='1'`,
-          (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesahalan",
-                  data: [],
-                });
-              });
-              return;
-            }
-            records = results;
-            if (records.length == 0) {
-              return res.status(400).send({
-                status: false,
-                message: "Terjadi kesalahan",
-                data: [],
-              });
-            }
-            connection.commit((err) => {
-              if (err) {
-                console.error("Error committing transaction:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "Terjadi kesalahan",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              connection.end();
-              console.log("Transaction completed successfully!");
-              return res.status(200).send({
-                status: true,
-                message: "Successfuly get data",
-                data: results,
-              });
-            });
-          }
-        );
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM shift WHERE default_shift='1'`
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Successfuly get data",
+        data: results,
       });
-    });
-
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);;
-    //   connection.query(
-    //     `SELECT * FROM shift WHERE default_shift='1';`,
-    //     function (error, results) {
-    //       connection.release();
-    //       if (error) console.log(error);
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil ambil data!",
-    //         data: results,
-    //       });
-    //     }
-    //   );
-
-    // });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("eroor : ", e);
+      return res.status(400).send({
+        status: false,
+        message: "Terjadi kesalahan",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  banner_from_finance(req, res) {
+  async banner_from_finance(req, res) {
     console.log("-----banneer from finance----------");
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: "sis_admin",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT img,url,seq FROM banner WHERE stsrec = 'A' OR (begin_date>= date(now()) AND end_date <= date(now())) ORDER BY seq`,
-        function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil data!",
-            data: results,
-          });
-        }
+    const connection = await model.createConnection1("sis_admin");
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT img,url,seq FROM banner WHERE stsrec = 'A' OR (begin_date>= date(now()) AND end_date <= date(now())) ORDER BY seq`
       );
-      connection.release();
-    });
+      await conn.commit();
+      res.send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      res.send({
+        status: false,
+        message: "gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   historyData(req, res) {
@@ -6246,54 +5742,48 @@ module.exports = {
     }
   },
 
-  validasiLogin(req, res) {
+  async validasiLogin(req, res) {
     console.log("-----validasi login----------");
     var database = req.query.database;
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = model.createConnection1(`${database}_hrm`);
     var email = req.body.email;
     var password = sha1(req.body.password);
     var token_notif = req.body.token_notif;
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT a.em_bpjs_kesehatan as nomor_bpjs_kesehatan,a.em_bpjs_tenagakerja as nomor_bpjs_tenagakerja, em_id, full_name, em_email, des_id, dep_id, dep_group_id as dep_group, em_mobile as em_phone, em_birthday, em_blood_group, em_gender, em_image, em_joining_date, em_status, job_title as posisi, em_hak_akses, last_login, status as status_aktif, em_control, em_controlaccess as em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working as emp_att_working FROM employee a LEFT JOIN designation b ON a.des_id=b.id 
-        LEFT JOIN department c ON a.dep_id=c.id where em_email='${email}' AND em_password='${password}'`,
-        function (error, results) {
-          if (error) console.log(error);
-          if (results.length == 0) {
-            res.send({
-              status: false,
-              message: "Kombinasi email & password Anda Salah",
-            });
-          } else {
-            var queryKontra = "SELECT * FROM em";
-
-            var updateToken = `UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${email}'`;
-            connection.query(updateToken, function (error, results) {});
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              data: results,
-            });
-          }
-        }
-      );
-      connection.release();
-    });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] =
+        await conn.query(`SELECT a.em_bpjs_kesehatan as nomor_bpjs_kesehatan,a.em_bpjs_tenagakerja as nomor_bpjs_tenagakerja, em_id, full_name, em_email, des_id, dep_id, dep_group_id as dep_group, em_mobile as em_phone, em_birthday, em_blood_group, em_gender, em_image, em_joining_date, em_status, job_title as posisi, em_hak_akses, last_login, status as status_aktif, em_control, em_controlaccess as em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working as emp_att_working FROM employee a LEFT JOIN designation b ON a.des_id=b.id 
+        LEFT JOIN department c ON a.dep_id=c.id where em_email='${email}' AND em_password='${password}'`);
+      if (results.length == 0) {
+        await conn.commit();
+        res.send({
+          status: false,
+          message: "Kombinasi email & password Anda Salah",
+        });
+      } else {
+        var updateToken = `UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${email}'`;
+        const [update] = await conn.query(updateToken);
+        await conn.commit();
+        res.send({
+          status: true,
+          message: "Berhasil ambil data!",
+          data: results,
+        });
+      }
+    } catch (err) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", err);
+      res.send({
+        status: false,
+        message: "Kombinasi email & password Anda Salah",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async refresh_employee(req, res) {
@@ -6330,19 +5820,6 @@ module.exports = {
 
     var database = req.query.database;
     // const namaDatabaseDynamic = `${database}_test2208`;
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
     var em_id = req.body.em_id;
 
     const tahun = `${array[0]}`;
@@ -6396,405 +5873,199 @@ module.exports = {
      `;
 
     console.log("query update employee", query);
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      let [results] = await conn.query(query);
+      const queryHistory = `SELECT * FROM employee_history WHERE em_id='${em_id}' ORDER BY id DESC`;
+      const [history] = await conn.query(queryHistory);
+
+      let currentDate = new Date();
+
+      function getDaysDifference(endDate) {
+        // Convert the endDate string to a Date object
+        let end = new Date(endDate);
+
+        // Check if endDate is a valid date
+        if (isNaN(end)) {
+          return 0; // If the endDate is invalid, return 0 (similar to the 'IFNULL' logic)
         }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
 
-          connection.query(query, (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "gagal ambil data",
-                  data: [],
-                });
-              });
-              return;
-            }
+        // Calculate the difference in milliseconds
+        let diffInMs = end - currentDate;
 
-            connection.query(
-              `SELECT * FROM employee_history WHERE em_id='${em_id}' ORDER BY id DESC`,
-              (err, history) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: false,
-                      message: "gagal ambil data",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
+        // Convert milliseconds to days
+        let diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
-                let currentDate = new Date();
+        return diffInDays + 1;
+      }
 
-                // Function to calculate the difference in days
-                function getDaysDifference(endDate) {
-                  // Convert the endDate string to a Date object
-                  let end = new Date(endDate);
+      if (history.length > 0) {
+        results[0].em_status = history[0].description;
+        results[0].tanggal_berakhir_kontrak = history[0].end_date;
+        let sisaKontrak = getDaysDifference(history[0].end_date);
 
-                  // Check if endDate is a valid date
-                  if (isNaN(end)) {
-                    return 0; // If the endDate is invalid, return 0 (similar to the 'IFNULL' logic)
-                  }
+        if (results[0].em_status == "PERMANENT") {
+          results[0].sisa_kontrak = "0";
+        } else {
+          results[0].sisa_kontrak = sisaKontrak.toString();
+        }
+      }
 
-                  // Calculate the difference in milliseconds
-                  let diffInMs = end - currentDate;
+      console.log("Sisa kontrak", results[0].sisa_kontrak);
 
-                  // Convert milliseconds to days
-                  let diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      const [depertment] = await conn.query(
+        `SELECT * FROM  department WHERE  id='${results[0].dep_id}'`
+      );
+      if (
+        results[0].tipe_absen == "" ||
+        results[0].tipe_absen == "0" ||
+        results[0].tipe_absen == null ||
+        results[0].tipe_absen == undefined
+      ) {
+        results[0].tipe_absen = depertment[0].tipe_absen;
+      }
 
-                  return diffInDays + 1;
-                }
+      console.log(results[0].lama_bekerja);
+      const totalDays = parseInt(results[0].lama_bekerja);
+      const result = convertDaysToYMD(totalDays);
 
-                if (history.length > 0) {
-                  results[0].em_status = history[0].description;
-                  results[0].tanggal_berakhir_kontrak = history[0].end_date;
-                  let sisaKontrak = getDaysDifference(history[0].end_date);
+      var formatLamaBekerja = "";
+      if (result.tahun != 0) {
+        formatLamaBekerja = `${result.tahun} Tahun ${result.bulan} Bulan ${result.hari} Hari`;
+      } else {
+        if (result.bulan != 0) {
+          formatLamaBekerja = `${result.bulan} bulan ${result.hari} Hari`;
+        } else {
+          formatLamaBekerja = `${result.hari} Hari`;
+        }
+      }
+      const totalDaysKontrak = parseInt(results[0].sisa_kontrak);
+      const result1 = convertDaysToYMD(totalDaysKontrak);
 
-                  if (results[0].em_status == "PERMANENT") {
-                    results[0].sisa_kontrak = "0";
-                  } else {
-                    results[0].sisa_kontrak = sisaKontrak.toString();
-                  }
-                }
+      var formatSisaKontrak = "";
+      if (result1.tahun != 0) {
+        formatSisaKontrak = `${result1.tahun} Tahun ${result1.bulan} Bulan ${result1.hari} Hari`;
+      } else {
+        if (result1.bulan != 0) {
+          formatSisaKontrak = `${result1.bulan} Bulan ${result1.hari} Hari`;
+        } else {
+          formatSisaKontrak = `${result1.hari} hr`;
+        }
+      }
 
-                console.log("Sisa kontrak", results[0].sisa_kontrak);
+      if (totalDaysKontrak == 0) {
+        formatSisaKontrak = "";
+      }
+      results[0].sisa_kontrak_format = formatSisaKontrak;
+      results[0].lama_bekerja_format = formatLamaBekerja;
 
-                connection.query(
-                  `SELECT * FROM  department WHERE  id='${results[0].dep_id}'`,
-                  (err, depertment) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: false,
-                          message: "gagal ambil data",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-
-                    if (
-                      results[0].tipe_absen == "" ||
-                      results[0].tipe_absen == "0" ||
-                      results[0].tipe_absen == null ||
-                      results[0].tipe_absen == undefined
-                    ) {
-                      results[0].tipe_absen = depertment[0].tipe_absen;
-                    }
-
-                    console.log(results[0].lama_bekerja);
-                    const totalDays = parseInt(results[0].lama_bekerja);
-                    const result = convertDaysToYMD(totalDays);
-
-                    var formatLamaBekerja = "";
-                    if (result.tahun != 0) {
-                      formatLamaBekerja = `${result.tahun} Tahun ${result.bulan} Bulan ${result.hari} Hari`;
-                    } else {
-                      if (result.bulan != 0) {
-                        formatLamaBekerja = `${result.bulan} bulan ${result.hari} Hari`;
-                      } else {
-                        formatLamaBekerja = `${result.hari} Hari`;
-                      }
-                    }
-                    const totalDaysKontrak = parseInt(results[0].sisa_kontrak);
-                    const result1 = convertDaysToYMD(totalDaysKontrak);
-
-                    var formatSisaKontrak = "";
-                    if (result1.tahun != 0) {
-                      formatSisaKontrak = `${result1.tahun} Tahun ${result1.bulan} Bulan ${result1.hari} Hari`;
-                    } else {
-                      if (result1.bulan != 0) {
-                        formatSisaKontrak = `${result1.bulan} Bulan ${result1.hari} Hari`;
-                      } else {
-                        formatSisaKontrak = `${result1.hari} hr`;
-                      }
-                    }
-
-                    if (totalDaysKontrak == 0) {
-                      formatSisaKontrak = "";
-                    }
-                    results[0].sisa_kontrak_format = formatSisaKontrak;
-                    results[0].lama_bekerja_format = formatLamaBekerja;
-                    connection.commit((err) => {
-                      if (err) {
-                        console.error("Error committing transaction:", err);
-                        connection.rollback(() => {
-                          connection.end();
-                          return res.status(400).send({
-                            status: true,
-                            message: "failed insert data",
-                            data: [],
-                          });
-                        });
-                        return;
-                      }
-                      connection.end();
-                      console.log("Transaction completed successfully!");
-                      return res.status(200).send({
-                        status: true,
-                        message: "Success insert data",
-                        data: results,
-                      });
-                    });
-                  }
-                );
-              }
-            );
-          });
-        });
+      console.log("Transaction completed successfully!");
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Success insert data",
+        data: results,
       });
-    } catch ($e) {
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("errorr", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) await conn.release();
     }
   },
-  //   refresh_employee(req, res) {
-  //     function convertDaysToYMD(totalDays) {
-  //       const daysInYear = 365; // Jumlah hari dalam setahun
-  //       const daysInMonth = 30; // Rata-rata jumlah hari dalam sebulan
-
-  //       const years = Math.floor(totalDays / daysInYear);
-  //       totalDays -= years * daysInYear;
-
-  //       const months = Math.floor(totalDays / daysInMonth);
-  //       totalDays -= months * daysInMonth;
-
-  //       const days = totalDays;
-
-  //       return {
-  //           tahun: years,
-  //           bulan: months,
-  //       hari: days
-  //       };
-  //   }
-
-  //     var currentDate = new Date();
-
-  //     // Extract date components
-  //     var year = currentDate.getFullYear();
-  //     var month = String(currentDate.getMonth() + 1).padStart(2, '0');
-  //     var day = String(currentDate.getDate()).padStart(2, '0');
-
-  //     // Create the formatted date string
-  //     var array = `${year}-${month}-${day}`.split('-');
-  //     console.log('array',array)
-
-  //     var database = req.query.database;
-  //     // const namaDatabaseDynamic = `${database}_test2208`;
-  //     const configDynamic = {
-  //       multipleStatements: true,
-  //       host: ipServer,//my${database}.siscom.id (ip local)
-  //       user: 'pro',
-  //       password: 'Siscom3519',
-  //       database: `${database}_hrm`,
-  //       connectionLimit: 1000,
-  //       connectTimeout: 60 * 60 * 1000,
-  //       acquireTimeout: 60 * 60 * 1000,
-  //       timeout: 60 * 60 * 1000,
-  //     };
-  //     const mysql = require("mysql");
-  //     const poolDynamic = mysql.createPool(configDynamic);
-  //     var em_id = req.body.em_id;
-
-  //     const tahun = `${array[0]}`;
-  //     const convertYear = tahun.substring(2, 4);
-  //     var convertBulan;
-  //     if (array[1].length == 1) {
-  //       convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
-  //     } else {
-  //       convertBulan = array[1];
-
-  //     }
-  //     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-  //     poolDynamic.getConnection(function (err, connection) {
-  //       if (err) console.log(err);
-
-  //       var query=   `
-  //       SELECT
-  //       IFNULL(MAX(employee_history.end_date) ,'')AS tanggal_berakhir_kontrak,
-  //       IFNULL(DATEDIFF(MAX(employee_history.end_date), CURDATE()),'0') AS sisa_kontrak,
-  //       IFNULL(DATEDIFF(CURDATE(),a.em_joining_date),'0') AS lama_bekerja,
-  //       em_bpjs_kesehatan AS nomor_bpjs_kesehatan,em_bpjs_tenagakerja AS nomor_bpjs_tenagakerja,
-  //       (SELECT beginday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS begin_payroll,
-  //       (SELECT NAME FROM sysdata WHERE id='18') AS time_attendance,
-  //       (SELECT NAME FROM sysdata WHERE kode='012') AS is_view_tracking,
-  //       (SELECT NAME FROM sysdata WHERE id='006') AS interval_tracking,
-  //       (SELECT NAME FROM sysdata WHERE kode='021') AS back_date,
-  //       a.em_tracking  AS is_tracking,
-  //       a.file_face,
-  //       (SELECT endday_payroll FROM payment_schedule WHERE is_default='Y' LIMIT 1) AS end_payroll,
-  //       em_control, em_controlaccess AS em_control_access,
-  //       branch.name AS branch_name, a.em_id, full_name, em_email, des_id, dep_id, dep_group_id AS dep_group, em_mobile AS em_phone, em_birthday, em_blood_group, em_gender, em_image, em_joining_date, em_status, job_title AS posisi, em_hak_akses, last_login, a.status AS status_aktif, em_controlaccess AS em_control_access, b.name AS emp_jobTitle,c.name AS emp_departmen,em_att_working AS emp_att_working FROM employee a
-  //       LEFT JOIN employee_history ON a.em_id=employee_history.em_id LEFT JOIN designation b ON a.des_id=b.id LEFT JOIN
-  //       department c ON a.dep_id=c.id JOIN branch ON branch.id=a.branch_id WHERE a.em_id='${em_id}'
-  //        GROUP BY a.em_id`
-
-  //       connection.query(query,function (error, results) {
-  //           connection.release();
-  //           if (error != null) console.log(error)
-  //           if (results.length == 0) {
-  //             res.send({
-  //               status: false,
-  //               message: "Data tidak ditemukan",
-  //             });
-  //           } else {
-  // console.log(results[0].lama_bekerja)
-  //             const totalDays = parseInt(results[0].lama_bekerja);
-  //             const result = convertDaysToYMD(totalDays);
-
-  //             var formatLamaBekerja="";
-  //             if (result.tahun!=0){
-  //               formatLamaBekerja=`${result.tahun} Tahun ${result.bulan} Bulan ${result.hari} Hari`
-  //             }else{
-  //               if (result.bulan!=0){
-  //                 formatLamaBekerja=`${result.bulan} bulan ${result.hari} Hari`
-  //               }else{
-  //                 formatLamaBekerja=`${result.hari} Hari`
-  //               }
-  //             }
-  //             const totalDaysKontrak = parseInt(results[0].sisa_kontrak);
-  //             const result1 = convertDaysToYMD(totalDaysKontrak);
-
-  //             var formatSisaKontrak="";
-  //             if (result1.tahun!=0){
-  //               formatSisaKontrak=`${result1.tahun} Tahun ${result1.bulan} Bulan ${result1.hari} Hari`
-  //             }else{
-  //               if (result1.bulan!=0){
-  //                 formatSisaKontrak=`${result1.bulan} Bulan ${result1.hari} Hari`
-  //               }else{
-  //                 formatSisaKontrak=`${result1.hari} hr`
-  //               }
-  //             }
-
-  //             if (totalDaysKontrak==0){
-  //               formatSisaKontrak=''
-  //             }
-  //             results[0].sisa_kontrak_format=formatSisaKontrak;
-  //             results[0].lama_bekerja_format =formatLamaBekerja
-
-  //             res.send({
-  //               status: true,
-  //               message: "Berhasil ambil data!",
-  //               data: results,
-  //             });
-  //           }
-  //         }
-  //       );
-
-  //     });
-  //   },
-  validasiGantiPassword(req, res) {
+  async validasiGantiPassword(req, res) {
     console.log("-----validasi ganti password---------");
 
     var database = req.query.database;
 
     // const namaDatabaseDynamic = `${database}_test2208`;
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
     var em_id = req.body.em_id;
     var password_lama = req.body.password_lama;
     var password_baru = req.body.password_baru;
 
     var convertPasswordLama = sha1(password_lama);
     var convertPasswordBaru = sha1(password_baru);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT * FROM employee WHERE em_id='${em_id}'`,
-        function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          var getPassword = results[0].em_password;
-          var validasi = convertPasswordLama == getPassword ? true : false;
-          if (validasi == true) {
-            connection.query(
-              `UPDATE employee SET em_password='${convertPasswordBaru}' WHERE em_id='${em_id}'`,
-              function (error, results) {
-                if (error != null) console.log(error);
-                res.send({
-                  status: true,
-                  message: "Password berhasil di ubah",
-                });
-              }
-            );
-          } else {
-            res.send({
-              status: false,
-              message: "Password lama tidak sama",
-            });
-          }
-        }
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM employee WHERE em_id='${em_id}'`
       );
-    });
+      var getPassword = results[0].em_password;
+      var validasi = convertPasswordLama == getPassword ? true : false;
+      if (validasi == true) {
+        const [update] = await conn.query(
+          `UPDATE employee SET em_password='${convertPasswordBaru}' WHERE em_id='${em_id}'`
+        );
+        await conn.commit();
+        res.send({
+          status: true,
+          message: "Password berhasil di ubah",
+        });
+      } else {
+        await conn.commit();
+        res.send({
+          status: false,
+          message: "Password lama tidak sama",
+        });
+      }
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("errorr", e);
+      return res.status(400).send({
+        status: true,
+        message: "Gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  newPasswordBaru(req, res) {
+  async newPasswordBaru(req, res) {
     console.log("-----validasi ganti password---------");
     var database = req.query.database;
-    // const namaDatabaseDynamic = `${database}_test2208`;
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = model.createConnection1(`${database}_hrm`);
     var password_baru = req.body.password;
     var convertPasswordBaru = sha1(password_baru);
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `UPDATE employee SET em_password='${convertPasswordBaru}' WHERE em_email='${req.body.email}'`,
-        function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Password berhasil di ubah",
-          });
-        }
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `UPDATE employee SET em_password='${convertPasswordBaru}' WHERE em_email='${req.body.email}'`
       );
-    });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Password berhasil di ubah",
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("errorr", e);
+      return res.status(400).send({
+        status: true,
+        message: "Gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   // kirimTidakMasukKerja(req, res) {
@@ -7124,138 +6395,56 @@ module.exports = {
 
     var script = `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`;
 
-    const connection = await model.createConnection(database);
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE ajuan='4'`);
+      if (results.length > 0) {
+        var text = results[0]["nomor_ajuan"];
+        nomor = parseInt(text.substring(8, 13)) + 1;
+        var nomorStr = String(nomor).padStart(4, "0");
+        insertData.nomor_ajuan =
+          `DL20${convertYear}${convertBulan}` + nomorStr;
+      } else {
+        nomor = 1;
+        var nomorStr = String(nomor).padStart(4, "0");
+        insertData.nomor_ajuan =
+          `DL20${convertYear}${convertBulan}` + nomorStr;
       }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-
-        //get sysdata
-        connection.query(
-          `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE ajuan='4'`,
-          (err, results) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesahalan",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            if (results.length > 0) {
-              var text = results[0]["nomor_ajuan"];
-              nomor = parseInt(text.substring(8, 13)) + 1;
-              var nomorStr = String(nomor).padStart(4, "0");
-              insertData.nomor_ajuan =
-                `DL20${convertYear}${convertBulan}` + nomorStr;
-            } else {
-              nomor = 1;
-              var nomorStr = String(nomor).padStart(4, "0");
-              insertData.nomor_ajuan =
-                `DL20${convertYear}${convertBulan}` + nomorStr;
-            }
-            connection.query(script, [insertData], (err, results) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "Terjadi kesahalan",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              connection.query(
-                `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${insertData.nomor_ajuan}'`,
-                (err, transaksi) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: true,
-                        message: "Data gagal terkirim",
-                        data: results,
-                      });
-                    });
-                    return;
-                  }
-                  connection.query(
-                    `SELECT * FROM ${databaseMaster}.employee WHERE em_id='${insertData.em_id}'`,
-                    (err, employee) => {
-                      if (err) {
-                        console.error("Error executing SELECT statement:", err);
-                        connection.rollback(() => {
-                          connection.end();
-                          return res.status(400).send({
-                            status: true,
-                            message: "Data gagal terkirim",
-                            data: results,
-                          });
-                        });
-                        return;
-                      }
-
-                      utility.insertNotifikasi(
-                        employee[0].em_report_to,
-                        "Approval Dinas Luar",
-                        "DinasLuar",
-                        employee[0].em_id,
-                        transaksi[0].id,
-                        transaksi[0].nomor_ajuan,
-                        employee[0].full_name,
-                        namaDatabaseDynamic,
-                        databaseMaster
-                      );
-
-                      connection.commit((err) => {
-                        if (err) {
-                          console.error("Error committing transaction:", err);
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: false,
-                              message: "error commit",
-
-                              data: [],
-                            });
-                          });
-                          return;
-                        }
-                        connection.end();
-                        console.log("Transaction completed successfully!");
-                        return res.status(200).send({
-                          status: true,
-                          message: "Successfuly get data",
-                          data: employee,
-                        });
-                      });
-                    }
-                  );
-                }
-              );
-            });
-          }
-        );
+      const [insert] = await conn.query(script, [insertData],);
+      const [transaksi] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE nomor_ajuan='${insertData.nomor_ajuan}'`);
+      const [employee] = await conn.query(`SELECT * FROM ${databaseMaster}.employee WHERE em_id='${insertData.em_id}'`);
+      utility.insertNotifikasi(
+        employee[0].em_report_to,
+        "Approval Dinas Luar",
+        "DinasLuar",
+        employee[0].em_id,
+        transaksi[0].id,
+        transaksi[0].nomor_ajuan,
+        employee[0].full_name,
+        namaDatabaseDynamic,
+        databaseMaster
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Successfuly get data",
+        data: results,
       });
-    });
-    //   });
-    // });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
   // const poolDynamic = mysql.createPool(configDynamic);
 
@@ -7891,14 +7080,16 @@ module.exports = {
 
     // const mysql = require("mysql2/promise");
     // const poolDynamic = mysql.createPool(configDynamic);
-    const connection = await (await model.createConnection1(namaDatabasMaster)).getConnection();
+    const connection = await (
+      await model.createConnection1(namaDatabasMaster)
+    ).getConnection();
 
     //    poolDynamic.getConnection(function (err, connection) {
 
     // if (startDate != "") {
     //   queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC ;`;
     // } else {
-      queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.tanggal_absen}' ORDER By id DESC`;
+    queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.tanggal_absen}' ORDER By id DESC`;
     // }
 
     try {
@@ -8048,7 +7239,7 @@ module.exports = {
             var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${req.body.tanggal_absen}' AND leave_status = 'Approve2' AND time_plan >= '${jamAbsen}'`;
             const [cekIzin] = await connection.query(queryCekIzinTerlambat);
 
-            if (cekIzin.length == 0){
+            if (cekIzin.length == 0) {
               if (jam2 > jam1) {
                 const selisihWaktu = jam1.getTime() - jam2.getTime();
                 // Menghitung selisih dalam menit
@@ -8220,7 +7411,11 @@ module.exports = {
                     statusSpName = "Surat Peringatan 2";
                     statussp = "sp2";
                     idSp = "3";
-                    if (terlambat.length == parseInt(sysdata[3].name)||terlambat.length == parseInt(sysdata[1].name) || terlambat.length == parseInt(sysdata[4].name)) {
+                    if (
+                      terlambat.length == parseInt(sysdata[3].name) ||
+                      terlambat.length == parseInt(sysdata[1].name) ||
+                      terlambat.length == parseInt(sysdata[4].name)
+                    ) {
                       deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan memberikan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                           `;
                       const [dataSp] = await connection.query(
@@ -8287,7 +7482,11 @@ module.exports = {
                     statusSpName = "Surat Peringatan 3";
                     statussp = "sp3";
                     idSp = "4";
-                    if (terlambat.length == parseInt(sysdata[4].name) || terlambat.length == parseInt(sysdata[3].name) || terlambat.length == parseInt(sysdata[1].name)) {
+                    if (
+                      terlambat.length == parseInt(sysdata[4].name) ||
+                      terlambat.length == parseInt(sysdata[3].name) ||
+                      terlambat.length == parseInt(sysdata[1].name)
+                    ) {
                       // SP 3
                       deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                           `;
@@ -8358,7 +7557,9 @@ module.exports = {
                   statussp = "sp1";
                   idSp = "2";
                   if (
-                    terlambat.length == parseInt(sysdata[4].name) || terlambat.length == parseInt(sysdata[3].name) || terlambat.length == parseInt(sysdata[1].name)
+                    terlambat.length == parseInt(sysdata[4].name) ||
+                    terlambat.length == parseInt(sysdata[3].name) ||
+                    terlambat.length == parseInt(sysdata[1].name)
                   ) {
                     deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                     `;
@@ -8765,16 +7966,16 @@ module.exports = {
               // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
 
               // if (cekIzin == 0){
-                if (jam2 < jam1) {
-                  const selisihWaktu = jam1.getTime() - jam2.getTime();
-  
-                  // Menghitung selisih dalam menit
-                  const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
-  
-                  title = "Absen Pulang Cepat";
-                  deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
-                  isNotif = true;
-                  statusAbsen = "pulang_cepat";
+              if (jam2 < jam1) {
+                const selisihWaktu = jam1.getTime() - jam2.getTime();
+
+                // Menghitung selisih dalam menit
+                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+
+                title = "Absen Pulang Cepat";
+                deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
+                isNotif = true;
+                statusAbsen = "pulang_cepat";
                 // }
               }
             }
@@ -8873,7 +8074,7 @@ module.exports = {
               }
               queryPulangCepaat = `SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL`;
 
-              console.log('ini query pulang cepat ', queryPulangCepaat);
+              console.log("ini query pulang cepat ", queryPulangCepaat);
               const [pulangCepat] = await connection.query(queryPulangCepaat);
 
               utility.insertNotifikasiAbsensi(
@@ -8910,7 +8111,11 @@ module.exports = {
                       statusSpName = "Surat Peringatan 2";
                       statussp = "sp2";
                       idSp = "3";
-                      if (pulangCepat.length == parseInt(sysdata[1].name) || pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name) ) {
+                      if (
+                        pulangCepat.length == parseInt(sysdata[1].name) ||
+                        pulangCepat.length == parseInt(sysdata[3].name) ||
+                        pulangCepat.length >= parseInt(sysdata[4].name)
+                      ) {
                         // SP 2
                         deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                             `;
@@ -8979,7 +8184,11 @@ module.exports = {
                       statusSpName = "Surat Peringatan 3";
                       statussp = "sp3";
                       idSp = "4";
-                      if (pulangCepat.length == parseInt(sysdata[1].name) || pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name)) {
+                      if (
+                        pulangCepat.length == parseInt(sysdata[1].name) ||
+                        pulangCepat.length == parseInt(sysdata[3].name) ||
+                        pulangCepat.length >= parseInt(sysdata[4].name)
+                      ) {
                         // SP 2
                         deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                             `;
@@ -9047,74 +8256,78 @@ module.exports = {
                     }
                   } else {
                     statusSpName = "Surat Peringatan 1";
-                      statussp = "sp1";
-                      idSp = "2";
-                    if (pulangCepat.length == parseInt(sysdata[1].name)||pulangCepat.length == parseInt(sysdata[3].name) || pulangCepat.length >= parseInt(sysdata[4].name)) {
+                    statussp = "sp1";
+                    idSp = "2";
+                    if (
+                      pulangCepat.length == parseInt(sysdata[1].name) ||
+                      pulangCepat.length == parseInt(sysdata[3].name) ||
+                      pulangCepat.length >= parseInt(sysdata[4].name)
+                    ) {
                       deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
                   `;
 
-                    const [dataSp] = await connection.query(
-                      `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
-                    );
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
+                      );
 
-                    nomorSp = `SP${year}${convertBulan}`;
+                      nomorSp = `SP${year}${convertBulan}`;
 
-                    if (dataSp.length > 0) {
-                      var text = dataSp[0]["nomor"];
-                      var nomor = parseInt(text.substring(9, 14)) + 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorSp = nomorSp + nomorStr;
-                    } else {
-                      var nomor = 1;
-                      var nomorStr = String(nomor).padStart(4, "0");
-                      nomorSp = nomorSp + nomorStr;
-                    }
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
 
-                    var status = "Pending";
-                    var approveStatus = "Pending";
-                    var titleNew = "Absen Pulang Cepat";
+                      var status = "Pending";
+                      var approveStatus = "Pending";
+                      var titleNew = "Absen Pulang Cepat";
 
-                    const [data] =
-                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,alasan)
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,alasan)
                       VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${alasan}') `);
 
-                    // const [insertDetail] = await connection.query(
-                    //   `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
-                    // );
+                      // const [insertDetail] = await connection.query(
+                      //   `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      // );
 
-                    const [sysdataSP] = await connection.query(
-                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
-                    );
-                    if (sysdataSP.length > 0) {
-                      if (sysdataSP[0].name != null) {
-                        utility.insertNotifikasiAbsensiSp(
-                          sysdataSP[0].name,
-                          "Absensi Pulang Cepat",
-                          statusAbsen,
-                          employee[0].em_id,
-                          nomorSp,
-                          nomorSp,
-                          employee[0].full_name,
-                          namaDatabaseDynamic,
-                          namaDatabasMaster,
-                          statusSpName
-                        );
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Pulang Cepat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            nomorSp,
+                            nomorSp,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Pulang Cepat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            nomorSp,
+                            nomorSp,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
                       }
-                      if (sysdataSP[1].name != null) {
-                        utility.insertNotifikasiAbsensiSp(
-                          sysdataSP[1].name,
-                          "Absensi Pulang Cepat",
-                          statusAbsen,
-                          employee[0].em_id,
-                          nomorSp,
-                          nomorSp,
-                          employee[0].full_name,
-                          namaDatabaseDynamic,
-                          namaDatabasMaster,
-                          statusSpName
-                        );
-                      }
-                    }
                     }
                   }
                 }
@@ -9355,24 +8568,13 @@ module.exports = {
         status_absen: statusAbsen, // pulang_cepat atau terlambat,
         data: insertData,
       });
-
-      // // Contoh query
-      // const insertQuery1 = 'INSERT INTO table1 (column1) VALUES (?)';
-      // const [result1] = await connection.query(insertQuery1, ['value1']);
-
-      // const insertQuery2 = 'INSERT INTO table2 (column2) VALUES (?)';
-      // const [result2] = await connection.query(insertQuery2, ['value2']);
-
-      // // Jika semua query berhasil, commit transaksi
-
-      // console.log('Transaction committed:', result1.insertId, result2.insertId);
     } catch (error) {
-      // Jika ada error, rollback transaksi
-      await connection.rollback();
+      if (connection) {
+        await connection.rollback();
+      }
       console.error("Transaction rolled back:", error);
     } finally {
-      // Lepaskan koneksi setelah selesai
-      connection.release();
+      if (connection) await connection.release();
     }
   },
 
@@ -10072,22 +9274,6 @@ module.exports = {
     var queryCek = "";
     var queryEmployee = `SELECT IFNULL(branch.zona_waktu,0) AS zona_waktu FROM employee LEFT JOIN branch ON employee.branch_id=branch.id  WHERE employee.em_id='${req.body.em_id}'`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: "3.1.189.143", //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    //    poolDynamic.getConnection(function (err, connection) {
-
     if (startDate != "") {
       queryCek = `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${req.body.em_id}' AND (CONCAT(atten_date, ' ', signin_time) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}') AND (CONCAT(atten_date, ' ', signin_time)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND atttype='1' ORDER BY id DESC LIMIT 1;`;
     } else {
@@ -10096,97 +9282,50 @@ module.exports = {
 
     console.log(insertData);
 
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [sysdata] = await conn.query(
+        `SELECT * FROM sysdata WHERE KODE='013'`
+      );
+      const [results] = await conn.query(queryCek);
+
+      if (req.body.kategori == "1") {
+        if (results.length == 0) {
+        } else {
+          var queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakout_time='${jamKeluar}', place_break_out='${lokasiAbsenOut}', breakout_longlat='${latLangOut}', signout_pict='${gambarKeluar}', signout_note='${catatanKeluar}', signout_addr='${lokasiKeluar}' WHERE id='${id_record}'`;
+          var lastItem = results.pop();
+          if (lastItem.signout_longlat == "") {
+            var id_record = lastItem.id;
+            if (typeAbsen == "1" || typeAbsen == 1) {
+              queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakin_time='${jamMasuk}', place_break_in='${lokasiAbsenIn}', breakin_longlat='${latLangIn}', breakin_pict='${gambarMasuk}', breakin_note='${catatanMasuk}', breakin_addr='${lokasiMasuk}' WHERE id='${id_record}'`;
+            } else {
+              queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakout_time='${jamKeluar}', place_break_out='${lokasiAbsenOut}', breakout_longlat='${latLangOut}', breakout_pict='${gambarKeluar}', breakout_note='${catatanKeluar}', breakout_addr='${lokasiKeluar}' WHERE id='${id_record}'`;
+            }
+            const [update] = await conn.query(queryUpdate);
           }
-          connection.query(queryCek, (err, results) => {
-            if (err) {
-              console.error("Error executing UPDATE statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "terjadi kesalahan",
-                  data: [],
-                });
-              });
-              return;
-            }
-            console.log(results.length);
-
-            if (req.body.kategori == "1") {
-              if (results.length == 0) {
-              } else {
-                var queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakout_time='${jamKeluar}', place_break_out='${lokasiAbsenOut}', breakout_longlat='${latLangOut}', signout_pict='${gambarKeluar}', signout_note='${catatanKeluar}', signout_addr='${lokasiKeluar}' WHERE id='${id_record}'`;
-
-                var lastItem = results.pop();
-                if (lastItem.signout_longlat == "") {
-                  var id_record = lastItem.id;
-                  if (typeAbsen == "1" || typeAbsen == 1) {
-                    queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakin_time='${jamMasuk}', place_break_in='${lokasiAbsenIn}', breakin_longlat='${latLangIn}', breakin_pict='${gambarMasuk}', breakin_note='${catatanMasuk}', breakin_addr='${lokasiMasuk}' WHERE id='${id_record}'`;
-                  } else {
-                    queryUpdate = `UPDATE  ${namaDatabaseDynamic}.attendance SET breakout_time='${jamKeluar}', place_break_out='${lokasiAbsenOut}', breakout_longlat='${latLangOut}', breakout_pict='${gambarKeluar}', breakout_note='${catatanKeluar}', breakout_addr='${lokasiKeluar}' WHERE id='${id_record}'`;
-                  }
-                  console.log(queryUpdate);
-                  connection.query(queryUpdate, (err, results) => {
-                    if (err) {
-                      console.error("Error executing UPDATE statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "terjadi kesalahan",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-                  });
-                } else {
-                }
-              }
-
-              connection.commit((err) => {
-                if (err) {
-                  console.error("Error committing transaction:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: true,
-                      message: "Kombinasi email & password Anda Salah",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                connection.end();
-                console.log("Transaction completed successfully!");
-                return res.status(200).send({
-                  status: true,
-                  message: "Kombinasi email & password Anda Salah",
-                  data: records,
-                });
-              });
-            }
-          });
+        }
+        await conn.commit();
+        console.log("Transaction completed successfully!");
+        return res.status(200).send({
+          status: true,
+          message: "berhasil kirm absen",
         });
-      });
-    } catch ($e) {
+      }
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("errr", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) await conn.release();
     }
   },
 
@@ -10430,7 +9569,7 @@ module.exports = {
 
   //   });
   // },
-  load_aktifitas(req, res) {
+  async load_aktifitas(req, res) {
     console.log("-----log aktifitas----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10447,39 +9586,36 @@ module.exports = {
     const convertBulan = month <= 9 ? `0${month}` : month;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`,
-        function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            jumlah_data: results.length,
-            message: "Berhasil ambil data!",
-            data: results,
-          });
-        }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`
       );
-    });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        jumlah_data: results.length,
+        message: "Berhasil ambil data!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  pencarian_aktifitas(req, res) {
+  async pencarian_aktifitas(req, res) {
     console.log("-----perncatian aktifitas----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10494,40 +9630,36 @@ module.exports = {
     const convertYear = tahun.substring(2, 4);
     const convertBulan = month <= 9 ? `0${month}` : month;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' AND menu_name LIKE '%${cari}%' ORDER BY idx DESC`,
-        function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            jumlah_data: results.length,
-            message: "Berhasil ambil data!",
-            data: results,
-          });
-        }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' AND menu_name LIKE '%${cari}%' ORDER BY idx DESC`
       );
-    });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        jumlah_data: results.length,
+        message: "Berhasil ambil data!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  load_approve_info(req, res) {
+  async load_approve_info(req, res) {
     console.log("-----load approve info update----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10657,69 +9789,59 @@ module.exports = {
 
       var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending' AND emp_loan.em_id!='${em_id}'`;
     }
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
-          [em_id],
-          function (error, results) {
-            if (error != null) console.log(error);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              jumlah_tidak_hadir: results[0].length,
-              jumlah_cuti: results[1].length,
-              jumlah_lembur: results[2].length,
-              jumlah_tugasluar: results[3].length,
-              jumlah_dinasluar: results[4].length,
-              jumlah_klaim: results[5].length,
-              jumlah_payroll: results[6].length,
-              jumlah_checkin: results[7].length,
-              jumlah_wfh: results[8].length,
-              jumlah_kasbon: results[9].length,
-              jumlah_surat_peringatan: results[10].length,
-              jumlah_teguran_lisan: results[11].length,
-              data1: results[0],
-              data2: results[1],
-              data3: results[2],
-              data4: results[3],
-              data5: results[4],
-              data6: results[5],
-              data7: results[6],
-              data8: results[7],
-              data9: results[8],
-              data10: results[9],
-              data11: results[10],
-              data12: results[11],
-            });
-          }
-        );
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
+        [em_id]
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        jumlah_tidak_hadir: results[0].length,
+        jumlah_cuti: results[1].length,
+        jumlah_lembur: results[2].length,
+        jumlah_tugasluar: results[3].length,
+        jumlah_dinasluar: results[4].length,
+        jumlah_klaim: results[5].length,
+        jumlah_payroll: results[6].length,
+        jumlah_checkin: results[7].length,
+        jumlah_wfh: results[8].length,
+        jumlah_kasbon: results[9].length,
+        jumlah_surat_peringatan: results[10].length,
+        jumlah_teguran_lisan: results[11].length,
+        data1: results[0],
+        data2: results[1],
+        data3: results[2],
+        data4: results[3],
+        data5: results[4],
+        data6: results[5],
+        data7: results[6],
+        data8: results[7],
+        data9: results[8],
+        data10: results[9],
+        data11: results[10],
+        data12: results[11],
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  load_approve_info_multi(req, res) {
+  async load_approve_info_multi(req, res) {
     console.log("-----load approve infor multi----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10882,69 +10004,58 @@ module.exports = {
       var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
     }
 
-    console.log(query3);
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`,
-          function (error, results) {
-            if (error != null) console.log(error);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              jumlah_tidak_hadir: results[0].length,
-              jumlah_cuti: results[1].length,
-              jumlah_lembur: results[2].length,
-              jumlah_tugasluar: results[3].length,
-              jumlah_dinasluar: results[4].length,
-              jumlah_klaim: results[5].length,
-              jumlah_payroll: results[6].length,
-              jumlah_checkin: results[7].length,
-              jumlah_wfh: results[8].length,
-              jumlah_kasbon: results[9].length,
-              jumlah_surat_peringatan: results[10].length,
-              jumlah_teguran_lisan: results[11].length,
-              data1: results[0],
-              data2: results[1],
-              data3: results[2],
-              data4: results[3],
-              data5: results[4],
-              data6: results[5],
-              data7: results[6],
-              data8: results[7],
-              data9: results[8],
-              data10: results[9],
-              data11: results[10],
-              data12: results[11],
-            });
-          }
-        );
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        jumlah_tidak_hadir: results[0].length,
+        jumlah_cuti: results[1].length,
+        jumlah_lembur: results[2].length,
+        jumlah_tugasluar: results[3].length,
+        jumlah_dinasluar: results[4].length,
+        jumlah_klaim: results[5].length,
+        jumlah_payroll: results[6].length,
+        jumlah_checkin: results[7].length,
+        jumlah_wfh: results[8].length,
+        jumlah_kasbon: results[9].length,
+        jumlah_surat_peringatan: results[10].length,
+        jumlah_teguran_lisan: results[11].length,
+        data1: results[0],
+        data2: results[1],
+        data3: results[2],
+        data4: results[3],
+        data5: results[4],
+        data6: results[5],
+        data7: results[6],
+        data8: results[7],
+        data9: results[8],
+        data10: results[9],
+        data11: results[10],
+        data12: results[11],
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  load_approve_history(req, res) {
+  async load_approve_history(req, res) {
     console.log("-----load approve hisotry----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10966,48 +10077,40 @@ module.exports = {
     var query5 = `SELECT a.*, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.ajuan='4'`;
     var query6 = `SELECT a.*, c.name as nama_tipe, b.full_name FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%'`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak di temukan",
-        });
-      } else {
-        connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6}`,
-          function (error, results) {
-            if (error != null) console.log(error);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              data_tidak_hadir: results[0],
-              data_cuti: results[1],
-              data_lembur: results[2],
-              data_tugas_luar: results[3],
-              data_dinas_luar: results[4],
-              data_klaim: results[5],
-            });
-          }
-        );
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `${query1};${query2};${query3};${query4};${query5};${query6}`
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data_tidak_hadir: results[0],
+        data_cuti: results[1],
+        data_lembur: results[2],
+        data_tugas_luar: results[3],
+        data_dinas_luar: results[4],
+        data_klaim: results[5],
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  load_approve_history_multi(req, res) {
+  async load_approve_history_multi(req, res) {
     console.log("-----load approve hisotry multi----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -11031,47 +10134,39 @@ module.exports = {
     JOIN ${database}_hrm.employee b JOIN ${database}_hrm.designation ON designation.id=b.des_id WHERE a.em_id=b.em_id 
     AND (a.approved_id IS NULL OR  a.approved_id ='') AND designation.payroll_approval  IN (?)`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak di temukan",
-        });
-      } else {
-        connection.query(
-          `${query1};${query2};${query3};${query4};${query5};${query6};${query6}`,
-          function (error, results) {
-            if (error != null) console.log(error);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data!",
-              data_tidak_hadir: results[0],
-              data_cuti: results[1],
-              data_lembur: results[2],
-              data_tugas_luar: results[3],
-              data_dinas_luar: results[4],
-              data_klaim: results[5],
-              data_payroll: results[6],
-            });
-          }
-        );
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `${query1};${query2};${query3};${query4};${query5};${query6};${query6}`
+      );
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data_tidak_hadir: results[0],
+        data_cuti: results[1],
+        data_lembur: results[2],
+        data_tugas_luar: results[3],
+        data_dinas_luar: results[4],
+        data_klaim: results[5],
+        data_payroll: results[6],
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async ApprovalAbsensi(req, res) {
@@ -12733,7 +11828,7 @@ module.exports = {
   //   })
   // },
 
-  spesifik_approval(req, res) {
+  async spesifik_approval(req, res) {
     console.log("-----spesifik approval----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -13121,151 +12216,60 @@ a.typeid,
      LEFT JOIN 
        ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
         WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%' ORDER BY a.id DESC`;
-
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-          data: [],
-        });
-      } else {
-        if (url_data == "cuti") {
-          connection.query(query2, function (error, dataCuti) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve cuti!",
-              jenis: "cuti",
-              data: dataCuti,
-            });
-          });
-        } else if (url_data == "tidak_hadir") {
-          connection.query(query1, function (error, dataTidakHadir) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Tidak Hadir!",
-              jenis: "tidak_hadir",
-              data: dataTidakHadir,
-            });
-          });
-        } else if (url_data == "lembur") {
-          console.log(query3);
-          connection.query(query3, function (error, dataLembur) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Lembur!",
-              jenis: "lembur",
-              data: dataLembur,
-            });
-          });
-        } else if (url_data == "tugas_luar") {
-          connection.query(query4, function (error, dataTugasLuar) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Tugas Luar!",
-              jenis: "Tugas Luar",
-              data: dataTugasLuar,
-            });
-          });
-        } else if (url_data == "dinas_luar") {
-          connection.query(query5, function (error, dataDinasLuar) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Dinas Luar!",
-              jenis: "Dinas Luar",
-              data: dataDinasLuar,
-            });
-          });
-        } else if (url_data == "klaim") {
-          connection.query(query6, function (error, dataKlaim) {
-            connection.release();
-            res.send({
-              message: "Berhasil ambil data approve klaim!",
-              jenis: "Klaim",
-              data: dataKlaim,
-            });
-          });
-        } else if (url_data == "absensi") {
-          connection.query(query7, function (error, dataAbsensi) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve klaim!",
-              jenis: "absensi",
-              data: dataAbsensi,
-            });
-          });
-        } else if (url_data == "wfh") {
-          console.log(query9);
-          connection.query(query9, function (error, dataWfh) {
-            connection.release();
-            console.log(dataWfh);
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Klaim!",
-              jenis: "wfh",
-              data: dataWfh,
-            });
-          });
-        } else if (url_data == "kasbon") {
-          connection.query(query8, function (error, dataLoan) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve klaim!",
-              jenis: "kasbon",
-              data: dataLoan,
-            });
-          });
-        } else if (url_data == "surat_peringatan") {
-          connection.query(query10, function (error, dataLoan) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve klaim!",
-              jenis: "kasbon",
-              data: dataLoan,
-            });
-          });
-        } else if (url_data == "teguran_lisan") {
-          console.log(query12);
-
-          connection.query(query12, function (error, dataAbsensi) {
-            connection.release();
-            console.log("data ", dataAbsensi);
-
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Teguran Lisan!",
-              jenis: "teguran lisan",
-              data: dataAbsensi,
-            });
-          });
-        }
+    let queryApproval;
+    if (url_data == "cuti") {
+      queryApproval = query2;
+    } else if (url_data == "tidak_hadir") {
+      queryApproval = query1;
+    } else if (url_data == "lembur") {
+      queryApproval = query3;
+    } else if (url_data == "tugas_luar") {
+      queryApproval = query4;
+    } else if (url_data == "dinas_luar") {
+      queryApproval = query5;
+    } else if (url_data == "klaim") {
+      queryApproval = query6;
+    } else if (url_data == "absensi") {
+      queryApproval = query7;
+    } else if (url_data == "wfh") {
+      queryApproval = query9;
+    } else if (url_data == "kasbon") {
+      queryApproval = query8;
+    } else if (url_data == "surat_peringatan") {
+      queryApproval = query10;
+    } else if (url_data == "teguran_lisan") {
+      queryApproval = query12;
+    }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(queryApproval);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        status: true,
+        message: `Berhasil ambil data approve ${url_data}!`,
+        jenis: url_data,
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  spesifik_approval_multi(req, res) {
+  async spesifik_approval_multi(req, res) {
     console.log("-----spesifik approval multi approvedd----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -14062,165 +13066,61 @@ a.typeid,
       FROM ${database}_hrm.sysdata JOIN ${database}_hrm.emp_loan ON sysdata.kode='019' JOIN ${database}_hrm.employee ON employee.em_id=emp_loan.em_id WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status  LIKE '%${stauts}%'   AND emp_loan.em_id!='${em_id}'`;
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-          data: [],
-        });
-      } else {
-        if (url_data == "cuti") {
-          console.log(query2);
-          connection.query(query2, function (error, dataCuti) {
-            console.log(dataCuti);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve cuti!",
-              jenis: "cuti",
-              data: dataCuti,
-            });
-          });
-        } else if (url_data == "tidak_hadir") {
-          console.log(query1);
-          connection.query(query1, function (error, dataTidakHadir) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Tidak Hadir!",
-              jenis: "tidak_hadir",
-              data: dataTidakHadir,
-            });
-          });
-        } else if (url_data == "lembur") {
-          connection.query(query3, function (error, dataLembur) {
-            console.log(query3);
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Lembur!",
-              jenis: "lembur",
-              data: dataLembur,
-            });
-          });
-        } else if (url_data == "tugas_luar") {
-          connection.query(query4, function (error, dataTugasLuar) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Tugas Luar!",
-              jenis: "Tugas Luar",
-              data: dataTugasLuar,
-            });
-          });
-        } else if (url_data == "dinas_luar") {
-          console.log(query5);
-          connection.query(query5, function (error, dataDinasLuar) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Dinas Luar!",
-              jenis: "Dinas Luar",
-              data: dataDinasLuar,
-            });
-          });
-        } else if (url_data == "klaim") {
-          connection.query(query6, function (error, dataKlaim) {
-            connection.release();
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Klaim!",
-              jenis: "Klaim",
-              data: dataKlaim,
-            });
-          });
-        } else if (url_data == "absensi") {
-          console.log(query8);
-          connection.query(query8, function (error, dataAbsensi) {
-            connection.release();
-            console.log(dataAbsensi);
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Klaim!",
-              jenis: "Klaim",
-              data: dataAbsensi,
-            });
-          });
-        } else if (url_data == "wfh") {
-          console.log(query9);
-          connection.query(query9, function (error, dataWfh) {
-            connection.release();
-            console.log(dataWfh);
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Klaim!",
-              jenis: "wfh",
-              data: dataWfh,
-            });
-          });
-        } else if (url_data == "kasbon") {
-          console.log(query10);
-          connection.query(query10, function (error, dataLoan) {
-            console.log(dataLoan);
-
-            connection.release();
-
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Klaim! ",
-              jenis: "kasbon",
-              data: dataLoan,
-            });
-          });
-        } else if (url_data == "surat_peringatan") {
-          console.log(query11);
-
-          connection.query(query11, function (error, dataAbsensi) {
-            connection.release();
-            console.log("data ", dataAbsensi);
-
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Surat Peringatan!",
-              jenis: "wfh",
-              data: dataAbsensi,
-            });
-          });
-        } else if (url_data == "teguran_lisan") {
-          console.log(query12);
-
-          connection.query(query12, function (error, dataAbsensi) {
-            connection.release();
-            console.log("data ", dataAbsensi);
-
-            res.send({
-              status: true,
-              message: "Berhasil ambil data approve Teguran Lisan!",
-              jenis: "teguran lisan",
-              data: dataAbsensi,
-            });
-          });
-        }
+    let queryApproval;
+    if (url_data == "cuti") {
+      queryApproval = query2;
+    } else if (url_data == "tidak_hadir") {
+      queryApproval = query1;
+    } else if (url_data == "lembur") {
+      queryApproval = query3;
+    } else if (url_data == "tugas_luar") {
+      queryApproval = query4;
+    } else if (url_data == "dinas_luar") {
+      queryApproval = query5;
+    } else if (url_data == "klaim") {
+      queryApproval = query6;
+    } else if (url_data == "absensi") {
+      queryApproval = query7;
+    } else if (url_data == "wfh") {
+      queryApproval = query9;
+    } else if (url_data == "kasbon") {
+      queryApproval = query8;
+    } else if (url_data == "surat_peringatan") {
+      queryApproval = query10;
+    } else if (url_data == "teguran_lisan") {
+      queryApproval = query12;
+    }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(queryApproval);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        status: true,
+        message: `Berhasil ambil data approve ${url_data}!`,
+        jenis: url_data,
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  listApprovalPayroll(req, res) {
+  async listApprovalPayroll(req, res) {
     console.log("-----spesifik approval----------");
     console.log(req.body);
     var database = req.query.database;
@@ -14241,39 +13141,32 @@ a.typeid,
 
     var query1 = `SELECT designation.name as nama_divisi, employee.full_name,employee.em_email,emp_mobile_approval.* FROM emp_mobile_approval JOIN ${database}_hrm.employee ON employee.em_id=emp_mobile_approval.em_id JOIN ${database}_hrm.designation ON employee.des_id=designation.id AND (emp_mobile_approval.approved_id IS NULL) AND created_date='${req.body.date}'`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-          data: [],
-        });
-      } else {
-        connection.query(query1, function (error, dataCuti) {
-          connection.release();
-          res.send({
-            status: true,
-            message: "Berhasil ambil data approve payroll",
-            jenis: "cuti",
-            data: dataCuti,
-          });
-        });
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(query1);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: `Berhasil ambil data approve cuti!`,
+        jenis: "cuti",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   slipGaji(req, res) {
@@ -14406,7 +13299,7 @@ a.typeid,
   //   })
   // },
 
-  load_notifikasi(req, res) {
+  async load_notifikasi(req, res) {
     console.log("-----load aktifitas notifikasi----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -14457,74 +13350,64 @@ a.typeid,
 
     console.log(query1);
     console.log();
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [dataTanggal] = await conn.query(query1);
+      var listTanggal = dataTanggal;
+      let filter1 = [];
+      listTanggal.forEach((element) => {
+        filter1.push(element["atten_date"]);
+      });
+      filter1 = filter1.filter(
+        (value, index, arr) => arr.indexOf(value) == index
+      );
+      const [dataAll] = await conn.query(query1);
+      var allData = dataAll;
+      console.log("");
+      var hasilFinal = [];
+      filter1.forEach((element) => {
+        var turunan = [];
 
-    console.log("query tanggal ", query1);
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
+        allData.forEach((element2) => {
+          if (element2["atten_date"] == element) {
+            turunan.push(element2);
+          }
         });
-      } else {
-        connection.query(query1, function (error, dataTanggal) {
-          connection.release();
-          var listTanggal = dataTanggal;
-          let filter1 = [];
-          listTanggal.forEach((element) => {
-            filter1.push(element["atten_date"]);
-          });
-          filter1 = filter1.filter(
-            (value, index, arr) => arr.indexOf(value) == index
-          );
 
-          connection.query(query2, function (error, dataAll) {
-            var allData = dataAll;
-            console.log("");
-            var hasilFinal = [];
-            filter1.forEach((element) => {
-              var turunan = [];
+        var data = {
+          tanggal: element,
+          notifikasi: turunan,
+        };
+        hasilFinal.push(data);
+        hasilFinal = hasilFinal.sort((a, b) => a.tanggal - b.tanggal);
 
-              allData.forEach((element2) => {
-                if (element2["atten_date"] == element) {
-                  turunan.push(element2);
-                }
-              });
-
-              var data = {
-                tanggal: element,
-                notifikasi: turunan,
-              };
-              hasilFinal.push(data);
-              hasilFinal = hasilFinal.sort((a, b) => a.tanggal - b.tanggal);
-
-              console.log("hasil final ", hasilFinal);
-            });
-            res.send({
-              status: true,
-              message: "Berhasil ambil!",
-              data: hasilFinal,
-            });
-          });
-        });
+        console.log("hasil final ", hasilFinal);
+      });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: hasilFinal,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  load_laporan_absensi(req, res) {
+
+  async load_laporan_absensi(req, res) {
     console.log(
       "-----load laporan absensi periode----------",
       req.headers.em_id
@@ -14534,7 +13417,8 @@ a.typeid,
     var getbulan = req.body.bulan;
     var gettahun = req.body.tahun;
     var status = req.body.status;
-    var branchId = req.body.branch_id == '' ? req.headers.branch_id : req.body.branch_id;
+    var branchId =
+      req.body.branch_id == "" ? req.headers.branch_id : req.body.branch_id;
 
     var database = req.query.database;
 
@@ -14609,44 +13493,35 @@ a.typeid,
     } else {
       url = query2;
     }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-
-        console.log("url new ", url);
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_absensi_filter_lokasi(req, res) {
+  async load_laporan_absensi_filter_lokasi(req, res) {
     console.log("-----load laporan absensi filter lokasi----------");
     var database = req.query.database;
     var getbulan = req.body.bulan;
@@ -14675,42 +13550,35 @@ a.typeid,
     } else {
       url = query2;
     }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_absensi_tanggal(req, res) {
+  async load_laporan_absensi_tanggal(req, res) {
     console.log("-----log laporan absensi tanggal----------");
     var database = req.query.database;
     var atten_date = req.body.atten_date;
@@ -14736,41 +13604,35 @@ a.typeid,
       url = query2;
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_absensi_harian(req, res) {
+  async load_laporan_absensi_harian(req, res) {
     console.log("-----load lapoarn absensi  ----------");
     var database = req.query.database;
 
@@ -14793,42 +13655,35 @@ a.typeid,
       url = query2;
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-            jumlah: results.length,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_absensi_harian_telat(req, res) {
+  async load_laporan_absensi_harian_telat(req, res) {
     console.log("-----load lapoarn absensi harian telat dev----------");
     var database = req.query.database;
 
@@ -15192,40 +14047,33 @@ a.typeid,
     } else {
       url = query2;
     }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-            jumlah: results.length,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+        jumlah: results.length,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   whereOnceAttendate(req, res) {
@@ -15274,7 +14122,7 @@ a.typeid,
       }
     });
   },
-  load_laporan_belum_absen(req, res) {
+  async load_laporan_belum_absen(req, res) {
     console.log("-----load laporan belum absensi----------");
     var database = req.query.database;
 
@@ -15288,11 +14136,6 @@ a.typeid,
     const convertBulan = array[1];
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    // var query1 = `SELECT a.full_name, a.job_title FROM ${database}_hrm.employee a WHERE a.em_id NOT IN (SELECT em_id FROM ${namaDatabaseDynamic}.attendance WHERE atten_date='${req.body.atten_date}') AND a.status='ACTIVE' ORDER BY a.id DESC`;
-    // var query2 = `SELECT a.full_name, a.job_title FROM ${database}_hrm.employee a WHERE a.dep_id='${status}' AND a.em_id NOT IN (SELECT em_id FROM ${namaDatabaseDynamic}.attendance WHERE atten_date='${req.body.atten_date}') AND a.status='ACTIVE' ORDER BY a.id DESC`;
-    // var query3 = `SELECT b.full_name, b.job_title, c.name as ket_izin, c.category FROM ${namaDatabaseDynamic}.emp_leave a LEFT JOIN ${database}_hrm.employee b ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.leave_types c ON a.typeid=c.id WHERE a.atten_date='${req.body.atten_date}' AND b.status='ACTIVE'`;
-    // var query4 = `SELECT b.full_name, b.job_title, a.ajuan as ket_izin, c.category FROM ${namaDatabaseDynamic}.emp_labor a LEFT JOIN ${database}_hrm.employee b ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.leave_types c ON a.typeid=c.id WHERE a.atten_date='${req.body.atten_date}' AND b.status='ACTIVE'`;
-
     var query1 = `SELECT a.full_name,a.em_id, a.job_title FROM ${database}_hrm.employee a WHERE a.em_id NOT IN (SELECT em_id FROM ${namaDatabaseDynamic}.attendance WHERE atten_date='${req.body.atten_date}') AND a.status='ACTIVE' ORDER BY a.id DESC`;
     var query2 = `SELECT a.full_name,a.em_id, a.job_title FROM ${database}_hrm.employee a WHERE a.dep_id='${status}' AND a.em_id NOT IN (SELECT em_id FROM ${namaDatabaseDynamic}.attendance WHERE atten_date='${req.body.atten_date}') AND a.status='ACTIVE' ORDER BY a.id DESC`;
     var query3 = `SELECT b.full_name,b.em_id, b.job_title, c.name as ket_izin, c.category FROM ${namaDatabaseDynamic}.emp_leave a LEFT JOIN ${database}_hrm.employee b ON a.em_id=b.em_id LEFT JOIN ${database}_hrm.leave_types c ON a.typeid=c.id WHERE a.atten_date='${req.body.atten_date}' AND b.status='ACTIVE'`;
@@ -15304,54 +14147,43 @@ a.typeid,
     } else {
       url = query2;
     }
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(`${url};${query3};${query4};`);
+      var all_jumlah =
+        results[0].length + results[1].length + results[2].length;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(
-          `${url};${query3};${query4};`,
-          function (error, results) {
-            if (error) console.log(error);
-            var all_jumlah =
-              results[0].length + results[1].length + results[2].length;
-            res.send({
-              status: true,
-              message: "Berhasil ambil!",
-              data: results[0],
-              data_pengajuan1: results[1],
-              data_pengajuan2: results[2],
-              jumlah: all_jumlah,
-            });
-          }
-        );
+      res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results[0],
+        data_pengajuan1: results[1],
+        data_pengajuan2: results[2],
+        jumlah: all_jumlah,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("eroor", e);
+      res.status(400).send({
+        status: false,
+        message: "eroororo",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_pengajuan(req, res) {
+  async load_laporan_pengajuan(req, res) {
     console.log("-----load laporan pengajuan----------");
     var database = req.query.database;
     var emId = req.headers.em_id == undefined ? "000000123" : req.headers.em_id;
-    var branchId = req.body.branch_id == '' ? req.headers.branch_id : req.body.branch_id;
+    var branchId =
+      req.body.branch_id == "" ? req.headers.branch_id : req.body.branch_id;
 
     var status = req.body.status;
     var type = req.body.type;
@@ -15502,42 +14334,35 @@ a.typeid,
   ${url} 
 ) AS TBL 
 GROUP BY TBL.full_name`;
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-            jumlah: 1,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+        jumlah: 1,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_laporan_pengajuan_harian(req, res) {
+  async load_laporan_pengajuan_harian(req, res) {
     console.log("-----load laporan pengajuanm harian----------");
     var database = req.query.database;
 
@@ -15595,42 +14420,35 @@ GROUP BY TBL.full_name`;
       }
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.release();
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-            jumlah: results.length,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+        jumlah: results.length,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  load_detail_laporan_pengajuan(req, res) {
+  async load_detail_laporan_pengajuan(req, res) {
     console.log("-----load detail laporan pengajuan----------");
     var database = req.query.database;
 
@@ -15720,43 +14538,35 @@ GROUP BY TBL.full_name`;
       url = query_klaim;
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(url);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        console.log(url);
-        connection.query(url, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-            jumlah: results.length,
-          });
-        });
-        connection.release();
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+        jumlah: results.length,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
-  emp_leave_lastrow(req, res) {
+  async emp_leave_lastrow(req, res) {
     console.log("-----emp leave lastrow----------");
     var database = req.query.database;
 
@@ -15770,41 +14580,33 @@ GROUP BY TBL.full_name`;
     const convertYear = tahun.substring(2, 4);
     const convertBulan = array[1];
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(script);
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(script, function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil berhasil di tambah!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil berhasil di tambah!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  emp_labor_lastrow(req, res) {
+  async emp_labor_lastrow(req, res) {
     console.log("----em labor lastrow----------");
     var database = req.query.database;
 
@@ -15821,40 +14623,33 @@ GROUP BY TBL.full_name`;
     const convertBulan = array[1];
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(script);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(script, function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil berhasil di tambah!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil berhasil di tambah!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  emp_klaim_lastrow(req, res) {
+  async emp_klaim_lastrow(req, res) {
     console.log("-----emp klaim last row---------");
     var database = req.query.database;
 
@@ -15869,38 +14664,31 @@ GROUP BY TBL.full_name`;
     const convertBulan = array[1];
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(script);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(script, function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil berhasil di tambah!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil berhasil di tambah!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
   async emp_request_lastrow(req, res) {
     console.log("-----emp request last row----------");
@@ -15910,65 +14698,31 @@ GROUP BY TBL.full_name`;
 
     var script = `SELECT nomor_ajuan FROM employee_request WHERE nomor_ajuan LIKE '%${pola}%' ORDER BY id DESC LIMIT 1`;
 
-    const connection = await model.createConnection(database);
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        //-------end check koneksi-----
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(script);
 
-        connection.query(script, (err, results) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: false,
-                message: "Terjadi kesahalan",
-                data: [],
-              });
-            });
-            return;
-          }
-          records = results;
-          if (records.length == 0) {
-            return res.status(200).send({
-              status: false,
-              message: "Terjadi kesalahan",
-              data: [],
-            });
-          }
-          connection.commit((err) => {
-            if (err) {
-              console.error("Error committing transaction:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesalahan",
-                  data: [],
-                });
-              });
-              return;
-            }
-            connection.end();
-            console.log("Transaction completed successfully!");
-            return res.status(200).send({
-              status: true,
-              message: "Successfuly get data",
-              data: results,
-            });
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil berhasil di tambah!",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
 
     // pool.getConnection(function (err, connection) {
     //   if (err) {
@@ -16484,7 +15238,8 @@ GROUP BY TBL.full_name`;
       );
     });
   },
-  insert_absen_approve_pengajuan(req, res) {
+
+  async insert_absen_approve_pengajuan(req, res) {
     console.log("-----insert absen approve pengajuan----------");
     var data = req.body.dataAbsen;
     var database = req.query.database;
@@ -16525,40 +15280,33 @@ GROUP BY TBL.full_name`;
 
     var script = `INSERT INTO ${namaDatabaseDynamic}.attendance (em_id, atten_date, signin_time, signout_time, working_hour, place_in, place_out, absence, overtime, earnleave, status, signin_longlat, signout_longlat, signin_pict, signout_pict, signin_note, signout_note, signin_addr, signout_addr, atttype) VALUES ?`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(script, [loopData]);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak di temukan",
-        });
-      } else {
-        connection.query(script, [loopData], function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil input absensi pengajuan employee!",
-            data: results,
-          });
-        });
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil input absensi pengajuan employee!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
-  notifikasi_reportTo(req, res) {
+  async notifikasi_reportTo(req, res) {
     console.log("-----notifikasi report to----------");
     var emIdPengaju = req.body.emId_pengaju;
     var title = req.body.title;
@@ -16570,88 +15318,58 @@ GROUP BY TBL.full_name`;
     var database = req.query.database;
     var view = req.body.view;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `SELECT em_report_to FROM employee WHERE em_id='${emIdPengaju}'`,
-        function (error, results) {
-          var emReportTo = results[0].em_report_to;
-          var emReportToList = emReportTo.split(",");
-          var loopData = [];
-          for (var i = 0; i < emReportToList.length; i++) {
-            var insert = [
-              emReportToList[i],
-              title,
-              deskripsi,
-              url,
-              atten_date,
-              jam,
-              status,
-              view,
-            ];
-            loopData.push(insert);
-          }
-
-          var array = atten_date.split("-");
-
-          const tahun = `${array[0]}`;
-          const convertYear = tahun.substring(2, 4);
-          const convertBulan = array[1];
-          const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-          var script = `INSERT INTO ${namaDatabaseDynamic}.notifikasi (em_id, title, deskripsi, url, atten_date, jam, status, view) VALUES ?`;
-
-          const configDynamic = {
-            multipleStatements: true,
-            host: ipServer, //myhris.siscom.id (ip local)
-            user: "pro",
-            password: "Siscom3519",
-            database: `${namaDatabaseDynamic}`,
-            connectionLimit: 1000,
-            connectTimeout: 60 * 60 * 1000,
-            acquireTimeout: 60 * 60 * 1000,
-            timeout: 60 * 60 * 1000,
-          };
-          const mysql = require("mysql");
-          const poolDynamic = mysql.createPool(configDynamic);
-
-          poolDynamic.getConnection(function (err, connection) {
-            if (err) {
-              res.send({
-                status: false,
-                message: "Database tidak di temukan",
-              });
-            } else {
-              connection.query(script, [loopData], function (error, results) {
-                if (error != null) console.log(error);
-                res.send({
-                  status: true,
-                  message: "Berhasil input absensi pengajuan employee!",
-                  data: results,
-                });
-              });
-              connection.release();
-            }
-          });
-        }
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT em_report_to FROM employee WHERE em_id='${emIdPengaju}'`
       );
-      connection.release();
-    });
+      var emReportTo = results[0].em_report_to;
+      var emReportToList = emReportTo.split(",");
+      var loopData = [];
+      for (var i = 0; i < emReportToList.length; i++) {
+        var insert = [
+          emReportToList[i],
+          title,
+          deskripsi,
+          url,
+          atten_date,
+          jam,
+          status,
+          view,
+        ];
+        loopData.push(insert);
+      }
+
+      var array = atten_date.split("-");
+
+      const tahun = `${array[0]}`;
+      const convertYear = tahun.substring(2, 4);
+      const convertBulan = array[1];
+      const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+
+      var script = `INSERT INTO ${namaDatabaseDynamic}.notifikasi (em_id, title, deskripsi, url, atten_date, jam, status, view) VALUES ?`;
+      const [resultss] = await conn.query(script, [loopData]);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil input absensi pengajuan employee!",
+        data: resultss,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
   insert_permintaan_kandidat(req, res) {
     console.log("-----inser permintaan kandidat----------");
@@ -16797,7 +15515,7 @@ GROUP BY TBL.full_name`;
     });
   },
 
-  load_history_kontrol(req, res) {
+  async load_history_kontrol(req, res) {
     console.log("-----load hostory kontrol----------");
 
     var em_id = req.body.em_id;
@@ -16812,38 +15530,31 @@ GROUP BY TBL.full_name`;
 
     var query1 = `SELECT * FROM ${namaDatabaseDynamic}.emp_control WHERE atten_date='${req.body.atten_date}' AND em_id='${em_id}' ORDER BY id DESC`;
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(query1);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak ditemukan",
-        });
-      } else {
-        connection.query(query1, function (error, results) {
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil ambil!",
-            data: results,
-          });
-        });
-        connection.release();
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async checkSlipGajiValidation(req, res) {
@@ -17186,7 +15897,7 @@ GROUP BY TBL.full_name`;
       }
     });
   },
-  info_aktifitas_employee(req, res) {
+  async info_aktifitas_employee(req, res) {
     console.log("-----info aktifitas employee---------- ", req.body);
     var database = req.query.database;
     var em_id = req.headers.em_id;
@@ -17277,50 +15988,40 @@ GROUP BY TBL.full_name`;
      `;
     }
 
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //myhris.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${namaDatabaseDynamic}`,
-      timezone: "+00:00",
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql");
-    const poolDynamic = mysql.createPool(configDynamic);
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
+      );
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) {
-        res.send({
-          status: false,
-          message: "Database tidak tersedia",
-        });
-      } else {
-        connection.query(
-          `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`,
-          function (error, results) {
-            if (error != null) console.log(error);
-            res.send({
-              status: true,
-              message: "Berhasil ambil data info!",
-
-              data_izin: results[1],
-              data_sakit: results[2],
-              data_cuti: results[3],
-              data_lembur: results[4],
-              data_masukwfh: results[5],
-              data_absentepatwaktu: results[6],
-              data_employee: "22",
-              data_masuk_kerja: results[0],
-            });
-          }
-        );
-        connection.release();
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data_izin: results[1],
+        data_sakit: results[2],
+        data_cuti: results[3],
+        data_lembur: results[4],
+        data_masukwfh: results[5],
+        data_absentepatwaktu: results[6],
+        data_employee: "22",
+        data_masuk_kerja: results[0],
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
       }
-    });
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async loadCutiMelahirkan(req, res) {
@@ -17463,37 +16164,38 @@ GROUP BY TBL.full_name`;
 
     let connection;
     try {
-        // Mendapatkan koneksi dengan memanggil fungsi .getConnection()
-        connection = await (await model.createConnection1(namaDatabaseDynamic)).getConnection();
+      // Mendapatkan koneksi dengan memanggil fungsi .getConnection()
+      connection = await (
+        await model.createConnection1(namaDatabaseDynamic)
+      ).getConnection();
 
-        await connection.beginTransaction();
+      await connection.beginTransaction();
 
-        const queryInsert = `INSERT INTO prod3 SET ?`;
-        const [results] = await connection.query(queryInsert, [valueBody]);
+      const queryInsert = `INSERT INTO prod3 SET ?`;
+      const [results] = await connection.query(queryInsert, [valueBody]);
 
-        await connection.commit();
-        console.log("Transaction completed successfully!");
+      await connection.commit();
+      console.log("Transaction completed successfully!");
 
-        return res.status(200).send({
-            status: true,
-            message: "Successfully inserted data into prod3",
-            data: results,
-        });
+      return res.status(200).send({
+        status: true,
+        message: "Successfully inserted data into prod3",
+        data: results,
+      });
     } catch (err) {
-        console.error("Error occurred:", err);
+      console.error("Error occurred:", err);
 
-        if (connection) {
-            await connection.rollback();
-        }
+      if (connection) {
+        await connection.rollback();
+      }
 
-        return res.status(400).send({
-            status: false,
-            message: "Gagal memproses data",
-            data: [],
-        });
+      return res.status(400).send({
+        status: false,
+        message: "Gagal memproses data",
+        data: [],
+      });
     } finally {
-        if (connection) connection.release();
+      if (connection) connection.release();
     }
-},
-
+  },
 };

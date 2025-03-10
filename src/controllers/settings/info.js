@@ -5,8 +5,6 @@ module.exports = {
     console.log("-----sisa kontrak---------");
     var database = req.query.database;
     var branchId = req.headers.branch_id;
-
-    const connection = await models.createConnection(database);
     var reminder = req.body.reminder;
 
     console.log();
@@ -22,37 +20,16 @@ module.exports = {
         AND e.status = 'ACTIVE' AND e.em_status != 'PERMANENT' AND branch_id=${branchId} ORDER BY TBL.end_date
         
         `;
-    //-----begin check koneksi----
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        //-------end check koneksi-----
+    const connection = await models.createConnection1(`${database}_hrm`);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [sysdata] = await conn.query(
+        `SELECT * FROM sysdata WHERE kode='015'`
+      );
 
-        connection.query(
-          "SELECT * FROM sysdata WHERE kode='015'",
-          (err, sysdata) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesahalan",
-                  data: [],
-                });
-              });
-              return;
-            }
-
-            query1 = ` 
+      query1 = ` 
                 SELECT CURDATE(), TBL.em_id, ADDDATE(TBL.end_date, INTERVAL - ${sysdata[0].name} DAY),
                 DATEDIFF(TBL.end_date, CURDATE()) AS sisa_kontrak, e.full_name, e.em_image, TBL.em_id, TBL.description, 
                 TBL.begin_date, TBL.end_date, TBL.remark, e.status  
@@ -64,53 +41,24 @@ module.exports = {
                 AND e.status = 'ACTIVE' AND e.em_status != 'PERMANENT' ORDER BY TBL.end_date
                 
                 `;
-
-            connection.query(query1, (err, results) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "Terjadi kesahalan",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              if (results.length == 0) {
-                return res.status(400).send({
-                  status: false,
-                  message: "Terjadi kesalahan",
-                  data: [],
-                });
-              }
-              connection.commit((err) => {
-                if (err) {
-                  console.error("Error committing transaction:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: false,
-                      message: "Terjadi kesalahan",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                connection.end();
-                console.log("Transaction completed successfully!");
-                return res.status(200).send({
-                  status: true,
-                  message: "Successfuly get data",
-                  data: results,
-                });
-              });
-            });
-          }
-        );
+      const [results] = await conn.query(query1);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Successfuly get data",
+        data: results,
       });
-    });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 };

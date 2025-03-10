@@ -2,7 +2,7 @@ const models = require("../../utils/models");
 
 module.exports = {
   async PalceCoordinate(req, res) {
-    console.log("---------place coodinate----------------");
+    console.log("---------place cooredinate------");
     var database = req.query.database;
     var attenDate = req.query_date;
 
@@ -34,171 +34,60 @@ module.exports = {
 
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
+    const connection = await models.createConnection1(`${database}_hrm`);
+    let conn;
     try {
-      const connection = await models.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          //
-
-          connection.query(
-            `
-                 SELECT name FROM sysdata WHERE kode='013'
-                 `,
-            (err, sysdata) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              connection.query(
-                `
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const querySys = `SELECT name FROM sysdata WHERE kode='013'`;
+      const [sysdata] = await conn.query(querySys);
+      const queryTugasLuar = `
                  SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
-                  sysdata[0].name == "1" || sysdata[0].name == 1
-                    ? "Approve"
-                    : "Approve2"
-                }'
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }'
                  UNION ALL
                  SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected LIKE '%${date}%' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='DL' ) AND leave_status='${
-                  sysdata[0].name == "1" || sysdata[0].name == 1
-                    ? "Approve"
-                    : "Approve2"
-                }'
-                 `,
-
-                (err, tugasLuar) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-
-                  if (tugasLuar.length > 0) {
-
-                    connection.query(
-                      ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(
-                        0,
-                        2
-                      )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`,
-                      (err, palceCoordinate) => {
-                        if (err) {
-                          console.error(
-                            "Error executing SELECT statement:",
-                            err
-                          );
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: false,
-                              message: "gagal ambil data",
-                              data: [],
-                            });
-                          });
-                        }
-
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error("Error committing transaction:", err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message:
-                                  "Kombinasi email & password Anda Salah",
-                                data: [],
-                              });
-                            });
-                            return;
-                          }
-                          connection.end();
-                          console.log("Transaction completed successfully!");
-                          return res.status(200).send({
-                            status: true,
-                            message: "Kombinasi email & password Anda Salah",
-                            data: palceCoordinate,
-                          });
-                        });
-                      }
-                    );
-                  } else {
-                    connection.query(
-                      ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`,
-                      (err, palceCoordinate) => {
-                        if (err) {
-                          console.error(
-                            "Error executing SELECT statement:",
-                            err
-                          );
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: false,
-                              message: "gagal ambil data",
-                              data: [],
-                            });
-                          });
-                        }
-
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error("Error committing transaction:", err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message:
-                                  "Kombinasi email & password Anda Salah",
-                                data: [],
-                              });
-                            });
-                            return;
-                          }
-                          connection.end();
-                          console.log("Transaction completed successfully!");
-                          return res.status(200).send({
-                            status: true,
-                            message: "Kombinasi email & password Anda Salah",
-                            data: palceCoordinate,
-                          });
-                        });
-                      }
-                    );
-                  }
-                }
-              );
-            }
-          );
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }'
+                 `;
+      const [tugasLuar] = await conn.query(queryTugasLuar);
+      console.log(tugasLuar);
+      if (tugasLuar.length > 0) {
+        const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(
+          0,
+          2
+        )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
+        const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+        await conn.commit();
+        return res.status(200).send({
+          status: true,
+          message: "Kombinasi email & password Anda Salah",
+          data: palceCoordinate,
         });
-      });
-    } catch ($e) {
+      } else {
+        const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
+        const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+        await conn.commit();
+        return res.status(200).send({
+          status: true,
+          message: "Kombinasi email & password Anda Salah",
+          data: palceCoordinate,
+        });
+      }
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error('errrroe', e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) {
+        await conn.release();
+      }
     }
   },
 };
