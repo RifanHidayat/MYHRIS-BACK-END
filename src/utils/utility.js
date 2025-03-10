@@ -293,19 +293,18 @@ module.exports = {
     console.log("emIds ", emIds);
   
     const listData = emIds.toString().split(",");
-  
-    let connection;
-  
+    const connection = await model.createConnection1(databaseMaster);
+    let conn;
     try {
-      connection = await (await model.createConnection1(databaseMaster)).getConnection();
-      await connection.beginTransaction();
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
   
       for (const emId of listData) {
         if (emId) {
           console.log("Memproses em_id:", emId);
   
           const queryEmployee = `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`;
-          const [employees] = await connection.query(queryEmployee, [emId]);
+          const [employees] = await conn.query(queryEmployee, [emId]);
   
           if (employees.length === 0) {
             console.warn(`Employee dengan ID ${emId} tidak ditemukan.`);
@@ -332,7 +331,7 @@ module.exports = {
             idx,
           ];
   
-          await connection.query(queryInsert, insertValues);
+          await conn.query(queryInsert, insertValues);
   
           // Memanggil notifikasi approval
           this.pushNotifikasiApproval2(
@@ -347,19 +346,19 @@ module.exports = {
         }
       }
   
-      await connection.commit();
+      await conn.commit();
       console.log("Transaction completed successfully!");
   
     } catch (err) {
       console.error("Error occurred:", err);
   
-      if (connection) {
-        await connection.rollback();
+      if (conn) {
+        await conn.rollback();
       }
   
     } finally {
-      if (connection) {
-        connection.release();
+      if (conn) {
+        conn.release();
       }
     }
   },
@@ -379,19 +378,18 @@ module.exports = {
     console.log("emIds ", emIds);
   
     const listData = emIds.toString().split(",");
-  
-    let connection;
-  
+    const connection = await model.createConnection1(databaseMaster);
+    let conn;
     try {
-      connection = await (await model.createConnection1(databaseMaster)).getConnection();
-      await connection.beginTransaction();
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
   
       for (const emId of listData) {
         if (emId) {
           console.log("Memproses em_id:", emId);
   
           const queryEmployee = `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`;
-          const [employees] = await connection.query(queryEmployee, [emId]);
+          const [employees] = await conn.query(queryEmployee, [emId]);
   
           if (employees.length === 0) {
             console.warn(`Employee dengan ID ${emId} tidak ditemukan.`);
@@ -415,7 +413,7 @@ module.exports = {
             idx,
           ];
   
-          await connection.query(queryInsert);
+          await conn.query(queryInsert);
   
           // Memanggil notifikasi approval
           this.pushNotifikasiApproval2(
@@ -430,19 +428,19 @@ module.exports = {
         }
       }
   
-      await connection.commit();
+      await conn.commit();
       console.log("Transaction completed successfully!");
   
     } catch (err) {
       console.error("Error occurred:", err);
   
-      if (connection) {
-        await connection.rollback();
+      if (conn) {
+        await conn.rollback();
       }
   
     } finally {
-      if (connection) {
-        connection.release();
+      if (conn) {
+        conn.release();
       }
     }
   },
@@ -492,13 +490,13 @@ module.exports = {
     }
   
     console.log("Initializing notification process", databasePeriode);
-  
+    const connection = await model.createConnection1(databseMaster);
+    let conn;
     const listData = emIds.toString().split(",");
   
     try {
-      const pool = await model.createConnection1(databseMaster);
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
   
       const employeeQueries = listData
         .filter((emId) => emId)
@@ -518,7 +516,7 @@ module.exports = {
           const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
             VALUES ('${e[0].em_id}','${title}','${description}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
   
-          insertQueries.push(connection.promise().query(query));
+          insertQueries.push(conn.promise().query(query));
   
           pushNotifikasiApprovalGlobal(
             e[0].token_notif,
@@ -533,13 +531,13 @@ module.exports = {
       }
   
       await Promise.all(insertQueries);
-      await connection.promise().commit();
+      await conn.promise().commit();
       console.log("Transaction completed successfully!");
     } catch (err) {
       console.error("Error during transaction:", err);
-      if (connection) await connection.promise().rollback();
+      if (conn) await conn.promise().rollback();
     } finally {
-      if (connection) connection.end();
+      if (conn) conn.release();
     }
   },
   notifikasiChat(
@@ -591,17 +589,17 @@ module.exports = {
     databasePeriode,
     databaseMaster
 ) {
-    try {
-        console.log("Membuat koneksi ke database...");
 
-        const pool = await model.createConnection1(databaseMaster);
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
+  const connection = await model.createConnection1(databaseMaster);
+  let conn;
+    try {
+        conn = await connection.getConnection();
+        await conn.beginTransaction();
 
         console.log("Mulai transaksi untuk notifikasi absensi");
 
         // Mendapatkan data pegawai yang mengajukan
-        const [employeeData] = await connection.query(
+        const [employeeData] = await conn.query(
             `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`,
             [emIdPengajuan]
         );
@@ -615,7 +613,7 @@ module.exports = {
 
         for (const emId of listData) {
             // Mendapatkan data karyawan yang akan menerima notifikasi
-            const [receivers] = await connection.query(
+            const [receivers] = await conn.query(
                 `SELECT * FROM ${databaseMaster}.employee WHERE em_id = ?`,
                 [emId]
             );
@@ -658,14 +656,17 @@ module.exports = {
             );
         }
 
-        await connection.commit();
+        await conn.commit();
         console.log("Transaksi notifikasi absensi berhasil disimpan!");
         
 
     } catch (error) {
+      if(conn){
+        await conn.rollback();
+      }
         console.error("Gagal menyimpan notifikasi absensi:", error.message);
     } finally {
-
+      if (conn) await conn.release();
     }
 },
 
@@ -710,33 +711,16 @@ async insertNotifikasiAbsensiSp(
 
   const listData = emIds.toString().split(",").filter(Boolean);
   console.log(listData);
-
+  const connection = await model.createConnection1(databseMaster);
+  let conn;
   try {
-    const connection = await model.createConnection1(databseMaster);
-    connection.connect((err) => {
-      if (err) {
-        console.error("Error connecting to the database:", err);
-        return;
-      }
-
-      connection.beginTransaction((err) => {
-        if (err) {
-          console.error("Error beginning transaction:", err);
-          connection.end();
-          return;
-        }
-        console.log("Processing notifikasi absensi");
+    conn = await connection.getConnection();
+    await conn.beginTransaction();
 
         listData.forEach((emId) => {
           const queryEmployee = `SELECT * FROM ${databseMaster}.employee WHERE em_id='${emId}'`;
-          connection.query(queryEmployee, (err, employees) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => connection.end());
-              return;
-            }
-
-            const employee = employees[0];
+          const [employees] = conn.query(queryEmployee);
+          const employee = employees[0];
             const salutation = employee.em_gender === "PRIA" ? "Bapak" : employee.em_gender === "Wanita" ? "Ibu" : "";
 
             let deskripsi = `${nameSp} ${namaPegajuan} dengan nomor ${nomorAjuan}`;
@@ -750,32 +734,18 @@ async insertNotifikasiAbsensiSp(
             const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan)
               VALUES ('${employee.em_id}', '${title}', '${deskripsi}', '${url}', CURDATE(), CURTIME(), 2, 0, '${emIdPengajuan}')`;
             console.log(query);
-
-            connection.query(query, (err) => {
-              if (err) {
-                console.error("Error executing INSERT statement:", err);
-                connection.rollback(() => connection.end());
-                return;
-              }
-
-              pushNotifikasiApproval(employee.token_notif, title, deskripsi, url, emIdPengajuan, idx);
-            });
-          });
+            const [notif] = conn.query(query);
+            pushNotifikasiApproval(notif.token_notif, title, deskripsi, url, emIdPengajuan, idx);
         });
 
-        connection.commit((err) => {
-          if (err) {
-            console.error("Error committing transaction:", err);
-            connection.rollback(() => connection.end());
-            return;
-          }
-          connection.end();
-          console.log("Transaction completed successfully!");
-        });
-      });
-    });
+
   } catch (e) {
+    if (conn){
+      await conn.rollback();
+    }
     console.error("Error during notifikasi processing:", e);
+  } finally{
+    if (conn) await conn.release();
   }
 },
 
