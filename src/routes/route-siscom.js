@@ -198,7 +198,9 @@ router.post('/work-schedule', dashboard.workSchedule);
 
 
 router.get('/peraturan-perusahaan-check',peraturanPerusahaan.checkData);
-
+router.get('/cabang',cabang.cabang);
+router.post('/cuti/type',auth.isAuth,izin.tipeIzin );
+router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
 
 
 //Peraturan Perusahaan
@@ -225,7 +227,6 @@ router.post('/insertTaskDaily',dailyTask.insertDailyTask);
 
 router.get('/surat-perjanjian',operasional.surtKontrak);
 router.get('/surat-perjanjian/:id',operasional.suratKontrakPdf);
-router.get('/cabang',cabang.cabang);
 router.get('/pinjaman/assets',pinjamanAsset.assets);
 router.get('/pinjaman/',pinjamanAsset.show);
 router.post('/pinjaman/',pinjamanAsset.store);
@@ -278,8 +279,6 @@ router.post('/klaim',auth.isAuth,klaim.store);
 router.post('/cuti',auth.isAuth,cuti.store );
 router.post('/edit-lembur',auth.isAuth,lembur.updateLembur);
 router.get('/history-cuti',auth.isAuth,cuti.historyCuti );
-router.post('/cuti/type',auth.isAuth,izin.tipeIzin );
-router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
 router.post('/insert-emp_claim', auth.isAuth,operasional.insertData);
 router.post('/insert-notifikasi',auth.isAuth, notifikasi.insertNotifikasi);
 router.post('/insert-candidate',auth.isAuth, operasional.insert_kandidat_baru);

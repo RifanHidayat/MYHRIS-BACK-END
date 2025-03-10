@@ -1,4 +1,5 @@
 const models = require("../../../utils/models");
+const utility = require("../../../utils/utility");
 
 const ipServer = process.env.API_URL;
 module.exports = {
@@ -22,7 +23,7 @@ module.exports = {
 
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    const connection = await model.createConnection1(database);
+    const connection = await models.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
       conn = await connection.getConnection();
