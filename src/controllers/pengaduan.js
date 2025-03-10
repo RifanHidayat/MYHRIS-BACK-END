@@ -241,231 +241,231 @@ module.exports = {
      
         
       },
-          async store(req,res){
+    //       async store(req,res){
 
      
-        console.log('-----Insert pengaduan kerusakan----------')
+    //     console.log('-----Insert pengaduan kerusakan----------')
       
-        var database=req.query.database;
+    //     var database=req.query.database;
 
-        var emId=req.body.em_id;
-        var nama=req.body.nama;
+    //     var emId=req.body.em_id;
+    //     var nama=req.body.nama;
     
-        var posisi=req.body.posisi;
-        var namaPeralatan=req.body.nama_peralatan;
-        var jenisKerusakan=req.body.jenis_kerusakan
-        var lokasiPenempatan=req.body.lokasi_penempatan
-        var  telp=req.body.telp
-        var lokasiPeralatanRusak=req.body.lokasi_peralatan_rusak;
-        var jumlahPeralatanRusal=req.body.jumlah_peralatan_rusak;
-        var catatan=req.body.catatan
+    //     var posisi=req.body.posisi;
+    //     var namaPeralatan=req.body.nama_peralatan;
+    //     var jenisKerusakan=req.body.jenis_kerusakan
+    //     var lokasiPenempatan=req.body.lokasi_penempatan
+    //     var  telp=req.body.telp
+    //     var lokasiPeralatanRusak=req.body.lokasi_peralatan_rusak;
+    //     var jumlahPeralatanRusal=req.body.jumlah_peralatan_rusak;
+    //     var catatan=req.body.catatan
 
-        var details=req.body.details
+    //     var details=req.body.details
 
       
-        var array = utility.dateNow2().split("-");
+    //     var array = utility.dateNow2().split("-");
         
 
-        const tahun = `${array[0]}`;
-        const convertYear = tahun.substring(2, 4);
-        var convertBulan;
-        if (array[1].length == 1) {
-          convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
-        } else {
-          convertBulan = array[1];
-        }
+    //     const tahun = `${array[0]}`;
+    //     const convertYear = tahun.substring(2, 4);
+    //     var convertBulan;
+    //     if (array[1].length == 1) {
+    //       convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
+    //     } else {
+    //       convertBulan = array[1];
+    //     }
     
-    console.log('detaul',details)
+    // console.log('detaul',details)
       
     
-        var query= `INSERT INTO ${table} SET ?`
+    //     var query= `INSERT INTO ${table} SET ?`
     
     
-    var nomorAjuan='PK'
+    // var nomorAjuan='PK'
     
     
-        console.log(req.body)
-          try{
-              const connection=await model.createConnection(database);
-              connection.connect((err) => {
-                if (err) {
-                  console.error('Error connecting to the database:', err);
-                  return;
-                }  
-                connection.beginTransaction((err) => {
-                  if (err) {
-                    console.error('Error beginning transaction:', err);
-                    connection.end();
-                    return;
-                  }
+    //     console.log(req.body)
+    //       try{
+    //           const connection=await model.createConnection(database);
+    //           connection.connect((err) => {
+    //             if (err) {
+    //               console.error('Error connecting to the database:', err);
+    //               return;
+    //             }  
+    //             connection.beginTransaction((err) => {
+    //               if (err) {
+    //                 console.error('Error beginning transaction:', err);
+    //                 connection.end();
+    //                 return;
+    //               }
 
-                  connection.query(` SELECT nomor_ajuan FROM  ${table} ORDER BY id DESC `,
-                  (err, results) => {
-                 if (err) {
-                   console.error('Error executing SELECT statement:', err);
-                   connection.rollback(() => {
-                     connection.end();
-                     return res.status(400).send({
-                       status: true,
-                       message: 'Data gagal terkirim',
-                       data:results
+    //               connection.query(` SELECT nomor_ajuan FROM  ${table} ORDER BY id DESC `,
+    //               (err, results) => {
+    //              if (err) {
+    //                console.error('Error executing SELECT statement:', err);
+    //                connection.rollback(() => {
+    //                  connection.end();
+    //                  return res.status(400).send({
+    //                    status: true,
+    //                    message: 'Data gagal terkirim',
+    //                    data:results
                      
-                     });
-                   });
-                   return;
-                 }
-                 if (results.length > 0) {
-                   var text = results[0]['nomor_ajuan'];
-                   nomor = parseInt(text.substring(8, 13)) + 1;
-                   var nomorStr = String(nomor).padStart(4, '0')
-                   nomorAjuan = `PK20${convertYear}${convertBulan}` + nomorStr;
+    //                  });
+    //                });
+    //                return;
+    //              }
+    //              if (results.length > 0) {
+    //                var text = results[0]['nomor_ajuan'];
+    //                nomor = parseInt(text.substring(8, 13)) + 1;
+    //                var nomorStr = String(nomor).padStart(4, '0')
+    //                nomorAjuan = `PK20${convertYear}${convertBulan}` + nomorStr;
            
-                 } else {
-                   nomor = 1;
-                   var nomorStr = String(nomor).padStart(4, '0')
-                   nomorAjuan  = `PK20${convertYear}${convertBulan}` + nomorStr;
-                 }
+    //              } else {
+    //                nomor = 1;
+    //                var nomorStr = String(nomor).padStart(4, '0')
+    //                nomorAjuan  = `PK20${convertYear}${convertBulan}` + nomorStr;
+    //              }
     
-                 var dataInsert = {
-                  posisi: posisi,
-                  nama_peralatan: namaPeralatan,
-                  jenis_kerusakan: jenisKerusakan,
-                  lokasi_penempatan: lokasiPenempatan,
-                  em_id:emId,
-                  nama:nama,
-                  created_by:nama,
-                  created_on:utility.dateNow2(),
-                  modified_on:utility.dateNow2(),
-                  modified_by:nama,
-                  telp:telp,
-                  nomor_ajuan:nomorAjuan
+    //              var dataInsert = {
+    //               posisi: posisi,
+    //               nama_peralatan: namaPeralatan,
+    //               jenis_kerusakan: jenisKerusakan,
+    //               lokasi_penempatan: lokasiPenempatan,
+    //               em_id:emId,
+    //               nama:nama,
+    //               created_by:nama,
+    //               created_on:utility.dateNow2(),
+    //               modified_on:utility.dateNow2(),
+    //               modified_by:nama,
+    //               telp:telp,
+    //               nomor_ajuan:nomorAjuan
                   
-                }
+    //             }
               
-                      connection.query( query,[dataInsert], (err, results) => {
-                        if (err) {
-                          console.error('Error executing SELECT statement:', err);
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: false,
-                              message: 'gagal ambil data',
-                              data:[]
+    //                   connection.query( query,[dataInsert], (err, results) => {
+    //                     if (err) {
+    //                       console.error('Error executing SELECT statement:', err);
+    //                       connection.rollback(() => {
+    //                         connection.end();
+    //                         return res.status(400).send({
+    //                           status: false,
+    //                           message: 'gagal ambil data',
+    //                           data:[]
                             
-                            });
-                          });
-                          return;
-                        }
+    //                         });
+    //                       });
+    //                       return;
+    //                     }
                         
-                        records = results;
+    //                     records = results;
 
                            
-                        for (var i=0;i<details.length;i++){
+    //                     for (var i=0;i<details.length;i++){
                           
                           
                           
                           
-                          console.log(details[i])
-                            details[i]['pengaduan_kerusakan_id']=records.insertId;
+    //                       console.log(details[i])
+    //                         details[i]['pengaduan_kerusakan_id']=records.insertId;
 
-                            connection.query( `INSERT INTO ${tableDetail} (nama_kerusakan,jumlah_kerusakan,lokasi_kerusakan,pengaduan_kerusakan_id,alasan_kerusakan)  
-                            VALUES ('${details[i]['nama_kerusakan']}','${details[i]['jumlah_kerusakan']}','${details[i]['lokasi_kerusakan']}','${records.insertId   }','${details[i]['alasan_kerusakan']}')`,details, (err, results) => {
-                              if (err) {
-                                console.error('Error executing SELECT statement:', err);
-                                connection.rollback(() => {
-                                  connection.end();
-                                  return res.status(400).send({
-                                    status: false,
-                                    message: 'gagal ambil data',
-                                    data:[]
+    //                         connection.query( `INSERT INTO ${tableDetail} (nama_kerusakan,jumlah_kerusakan,lokasi_kerusakan,pengaduan_kerusakan_id,alasan_kerusakan)  
+    //                         VALUES ('${details[i]['nama_kerusakan']}','${details[i]['jumlah_kerusakan']}','${details[i]['lokasi_kerusakan']}','${records.insertId   }','${details[i]['alasan_kerusakan']}')`,details, (err, results) => {
+    //                           if (err) {
+    //                             console.error('Error executing SELECT statement:', err);
+    //                             connection.rollback(() => {
+    //                               connection.end();
+    //                               return res.status(400).send({
+    //                                 status: false,
+    //                                 message: 'gagal ambil data',
+    //                                 data:[]
                                   
-                                  });
-                                });
-                                return;
-                              }
-                            }); 
+    //                               });
+    //                             });
+    //                             return;
+    //                           }
+    //                         }); 
 
 
 
-                        }
+    //                     }
 
                        
                         
                         
-                        // for (var i=0;i<details.length;i++){
-                        //     console.log(details[i])
-                        //     details[i]['pengaduan_kerusakan_id']=records.insertId
-                        // }
-                        // console.log("tes",details)
+    //                     // for (var i=0;i<details.length;i++){
+    //                     //     console.log(details[i])
+    //                     //     details[i]['pengaduan_kerusakan_id']=records.insertId
+    //                     // }
+    //                     // console.log("tes",details)
                 
-                        // var query2= `INSERT INTO ${tableDetail} SET ?`
+    //                     // var query2= `INSERT INTO ${tableDetail} SET ?`
     
-                        // connection.query( query2,details, (err, results) => {
-                        //     if (err) {
-                        //       console.error('Error executing SELECT statement:', err);
-                        //       connection.rollback(() => {
-                        //         connection.end();
-                        //         return res.status(400).send({
-                        //           status: false,
-                        //           message: 'gagal ambil data',
-                        //           data:[]
+    //                     // connection.query( query2,details, (err, results) => {
+    //                     //     if (err) {
+    //                     //       console.error('Error executing SELECT statement:', err);
+    //                     //       connection.rollback(() => {
+    //                     //         connection.end();
+    //                     //         return res.status(400).send({
+    //                     //           status: false,
+    //                     //           message: 'gagal ambil data',
+    //                     //           data:[]
                                 
-                        //         });
-                        //       });
-                        //       return;
-                        //     }
+    //                     //         });
+    //                     //       });
+    //                     //       return;
+    //                     //     }
                             
-                        //     records = results;
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error('Error committing transaction:', err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                         message: "failed insert data",
-                                data:[]
+    //                     //     records = results;
+    //                     connection.commit((err) => {
+    //                       if (err) {
+    //                         console.error('Error committing transaction:', err);
+    //                         connection.rollback(() => {
+    //                           connection.end();
+    //                           return res.status(400).send({
+    //                             status: true,
+    //                                      message: "failed insert data",
+    //                             data:[]
                               
-                              });
-                            });
-                            return;
-                          }
-                          connection.end();
-                          console.log('Transaction completed successfully!');
-                          return res.status(200).send({
-                            status: true,
-                            message: "Success insert data",
-                            data:records
+    //                           });
+    //                         });
+    //                         return;
+    //                       }
+    //                       connection.end();
+    //                       console.log('Transaction completed successfully!');
+    //                       return res.status(200).send({
+    //                         status: true,
+    //                         message: "Success insert data",
+    //                         data:records
                           
-                          });
+    //                       });
     
-                        });
+    //                     });
     
-                    //});
+    //                 //});
     
                       
                       
-                    });
-                  });
-                });
-              });
+    //                 });
+    //               });
+    //             });
+    //           });
               
               
             
-          }catch($e){
-            return res.status(400).send({
-              status: true,
-              message: 'Gagal ambil data',
-              data:[]
+    //       }catch($e){
+    //         return res.status(400).send({
+    //           status: true,
+    //           message: 'Gagal ambil data',
+    //           data:[]
             
-            });
+    //         });
       
-          }
+    //       }
     
           
      
         
-      },
+    //   },
     
       async update(req,res){
 

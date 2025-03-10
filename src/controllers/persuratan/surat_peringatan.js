@@ -109,44 +109,42 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var emId = req.headers.em_id;
 
     console.log('kesini gak sih');
-  
-    try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return res.status(500).send({ status: false, message: "Koneksi gagal" });
-        }
-  
-        const queryUnreadCount = `
-          SELECT COUNT(*) AS unread_count
-          FROM employee_letter el
-          WHERE el.em_id = ?
-          AND el.status = 'Approve'
-          AND el.exp_date >= CURDATE()
-          AND NOT EXISTS (
-              SELECT 1 
-              FROM employee_letter_view elr
-              WHERE elr.employee_letter_id = el.id
-              AND elr.em_id = ?
-          )`;
-  
-        connection.query(queryUnreadCount, [emId, emId], (err, result) => {
-          connection.end();
-          if (err) {
-            console.error("Error executing query:", err);
-            return res.status(400).send({ status: false, message: "Gagal mengambil jumlah surat" });
-          }
-  
-          return res.status(200).send({ 
-            status: true, 
-            message: "Jumlah surat yang belum dibaca", 
-            unread_count: result[0].unread_count 
-          });
-        });
+    const connection = await model.createConnection(database);
+    let conn;
+    try{
+      conn = await connection.getConnection();
+      await conn.beginTransaction;
+      const queryUnreadCount = `
+      SELECT COUNT(*) AS unread_count
+      FROM employee_letter el
+      WHERE el.em_id = ?
+      AND el.status = 'Approve'
+      AND el.exp_date >= CURDATE()
+      AND NOT EXISTS (
+          SELECT 1 
+          FROM employee_letter_view elr
+          WHERE elr.employee_letter_id = el.id
+          AND elr.em_id = ?
+      )`;
+      const [result] = await conn.query(queryUnreadCount, [emId, emId])
+
+      await conn.commt();
+      return res.status(200).send({ 
+        status: true, 
+        message: "Jumlah surat yang belum dibaca", 
+        unread_count: result[0].unread_count 
       });
-    } catch (e) {
-      return res.status(500).send({ status: false, message: "Terjadi kesalahan server" });
+    }catch(e){
+      if (conn){
+        await conn.rollback();
+      }
+      console.error('Error ouy', e);
+      return res.status(400).send({ 
+        status: false, 
+        message: "ERRoe", 
+      });
+    }finally{
+      if (conn) await conn.release();
     }
   },
   

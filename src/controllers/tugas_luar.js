@@ -62,7 +62,7 @@ module.exports = {
 
     var dateNow = utility.dateNow4();
     bodyValue.tgl_ajuan = dateNow;
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    const connection = await model.createConnection1(databaseMaster);
     let conn;
     try {
       conn = await connection.getConnection();
