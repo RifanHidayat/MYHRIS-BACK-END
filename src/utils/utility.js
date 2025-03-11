@@ -501,8 +501,7 @@ module.exports = {
       const employeeQueries = listData
         .filter((emId) => emId)
         .map((emId) =>
-          connection
-            .promise()
+          conn
             .query(
               `SELECT * FROM ${databseMaster}.employee WHERE em_id='${emId}'`
             )
@@ -516,7 +515,7 @@ module.exports = {
           const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
             VALUES ('${e[0].em_id}','${title}','${description}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
   
-          insertQueries.push(conn.promise().query(query));
+          insertQueries.push(conn.query(query));
   
           pushNotifikasiApprovalGlobal(
             e[0].token_notif,
@@ -531,11 +530,11 @@ module.exports = {
       }
   
       await Promise.all(insertQueries);
-      await conn.promise().commit();
+      await conn.commit();
       console.log("Transaction completed successfully!");
     } catch (err) {
       console.error("Error during transaction:", err);
-      if (conn) await conn.promise().rollback();
+      if (conn) await conn.rollback();
     } finally {
       if (conn) conn.release();
     }
