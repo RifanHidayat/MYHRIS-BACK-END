@@ -23,7 +23,6 @@ module.exports = {
     function isDateInRange(date, startDate, endDate) {
       return date >= startDate && date <= endDate;
     }
-
     var database = req.query.database;
     let name_url = req.originalUrl;
     var convert1 = name_url.substring(name_url.lastIndexOf("/") + 1);
@@ -34,11 +33,9 @@ module.exports = {
     var menu_name = req.body.menu_name;
     var activity_name = req.body.activity_name;
     var createdBy = req.body.created_by;
-
     var bodyValue = req.body;
     var branchId = req.headers.branch_id;
     var tasks = req.body.tasks;
-    console.log("task  ", tasks[0]);
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
@@ -47,8 +44,6 @@ module.exports = {
     bodyValue.branch_id = req.headers.branch_id;
 
     let now = new Date();
-
-    console.log(bodyValue);
 
     let year = now.getFullYear();
     let month = now.getMonth() + 1; // Bulan dimulai dari 0, jadi tambahkan 1
@@ -81,11 +76,11 @@ module.exports = {
 
     const databaseMaster = `${database}_hrm`;
     var nomorLb = `LB20${convertYear}${convertBulan}`;
-    var script = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
-    var transaksi = "";
+    var transaksion = "";
     const connection = await model.createConnection1(databaseMaster);
     let conn;
     try {
+      console.log('--------begin transaksi-----------')
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [data] = await conn.query(
@@ -117,14 +112,13 @@ module.exports = {
               timeParam2.setDate(time2.getDate() + 1);
             }
 
-            transaksi = "Izin";
+            transaksion = "Izin";
 
             if (isDateInRange(timeParam1, time1, time2)) {
               await conn.commit();
               return res.status(400).send({
                 status: false,
-                message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                data: [],
+                message: `Kamu telah melakaukan pengajuan ${transaksion} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
               });
             }
           } else if (
@@ -136,7 +130,6 @@ module.exports = {
               return res.status(400).send({
                 status: false,
                 message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                data: [],
               });
             }
 
@@ -145,12 +138,12 @@ module.exports = {
               return res.status(400).send({
                 status: false,
                 message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                data: [],
               });
             }
           }
         }
       }
+      console.log('inin lolos gak')
       const [cekLembur] = await conn.query(
         `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.atten_date}' AND status_transaksi=1 AND ( ajuan='1' OR ajuan='2') AND status IN ('Pending','Approve','Approve2')`
       );
@@ -180,18 +173,18 @@ module.exports = {
           }
 
           if (cekLembur[i].ajuan == "2") {
-            transaksi = "Tugas Luar";
+            transaksion = "Tugas Luar";
           }
 
           if (cekLembur[i].ajuan == "1") {
-            transaksi = "Lembur";
+            transaksion = "Lembur";
           }
 
           if (isDateInRange(timeParam1, time1, time2)) {
             await conn.commit();
             return res.status(400).send({
               status: false,
-              message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${cekLembur[0].status}`,
+              message: `Kamu telah melakukan pengajuan ${transaksion} pada tanggal ${time1} s.d. ${time2} dengan status ${cekLembur[0].status}`,
               data: [],
             });
           } else {
@@ -199,7 +192,7 @@ module.exports = {
               await conn.commit();
               return res.status(400).send({
                 status: false,
-                message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${cekLembur[0].status}`,
+                message: `Kamu telah melakukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${cekLembur[0].status}`,
                 data: [],
               });
             }
@@ -228,7 +221,6 @@ module.exports = {
       );
       const [transaksi] = await conn.query(
         `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan ='${bodyValue.nomor_ajuan}'`,
-        [bodyValue]
       );
       const [sysData] = await conn.query(
         "SELECT name FROM sysdata WHERE KODE IN (024)"
@@ -237,15 +229,15 @@ module.exports = {
         `SELECT * FROM  ${databaseMaster}.employee WHERE em_id='${bodyValue.em_id}'`
       );
       bodyValue.branch_id = user[0].branch_id;
-      console.log(task);
+      console.log(tasks);
       for (var i = 0; i < tasks.length; i++) {
-        var task = tasks[i]["task"];
+        let task = tasks[i]["task"];
         const [insertTask] = await conn.query(
           `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,nomor_ajuan) VALUES('${task}','0','${nomorLb}')`
         );
       }
 
-      var title = "Approval Lembur";
+      console.log('kesni gak sih');
 
       /// var listDataAtasan=user[0].em_report_to.toString().split(',')
 
@@ -276,16 +268,17 @@ module.exports = {
           databaseMaster
         );
       }
+      console.log('ini gak yah')
       await conn.commit();
       return res.status(200).send({
         status: true,
         message: "Successfuly insert data",
       });
     } catch (e) {
+      console.error("error", e);
       if (conn) {
         await conn.rollback();
       }
-      console.error("error", e);
       return res.status(400).send({
         status: false,
         message: "Gagal ambil data",
@@ -362,7 +355,7 @@ module.exports = {
 
     console.log(script);
 
-    var transaksi = "";
+    var transaksion = "";
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {

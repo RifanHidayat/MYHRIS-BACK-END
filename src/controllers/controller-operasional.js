@@ -13358,6 +13358,7 @@ a.typeid,
 
         console.log("hasil final ", hasilFinal);
       });
+      console.log("hasil final ", hasilFinal);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -14585,8 +14586,6 @@ GROUP BY TBL.full_name`;
     var pola = req.body.pola;
 
     var script = `SELECT nomor_ajuan FROM emp_labor WHERE nomor_ajuan LIKE '%${pola}%' ORDER BY id DESC LIMIT 1`;
-
-    console.log(script);
 
     var array = req.body.atten_date.split("-");
 
