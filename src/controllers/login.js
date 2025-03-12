@@ -405,7 +405,7 @@ module.exports = {
     var em_id = req.body.em_id;
     var last_login = req.body.last_login;
     console.log(req.body);
-    const connection = await model.createConnection1(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -441,7 +441,7 @@ module.exports = {
     var last_login = req.body.last_login;
     console.log(req.body);
 
-    const connection = await model.createConnection1(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -478,7 +478,7 @@ module.exports = {
     console.log(`---------Token --------------- ${token}`);
     console.log(`-----em id---------- ${database}`);
     
-    const connection = await model.createConnection1(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();

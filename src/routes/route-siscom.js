@@ -220,6 +220,7 @@ router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
 
 
 router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
+router.get('/getDailyMonitoring',dailyTask.employeeMonotoringDaily);
 router.post('/getTaskDaily',dailyTask.getDailyTask);
 router.post('/insertTaskDaily',dailyTask.insertDailyTask);
 
