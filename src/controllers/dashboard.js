@@ -38,7 +38,7 @@ module.exports = {
     var emId = req.query.em_id;
     let connection;
     try {
-      connection = await model.createConnection1(database);
+      connection = await model.createConnection1(`${database}_hrm`);
       await connection.getConnection();
       await connection.beginTransaction();
 

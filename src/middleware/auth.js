@@ -24,7 +24,7 @@ module.exports = {
     console.log(`---------Token --------------- ${token}`);
     console.log(`-----em id---------- ${database}`);
     const connecting = await models.createConnection1(`${database}_hrm`);
-        let conn;
+    let conn;
     try {
       if (token == undefined) {
         console.log("tidak ada prosees apapun");
