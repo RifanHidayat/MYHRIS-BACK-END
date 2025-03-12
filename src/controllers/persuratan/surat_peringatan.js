@@ -109,7 +109,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var emId = req.headers.em_id;
 
     console.log('kesini gak sih');
-    const connection = await model.createConnection(database);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try{
       conn = await connection.getConnection();
@@ -128,7 +128,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
       )`;
       const [result] = await conn.query(queryUnreadCount, [emId, emId])
 
-      await conn.commt();
+      await conn.commit();
       return res.status(200).send({ 
         status: true, 
         message: "Jumlah surat yang belum dibaca", 
