@@ -1,5 +1,14 @@
 const models = require("../../utils/models");
 
+function formatDate(dateStr) {
+  if (!dateStr || dateStr.trim() === "") return null; // Return null jika kosong
+
+  const parts = dateStr.split(", ")[1]?.split("-");
+  if (!parts || parts.length !== 3) return null;
+
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
+
 module.exports = {
   async insertDailyTask(req, res) {
     console.log("-----insert data kalim----------");
@@ -10,6 +19,7 @@ module.exports = {
     var array = req.body.atten_date.split("-");
     var listTask = req.body.list_task;
     var attenDate = req.body.atten_date;
+    var id = req.body.id;
 
     const tahun = `${array[0]}`;
     console.log("ini tahun", tahun);
@@ -24,31 +34,45 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [cekDaily] = await conn.query(
-        `SELECT * FROM daily_task WHERE tgl_buat = '${attenDate}'`
+        `SELECT id FROM daily_task WHERE tgl_buat = '${attenDate}'`
       );
+      console.log("ini cek daily", cekDaily);
       if (cekDaily.length > 0) {
         const queryDetail = `
-                INSERT INTO daily_task_detail 
-                (judul, rincian, tgl_finish, daily_task_id, status) 
-                VALUES (?, ?, ?, ?, ?)
+                UPDATE daily_task_detail 
+    SET judul = ?, rincian = ?, tgl_finish = ?, status = ? 
+    WHERE daily_task_id = ? AND id = ?
             `;
-        const taskId = cekDaily.insertId;
+        const taskId = cekDaily[0].id;
+        console.log(taskId);
 
         for (const item of listTask) {
-          const { task, judul, dropdown } = item;
+          const { id, task, judul, dropdown, tgl_finish } = item;
 
           var status = dropdown == "Finished" ? "1" : "0";
-          const tgl_finish = status == 1 ? new Date() : null;
+          var tanggal = formatDate(tgl_finish);
           console.log("ini status", status);
+          console.log("ini tanggal", tanggal);
 
           await conn.query(queryDetail, [
             judul,
             task,
-            tgl_finish,
-            taskId,
+            tanggal,
             status,
+            taskId,
+            id,
           ]);
         }
+        const taskIds = listTask.map((item) => item.id);
+        console.log(taskIds);
+
+        const deleteQuery = `
+            DELETE  FROM daily_task_detail 
+            WHERE daily_task_id = ? 
+            AND id NOT IN (${taskIds.map(() => "?").join(", ")})
+        `;
+        const [dlet] = await conn.query(deleteQuery, [taskId, ...taskIds]);
+        console.log(dlet);
       } else {
         const queryTask = `
                 INSERT INTO daily_task (em_id, tgl_buat) 
@@ -64,19 +88,13 @@ module.exports = {
         const taskId = task.insertId;
 
         for (const item of listTask) {
-          const { task, judul, dropdown } = item;
-
+          const { task, judul, dropdown, tgl_finish } = item;
+          var tanggal = formatDate(tgl_finish);
           var status = dropdown == "Finished" ? "1" : "0";
-          const tgl_finish = status == 1 ? new Date() : null;
           console.log("ini status", status);
+          console.log("ini tanggal", tanggal);
 
-          await conn.query(queryDetail, [
-            judul,
-            task,
-            tgl_finish,
-            taskId,
-            status,
-          ]);
+          await conn.query(queryDetail, [judul, task, tanggal, taskId, status]);
         }
       }
       await conn.commit();
@@ -87,7 +105,7 @@ module.exports = {
       });
     } catch (error) {
       await conn.rollback();
-      console.error("Insert Data Error: ", error.message);
+      console.error("Insert Data Error: ", error);
       res.status(500).json({
         success: false,
         message: "Gagal menambahkan data: " + error.message,
@@ -163,13 +181,20 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const date = req.query.date;
-      const querySysData = `SELECT * FROM ${databaseMaster}.sysdata WHERE KODE='013'`;
+      const queryCek = `SELECT tgl_buat FROM daily_task WHERE em_id = ? ORDER BY tgl_buat DESC LIMIT 1`;
+      const [cekdata] = await conn.query(queryCek, [em_id]);
+      const tglBuat = cekdata[0].tgl_buat.toISOString().split("T")[0];
+      let tglFinal;
+      const today = new Date();
+      const tglBuatDate = new Date(tglBuat);
 
-      const query = `
-                SELECT * FROM daily_task a 
-                JOIN daily_task_detail b 
-                ON a.id = b.daily_task_id
-            `;
+      if (tglBuatDate > today) {
+        tglFinal = tglBuat; 
+      } else {
+        tglFinal = new Date().toISOString().split("T")[0];
+      }
+      console.log(tglBuat);
+      const querySysData = `SELECT * FROM ${databaseMaster}.sysdata WHERE KODE='013'`;
       const [sysdata] = await conn.query(querySysData);
       const queryTaskPersetujuan1 = `WITH RECURSIVE DateRange AS (
                 SELECT DATE_FORMAT('${startPeriode}' ,'%Y-%m-01') AS DATE
@@ -203,7 +228,7 @@ module.exports = {
             FROM DateRange 
             LEFT JOIN ${namaDatabaseDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
             LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-            WHERE DateRange.date <=CURDATE()  AND DateRange.date>='${startPeriode}'
+            WHERE DateRange.date <='${tglFinal}'  AND DateRange.date>='${startPeriode}'
             ORDER BY DateRange.date DESC;`;
 
       const queryTaskPersetujuan2 = `
@@ -240,7 +265,7 @@ module.exports = {
           FROM DateRange 
           LEFT JOIN ${endPeriodeDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
           LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-          WHERE (DateRange.date <=CURDATE()  AND DateRange.date<='${endPeriode}')
+          WHERE (DateRange.date <='${tglFinal}' AND DateRange.date<='${endPeriode}')
           ORDER BY DateRange.date DESC;
     
     
@@ -294,7 +319,7 @@ module.exports = {
 
       emidsConver = emidsConver.slice(0, -1);
       console.log("tes tes", results[0]);
-      console.log(results)
+      console.log(results);
       var emids = results[0].em_daily_task.split(",");
       var emidsConver = "";
       for (var i = 0; i < emids.length; i++) {
@@ -310,197 +335,22 @@ module.exports = {
       await conn.commit();
       return res.status(200).send({
         status: true,
-        message: 'Succesfully get data',
+        message: "Succesfully get data",
         data: employee,
       });
     } catch (e) {
-      if (conn){le
+      if (conn) {
+        le;
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: false,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
-      if (conn) await conn.release();
-    }
-  },
-
-  async filterAllDailyTask(req, res) {
-    console.log("-----insert data kalim----------");
-    console.log("data absen ", req.body);
-    const em_id = req.body.em_id;
-    var database = req.query.database;
-    let ms = Date.now();
-
-    var d = new Date(ms),
-      month = "" + (d.getMonth() + 1),
-      day = "" + d.getDate(),
-      year = d.getFullYear();
-    if (month.length < 2) month = "0" + month;
-    if (day.length < 2) day = "0" + day;
-
-    var date = req.query.date;
-
-    // var em_id=req.query.id
-    console.log(req.body);
-    var bulan = req.body.bulan;
-    var tahun = req.body.tahun;
-
-    var startPeriode = req.body.start_periode;
-    var endPeriode = req.body.end_periode;
-
-    const convertYear = tahun.substring(2, 4);
-    var convertBulan;
-    if (bulan.length == 1) {
-      convertBulan = bulan <= 9 ? `0${bulan}` : bulan;
-    } else {
-      convertBulan = bulan;
-    }
-    var namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    var startPeriode =
-      req.query.start_periode == undefined
-        ? "2024-02-03"
-        : req.query.start_periode;
-    var endPeriode =
-      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
-    var array1 = startPeriode.split("-");
-    var array2 = endPeriode.split("-");
-
-    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
-      array1[1]
-    }`;
-    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
-      array2[1]
-    }`;
-
-    let date1 = new Date(startPeriode);
-    let date2 = new Date(endPeriode);
-    const montStart = date1.getMonth() + 1;
-    const monthEnd = date2.getMonth() + 1;
-    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      namaDatabaseDynamic = startPeriodeDynamic;
-    }
-    console.log("month endd", monthEnd);
-    console.log("month start  ", montStart);
-
-    const databaseMaster = `${database}_hrm`;
-    const connection = await models.createConnection1(namaDatabaseDynamic);
-    let conn;
-    try {
-      conn = await connection.getConnection();
-      await conn.beginTransaction();
-      const date = req.query.date;
-      const querySysData = `SELECT * FROM ${databaseMaster}.sysdata WHERE KODE='013'`;
-
-      const query = `
-                SELECT * FROM daily_task a 
-                JOIN daily_task_detail b 
-                ON a.id = b.daily_task_id
-            `;
-      const [sysdata] = await conn.query(querySysData);
-      const queryTaskPersetujuan1 = `WITH RECURSIVE DateRange AS (
-                SELECT DATE_FORMAT('${startPeriode}' ,'%Y-%m-01') AS DATE
-                UNION ALL
-                SELECT DATE + INTERVAL 1 DAY
-                FROM DateRange
-                WHERE DATE + INTERVAL 1 DAY <= LAST_DAY(DATE_FORMAT('${startPeriode}' ,'%Y-%m-01'))
-            )
-            SELECT
-             DateRange.date,
-            (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS lembur ,
-            (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS tugas_luar ,
-            (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS cuti ,
-            (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }'  LIMIT 1) AS sakit ,
-            (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }'  LIMIT 1) AS izin ,
-            (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS dinas_luar ,
-            (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
-            holiday.name  AS hari_libur,daily_task.*
-            FROM DateRange 
-            LEFT JOIN ${namaDatabaseDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
-            LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-            WHERE DateRange.date <=CURDATE()  AND DateRange.date>='${startPeriode}'
-            ORDER BY DateRange.date DESC;`;
-
-      const queryTaskPersetujuan2 = `
-    
-            WITH RECURSIVE DateRange AS (
-              SELECT DATE_FORMAT('${endPeriode} ','%Y-%m-01') AS DATE
-              UNION ALL
-              SELECT DATE + INTERVAL 1 DAY
-              FROM DateRange
-              WHERE DATE + INTERVAL 1 DAY <= LAST_DAY(DATE_FORMAT('${endPeriode}' ,'%Y-%m-01'))
-          )
-          SELECT
-           DateRange.date,
-          (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS lembur ,
-          (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS tugas_luar ,
-          (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS cuti ,
-          (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS sakit ,
-          (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS izin ,
-          (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
-        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
-      }' LIMIT 1) AS dinas_luar ,
-          (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date, 
-          holiday.name  AS hari_libur,daily_task.*
-          FROM DateRange 
-          LEFT JOIN ${endPeriodeDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
-          LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
-          WHERE (DateRange.date <=CURDATE()  AND DateRange.date<='${endPeriode}')
-          ORDER BY DateRange.date DESC;
-    
-    
-            
-            `;
-      const result = await conn.query(queryTaskPersetujuan1);
-      const result2 = await conn.query(queryTaskPersetujuan2);
-      console.log(queryTaskPersetujuan1);
-      let resultFinal = result2;
-
-      // Pastikan result dan result2 berbentuk array
-      if (Array.isArray(result) && Array.isArray(result2)) {
-        if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-          // Gabungkan kedua array dengan cara yang benar
-          resultFinal = [...result2, ...result];
-        }
-      }
-      console.log(resultFinal);
-      await conn.commit();
-      console.log("--------Berhsail dapatkan data AllDialyTask");
-      return res.status(200).json({ success: true, data: resultFinal });
-    } catch (error) {
-      if (conn) {
-        await conn.rollback();
-      }
-      console.error("--------gagal dapatkan data AllDialyTask", error);
-      return res.status(500).json({ success: false, message: error.message });
     } finally {
-      conn.release();
+      if (conn) await conn.release();
     }
   },
 
@@ -553,6 +403,7 @@ module.exports = {
 
       return res.status(200).json({
         success: true,
+        message: "Succesfully get data",
         data: result,
       });
 
@@ -562,7 +413,7 @@ module.exports = {
         await conn.rollback();
       }
       console.error("Gagal mendapatkan data AllDailyTask", error);
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
         message: error.message,
       });
