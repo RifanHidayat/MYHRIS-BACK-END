@@ -108,23 +108,13 @@ router.post('/atas-perintah',auth.isAuth,lembur.atasPerintah);
 router.post('/berhubungan-dengan', lembur.berhubunganDengan);
 router.post('/lembur/detail',auth.isAuth,lembur.detailTask);
 router.post('/tugas-luar',auth.isAuth,tugasLuar.store);
-//belum
-router.post('/klaim',auth.isAuth,klaim.store);
 
-router.post('/edit-lembur',auth.isAuth,lembur.updateLembur);
+
 
 router.post('/insert-emp_labor',auth.isAuth,operasional.insertData);
 router.post('/insert-emp_leave',auth.isAuth, operasional.insertData);
-router.post('/cuti',auth.isAuth,cuti.store );
-router.get('/history-cuti',auth.isAuth,cuti.historyCuti );
-router.post('/cuti/type',auth.isAuth,izin.tipeIzin );
-router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
-router.post('/insert-emp_claim', auth.isAuth,operasional.insertData);
-router.post('/insert-notifikasi',auth.isAuth, notifikasi.insertNotifikasi);
-router.post('/insert-candidate',auth.isAuth, operasional.insert_kandidat_baru);
-router.post('/insert-employee_request', auth.isAuth,operasional.insert_permintaan_kandidat);
-router.post('/insert_emp_control_employee', auth.isAuth,operasional.insert_emp_control_employee);
-router.post('/employee-divisi',auth.isAuth, operasional.empoyeeDivisi);
+
+
 
 router.post('/slip_gaji',auth.isAuth, operasional.slip_gaji);
 //router.post('/pph21',auth.isAuth, operasional.pph21);
@@ -132,8 +122,7 @@ router.post('/slip_gaji',auth.isAuth, operasional.slip_gaji);
 
 
 router.post('/whereOnce-employee',auth.isAuth, operasional.whereOnce);
-router.post('/employee-delegasi',auth.isAuth, operasional.empoyeeDelegasi);
-router.post('/whereOnce-attendance', operasional.whereOnceAttendate);
+
 router.post('/whereOnce-assign_leave', operasional.whereOnce);
 router.post('/whereOnce-leave_types', operasional.whereOnce);
 router.post('/whereOnce-settings', operasional.whereOnce);
@@ -143,40 +132,22 @@ router.post('/whereOnce-candidate', operasional.whereOnce);
 
 router.post('/history-attendance',auth.isAuth, operasional.historyData);
 router.post('/history-emp_labor',auth.isAuth, operasional.historyData);
-router.post('/history-emp_claim',auth.isAuth, operasional.historyData);
-router.post('/history-emp_leave',auth.isAuth, operasional.historyAjuanTidakMasukKerja);
-router.post('/history-permintaan_kandidat',auth.isAuth, operasional.historyPermintaanKandidat);
-router.post('/emp_leave_load_izin',auth.isAuth, operasional.emp_leave_load_izin);
 
-router.post('/emp_leave_load_izin_kategori',auth.isAuth,operasional.empIzinCategori);
-router.post('/emp_leave_load_dinasluar', auth.isAuth,operasional.emp_leave_load_dinasluar);
 
-router.post('/edit-emp_labor', operasional.editData);
+
 router.post('/edit-employee', operasional.editData);
 router.post('/edit-emp_leave', operasional.editData);
 
 
-router.post('/edit-emp_labor-approval-task', operasional.approvalTransaksiNew);
-router.post('/edit-emp_labor-approval', operasional.approvalTransaksi);
+
 router.post('/edit-emp_leave-approval', operasional.approvalTransaksi);
 router.post('/edit-emp_claim', operasional.approvalTransaksi);
 
-router.post('/edit-notifikasi', operasional.editData);
-router.post('/edit_face', operasional.edit_face);
-router.post("/get_face", operasional.get_face_mx);
-router.post('/edit_foto_user', auth.isAuth,operasional.edit_foto_user);
-router.post('/potong_cuti', operasional.potong_cuti);
-
-router.post('/edit_last_login', operasional.edit_last_login);
-router.post('/edit_last_login_clear',auth.isAuth, operasional.edit_last_login_id_mobile);
-router.post('/edit_last_login_id_mobile', operasional.edit_last_login_id_mobile);
-router.post('/edit_status_kandidat',auth.isAuth, operasional.edit_status_kandidat);
-router.post('/edit_statusAkhir_kandidat', operasional.edit_statusAkhir_kandidat);
-router.post('/tolak_kandidat', operasional.tolak_kandidat);
 
 
-router.post('/validasi-payroll', operasional.cekApprovalPayroll);
-router.post('/validasi-payroll-check', operasional.checkSlipGajiValidation);
+
+
+
 router.post('/approve_emp_mobile_payroll', operasional.approvePayroll);
 
 
@@ -193,100 +164,165 @@ router.get('/mobile-version-last', login.updateVersionLast);
 router.post('/login', login.loginUser);
 router.get('/login/cek-no-hp', login.cekNoHp);
 router.post('/edit_last_login',login.editLastLogin);
-router.post("/view_last_absen_user", operasional.view_last_absen_user);
+
 router.post("/view_last_absen_user2", absensi.viewLastAbsen);
 //router.get("/view_last_absen_user3",absensi.PalceCoordinate);
 //controller dashboard
-router.get('/dashboard/menu', dashboard.menu);
-router.get('/login/send-email', dashboard.kirimEmail);
+
 router.post('/validate-login-session', login.isAuth);
 
 
-
-
 router.post('/employee-attendance', requestAbsen.employeeAttendance);
-router.post('/save-employee-attendance', requestAbsen.saveEmployeeAttendance);
-router.post('/get-employee-attendance', requestAbsen.getEmployeeAttendance);
-router.post('/delete-employee-attendance', requestAbsen.UpdateEmployeeAttendance);
-router.post('/approval-employee-attendance', operasional.ApprovalAbsensi);
-router.post('/load_cuti_melahirkan', operasional.loadCutiMelahirkan);
-router.post('/masuk_prod3', operasional.masukProd3);
+
+
 
 // router.post('/emp-claim-saldo', claim.claimSaldo);
 // router.post('/bpjs-kesehatan',payroll.bpjsKesehatan);
 // router.post('/bpjs-ketanagakerjaan', payroll.bpjsKetanagakerjaan);
-router.post('/bpjs-kesehatan',payroll.bpjsKesehatanUpload);
-router.post('/bpjs-ketanagakerjaan', payroll.bpjsKetagakerjaanUpload);
-router.post('/slip-gaji', payroll.splitGajiNew);
-router.post('/pph21', payroll.pph21);
+
 
 
 
 //new root
-router.post('/izin', auth.isAuth,izin.store);
+
 router.post('/push_notification_approval', notifikasi.notifikasi);
 router.post('/work-schedule', dashboard.workSchedule);
 
-router.get('/history-izin', auth.isAuth,izin.historyIzin);
-
-
-
-router.post('/employee-tracking-insert',tracking.store);
-router.post('/employee-tracking-detail', auth.isAuth,tracking.employeeControllDetail);
-router.post('/employee-tracking-history', auth.isAuth,tracking.groupDate);
-router.post('/employee-tracking', auth.isAuth,tracking.employee);
-router.post('/employee-tracking-update', auth.isAuth,tracking.updateTracking);
-router.post('/employee-tracking-clear', auth.isAuth,tracking.clearTrackinng);
 
 
 
 
-router.post('/wfh', auth.isAuth,wfh.store)
-router.post('/wfh-approval', wfh.approveWfh);
-router.post('/wfh-delete', wfh.destroy);
-
-router.post('/employee-loan-insert', loan.store);
-
-router.post('/employee-loan-history', loan.index);
-router.post('/employee-loan-approval', loan.approval);
-router.post('/employee-loan-update', loan.update);
-router.post('/employee-loan-delete', loan.destroy);
-router.post('/employee-loan-detail', loan.detailCicilan);
-
-router.post('/chatting',chatting.store);
-router.get('/chatting/history',chatting.history);
-router.post('/chatting/update-status',chatting.updateStatus);
-
-router.get('/chatting/employee-history',chatting.historyChat);
-router.get('/chatting/employee',chatting.employee);
-router.get('/chatting/employee-history/count',chatting.countChat);
-router.post('/chatting/delete',chatting.deleteMessage);
 
 
 
+
+
+router.get('/peraturan-perusahaan-check',peraturanPerusahaan.checkData);
+router.get('/cabang',cabang.cabang);
+router.post('/cuti/type',auth.isAuth,izin.tipeIzin );
+router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
+
+
+//Peraturan Perusahaan
+
+
+
+//pinjaman asset
+
+
+
+// router.get('/surat-perjanjian/detail/pdf',operasional.suratKontrakPdf);
+// router.get("/attendance-terlambat",absensi.absenDatangTerlambat);
+// router.get("/attendance-terlambat-pulangcepat",absensi.absenPulangCepatDanTerlambat);
+// router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
+// router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
+// router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
+
+
+router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
+router.get('/getDailyMonitoring',dailyTask.employeeMonotoringDaily);
+router.post('/getTaskDaily',dailyTask.getDailyTask);
+router.post('/insertTaskDaily',dailyTask.insertDailyTask);
+
+// belum
+
+router.get('/surat-perjanjian',operasional.surtKontrak);
+router.get('/surat-perjanjian/:id',operasional.suratKontrakPdf);
+router.get('/pinjaman/assets',pinjamanAsset.assets);
+router.get('/pinjaman/',pinjamanAsset.show);
+router.post('/pinjaman/',pinjamanAsset.store);
+// router.post('/pinjaman/:id',pinjamanAsset.update);
+router.patch('/pinjaman/:id',pinjamanAsset.update);
+router.delete('/pinjaman/:id',pinjamanAsset.delete);
+router.get('/pinjaman/',pinjamanAsset.store);
+router.get('/pinjaman/detail/:id',pinjamanAsset.detail);
+router.get('/pinjaman/checked',pinjamanAsset.checked);
+router.get('/employee-monitoring',employee.employeeMonitoring);
+router.get("/attendance-terlambat",absensi.absenDatangTerlambat);
+router.get("/attendance-terlambat-pulangcepat",absensi.absenPulangCepatDanTerlambat);
+router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
+//Peraturan Perusahaan
+router.post('/peraturan-perusahaan',peraturanPerusahaan.saveDataCheck);
+router.get('/peraturan-perusahaan',peraturanPerusahaan.show);
+router.get('/peraturan-perusahaan-last',peraturanPerusahaan.lastShow);
+router.post('/peraturan-perusahaan-check-employee',peraturanPerusahaan.checkDataByEmployee);
 //pengaduan kerusakan
 router.post('/pengaduan-kerusakan',pengadaanKerusakan.store);
 router.patch('/pengaduan-kerusakan/:id',pengadaanKerusakan.update);
 router.get('/pengaduan-kerusakan',pengadaanKerusakan.show);
 router.get('/pengaduan-kerusakan/:id/detail',pengadaanKerusakan.detail);
 router.delete('/pengaduan-kerusakan/:id',pengadaanKerusakan.delete);
-
-
-//Peraturan Perusahaan
-router.post('/peraturan-perusahaan',peraturanPerusahaan.saveDataCheck);
-router.get('/peraturan-perusahaan',peraturanPerusahaan.show);
-router.get('/peraturan-perusahaan-last',peraturanPerusahaan.lastShow);
-router.get('/peraturan-perusahaan-check',peraturanPerusahaan.checkData);
-router.post('/peraturan-perusahaan-check-employee',peraturanPerusahaan.checkDataByEmployee);
-
-
-
-//Peraturan Perusahaan
-router.get('/employee-monitoring',employee.employeeMonitoring);
-router.get("/attendance-terlambat",absensi.absenDatangTerlambat);
-router.get("/attendance-terlambat-pulangcepat",absensi.absenPulangCepatDanTerlambat);
-router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
-
+router.post('/employee-loan-insert', loan.store);
+router.post('/employee-loan-history', loan.index);
+router.post('/employee-loan-approval', loan.approval);
+router.post('/employee-loan-update', loan.update);
+router.post('/employee-loan-delete', loan.destroy);
+router.post('/employee-loan-detail', loan.detailCicilan);
+router.post('/chatting',chatting.store);
+router.get('/chatting/history',chatting.history);
+router.post('/chatting/update-status',chatting.updateStatus);
+router.get('/chatting/employee-history',chatting.historyChat);
+router.get('/chatting/employee',chatting.employee);
+router.get('/chatting/employee-history/count',chatting.countChat);
+router.post('/chatting/delete',chatting.deleteMessage);
+router.get('/history-izin', auth.isAuth,izin.historyIzin);
+router.post('/wfh', auth.isAuth,wfh.store)
+router.post('/wfh-approval', wfh.approveWfh);
+router.post('/wfh-delete', wfh.destroy);
+router.post('/employee-tracking-insert',tracking.store);
+router.post('/employee-tracking-detail', auth.isAuth,tracking.employeeControllDetail);
+router.post('/employee-tracking-history', auth.isAuth,tracking.groupDate);
+router.post('/employee-tracking', auth.isAuth,tracking.employee);
+router.post('/employee-tracking-update', auth.isAuth,tracking.updateTracking);
+router.post('/employee-tracking-clear', auth.isAuth,tracking.clearTrackinng);
+router.post('/izin', auth.isAuth,izin.store);
+router.post('/klaim',auth.isAuth,klaim.store);
+router.post('/cuti',auth.isAuth,cuti.store );
+router.post('/edit-lembur',auth.isAuth,lembur.updateLembur);
+router.get('/history-cuti',auth.isAuth,cuti.historyCuti );
+router.post('/insert-emp_claim', auth.isAuth,operasional.insertData);
+router.post('/insert-notifikasi',auth.isAuth, notifikasi.insertNotifikasi);
+router.post('/insert-candidate',auth.isAuth, operasional.insert_kandidat_baru);
+router.post('/insert-employee_request', auth.isAuth,operasional.insert_permintaan_kandidat);
+router.post('/insert_emp_control_employee', auth.isAuth,operasional.insert_emp_control_employee);
+router.post('/employee-divisi',auth.isAuth, operasional.empoyeeDivisi);
+router.post('/employee-delegasi',auth.isAuth, operasional.empoyeeDelegasi);
+router.post('/whereOnce-attendance', operasional.whereOnceAttendate);
+router.post('/history-emp_claim',auth.isAuth, operasional.historyData);
+router.post('/history-emp_leave',auth.isAuth, operasional.historyAjuanTidakMasukKerja);
+router.post('/history-permintaan_kandidat',auth.isAuth, operasional.historyPermintaanKandidat);
+router.post('/emp_leave_load_izin',auth.isAuth, operasional.emp_leave_load_izin);
+router.post('/emp_leave_load_izin_kategori',auth.isAuth,operasional.empIzinCategori);
+router.post('/emp_leave_load_dinasluar', auth.isAuth,operasional.emp_leave_load_dinasluar);
+router.post('/edit-emp_labor', operasional.editData);
+router.post('/edit-emp_labor-approval-task', operasional.approvalTransaksiNew);
+router.post('/edit-emp_labor-approval', operasional.approvalTransaksi);
+router.post('/edit-notifikasi', operasional.editData);
+router.post('/edit_face', operasional.edit_face);
+router.post("/get_face", operasional.get_face_mx);
+router.post('/edit_foto_user', auth.isAuth,operasional.edit_foto_user);
+router.post('/potong_cuti', operasional.potong_cuti);
+router.post('/edit_last_login', operasional.edit_last_login);
+router.post('/edit_last_login_clear',auth.isAuth, operasional.edit_last_login_id_mobile);
+router.post('/edit_last_login_id_mobile', operasional.edit_last_login_id_mobile);
+router.post('/edit_status_kandidat',auth.isAuth, operasional.edit_status_kandidat);
+router.post('/edit_statusAkhir_kandidat', operasional.edit_statusAkhir_kandidat);
+router.post('/tolak_kandidat', operasional.tolak_kandidat);
+router.post('/validasi-payroll', operasional.cekApprovalPayroll);
+router.post('/validasi-payroll-check', operasional.checkSlipGajiValidation);
+router.post("/view_last_absen_user", operasional.view_last_absen_user);
+router.get('/dashboard/menu', dashboard.menu);
+router.get('/login/send-email', dashboard.kirimEmail);
+router.post('/save-employee-attendance', requestAbsen.saveEmployeeAttendance);
+router.post('/get-employee-attendance', requestAbsen.getEmployeeAttendance);
+router.post('/delete-employee-attendance', requestAbsen.UpdateEmployeeAttendance);
+router.post('/approval-employee-attendance', operasional.ApprovalAbsensi);
+router.post('/load_cuti_melahirkan', operasional.loadCutiMelahirkan);
+router.post('/masuk_prod3', operasional.masukProd3);
+router.post('/bpjs-kesehatan',payroll.bpjsKesehatanUpload);
+router.post('/bpjs-ketanagakerjaan', payroll.bpjsKetagakerjaanUpload);
+router.post('/slip-gaji', payroll.splitGajiNew);
+router.post('/pph21', payroll.pph21);
 router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
 router.post("/surat_peringatan_search",suratPeringatan.searchSuratPeringatan);
 router.post("/surat_peringatan_status",suratPeringatan.updateStatusSuratPeringatan);
@@ -300,35 +336,6 @@ router.post("/teguran_lisan_status",teguranLisan.updateStatusTeguranLisan);
 router.get("/teguran_lisan/count",teguranLisan.getUnreadSuratCount);
 router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
-
-//pinjaman asset
-router.get('/pinjaman/assets',pinjamanAsset.assets);
-router.get('/pinjaman/',pinjamanAsset.show);
-router.post('/pinjaman/',pinjamanAsset.store);
-// router.post('/pinjaman/:id',pinjamanAsset.update);
-router.patch('/pinjaman/:id',pinjamanAsset.update);
-router.delete('/pinjaman/:id',pinjamanAsset.delete);
-router.get('/pinjaman/',pinjamanAsset.store);
-router.get('/pinjaman/detail/:id',pinjamanAsset.detail);
-router.get('/pinjaman/checked',pinjamanAsset.checked);
-
-
-router.get('/surat-perjanjian',operasional.surtKontrak);
-router.get('/surat-perjanjian/:id',operasional.suratKontrakPdf);
-router.get('/cabang',cabang.cabang);
-// router.get('/surat-perjanjian/detail/pdf',operasional.suratKontrakPdf);
-// router.get("/attendance-terlambat",absensi.absenDatangTerlambat);
-// router.get("/attendance-terlambat-pulangcepat",absensi.absenPulangCepatDanTerlambat);
-// router.get("/attendance-pulang-cepat",absensi.absenPulangCepat)
-// router.get("/surat_peringatan",suratPeringatan.suratPeringatan);
-// router.post("/surat_peringatan/approval",suratPeringatan.approvalSp);
-
-
-router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
-router.post('/getTaskDaily',dailyTask.getDailyTask);
-router.post('/insertTaskDaily',dailyTask.insertDailyTask);
-
-
 
 
 module.exports = router;

@@ -68,13 +68,13 @@ module.exports = {
                 console.log(`Membuat koneksi ke database ${database}`);
                 pools[database] = mysql2.createPool({
                     multipleStatements: true,
-                    host: process.env.API_URL, 
+                    host: database == 'sis_admin' ? process.env.MY_DATABASE : process.env.API_URL, 
                     user: 'pro',
                     password: 'Siscom3519',
                     timezone: "+00:00",
                     database: database,
-                    connectionLimit: 50,
-                    queueLimit: 100,
+                    connectionLimit: 10,
+                    queueLimit: 0,
                     connectTimeout: 10000, // Timeout koneksi baru (10 detik)
                     acquireTimeout: 30000,  // Timeout saat mendapatkan koneksi dari pool (30 detik)
                     waitForConnections: true, 

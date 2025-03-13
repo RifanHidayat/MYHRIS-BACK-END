@@ -33,7 +33,7 @@ module.exports = {
           
           var month=req.body.bulan
 
-          const poolDynamic =await models.createConnection1(database);
+          const poolDynamic =await models.createConnection1(`${database}_hrm`);
       
           const connection = await poolDynamic.getConnection();
          
@@ -145,7 +145,7 @@ module.exports = {
           
           var month=req.body.bulan
           
-          const poolDynamic = models.createConnection1(database);
+          const poolDynamic = models.createConnection1(`${database}_hrm`);
       
           const connection = await poolDynamic.getConnection();
          
@@ -181,7 +181,7 @@ module.exports = {
       
       var month=req.body.bulan
     
-      const poolDynamic = models.createConnection1(database);
+      const poolDynamic = models.createConnection1(`${database}_hrm`);
   
       const connection = await poolDynamic.getConnection();
      
@@ -284,7 +284,7 @@ module.exports = {
             var database=req.query.database
             var month=req.body.bulan
            
-            const poolDynamic = models.createConnection1(database);
+            const poolDynamic = models.createConnection1(`${database}_hrm`);
         
             const connection = await poolDynamic.getConnection();
             var em_id = req.body.em_id;
@@ -426,7 +426,7 @@ module.exports = {
   
             
             var month=req.body.bulan
-            const poolDynamic = models.createConnection1(database);
+            const poolDynamic = models.createConnection1(`${database}_hrm`);
         
             const connection = await poolDynamic.getConnection();
            
@@ -453,7 +453,7 @@ module.exports = {
   
             var type='pph21'
             var month=req.body.bulan
-            const poolDynamic = models.createConnection1(database);
+            const poolDynamic = models.createConnection1(`${database}_hrm`);
         
             const connection = await poolDynamic.getConnection();
         
@@ -483,7 +483,7 @@ module.exports = {
             var type='slip_gaji'
             var month=req.body.bulan
             
-            const poolDynamic = models.createConnection1(database);
+            const poolDynamic = models.createConnection1(`${database}_hrm`);
         
             const connection = await poolDynamic.getConnection();
         

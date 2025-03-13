@@ -24,7 +24,7 @@ module.exports = {
     console.log(`---------Token --------------- ${token}`);
     console.log(`-----em id---------- ${database}`);
     const connecting = await models.createConnection1(`${database}_hrm`);
-        let conn;
+    let conn;
     try {
       if (token == undefined) {
         console.log("tidak ada prosees apapun");
@@ -57,21 +57,22 @@ module.exports = {
                  LEFT JOIN employee_history ON a.em_id=employee_history.em_id LEFT JOIN designation b ON a.des_id=b.id LEFT JOIN
                  department c ON a.dep_id=c.id LEFT JOIN branch ON branch.id=a.branch_id WHERE a.em_id='${emId}' AND a.token_notif='${token}'
                   GROUP BY a.em_id`;
+        console.log(query);
         const [results] = await conn.query(query);
 
         await conn.commit();
   
         if (results.length == 0) {
-          return res.status(402).json({
+          return res.status(400).json({
             status: false,
             message:
-              "Seseorang masuk  menggunakan akun anda menyebabkan akun anda keluar secara otomatis",
+              "Seseorang masuk menggunakan akun anda menyebabkan akun anda keluar secara otomatis",
           });
         }
   
         if (results[0].status == "INACTIVE") {
           console.log("token tidak valied");
-          return res.status(402).json({
+          return res.status(400).json({
             status: false,
             message: "Akun anda sudah tidak aktif",
           });
@@ -95,7 +96,7 @@ module.exports = {
     if (req.user.role == "admin") {
       next();
     } else {
-      res.status(401).json({
+      res.status(400).json({
         message: "User Not Authorized",
       });
     }

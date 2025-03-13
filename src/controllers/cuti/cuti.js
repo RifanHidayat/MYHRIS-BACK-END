@@ -1490,6 +1490,30 @@ WHERE e.em_id = '${req.body.em_id}'
     query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
              status IN (1) `;
     console.log(query);
+    const connection = await model.createConnection1(`${database}_hrm`);
+        let conn;
+        try {
+          conn = await connection.getConnection();
+          await conn.beginTransaction;
+          const [result] = await conn.query(query);
+          await conn.commit();
+          return res.status(200).send({
+            status: true,
+            message: "Succsefully get tipe cuti",
+            data: result,
+          });
+        } catch (e) {
+          if (conn) {
+            await conn.rollback();
+          }
+          console.error("Error ouy", e);
+          return res.status(400).send({
+            status: false,
+            message: "ERRoe",
+          });
+        } finally {
+          if (conn) await conn.release();
+        }
 
     try {
       const connection = await model.createConnection(database);

@@ -1643,66 +1643,30 @@ WHERE e.em_id = '${req.body.em_id}'
     if (datesplits.length > 0) {
       query = query + " ORDER BY idd DESC";
     }
-
-    try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-
-          connection.query(query, (err, pulangCepat) => {
-            if (err) {
-              console.error("Error executing SELECT statement:", err);
-              connection.rollback(() => {
-                connection.end();
-                return res.status(400).send({
-                  status: true,
-                  message: "gaga ambil data",
-                  data: [],
-                });
-              });
-              return;
-            }
-            connection.commit((err) => {
-              if (err) {
-                console.error("Error committing transaction:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: true,
-                    message: "Gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              connection.end();
-              console.log("Transaction completed successfully!");
-              return res.status(200).send({
-                status: true,
-                message: "Data berhasil di ambil",
-                data: pulangCepat,
-              });
-            });
+    const connection = await model.createConnection1(`${database}_hrm`);
+        let conn;
+        try {
+          conn = await connection.getConnection();
+          await conn.beginTransaction;
+          const [results] = await conn.query(query);
+          await conn.commit();
+          return res.status(200).send({
+            status: true,
+            message: "Succsefully get history izin",
+            data: results,
           });
-        });
-      });
-    } catch (e) {
-      return res.status(400).send({
-        status: true,
-        message: e,
-        data: [],
-      });
-    }
+        } catch (e) {
+          if (conn) {
+            await conn.rollback();
+          }
+          console.error("Error ouy", e);
+          return res.status(400).send({
+            status: false,
+            message: "ERRoe",
+          });
+        } finally {
+          if (conn) await conn.release();
+        }
   },
 
   async tipeIzin(req, res) {
@@ -1725,7 +1689,31 @@ WHERE e.em_id = '${req.body.em_id}'
     query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
        status IN (2,3) `;
     console.log(query);
-
+    const connection = await model.createConnection1(`${database}_hrm`);
+        let conn;
+        try {
+          conn = await connection.getConnection();
+          await conn.beginTransaction;
+          const [result] = await conn.query(query);
+          await conn.commit();
+          return res.status(200).send({
+            status: true,
+            message: "Succsefully get tipe izin",
+            data: result,
+          });
+        } catch (e) {
+          if (conn) {
+            await conn.rollback();
+          }
+          console.error("Error ouy", e);
+          return res.status(400).send({
+            status: false,
+            message: "ERRoe",
+          });
+        } finally {
+          if (conn) await conn.release();
+        }
+      
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
