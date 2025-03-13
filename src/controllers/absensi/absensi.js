@@ -2,6 +2,7 @@ const config = require("../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require("sha1");
+const randomstring = require("randomstring");
 const e = require("express");
 // const faceApiService = require('./faceapiService');
 const utility = require("../../utils/utility");
@@ -1035,7 +1036,7 @@ LIMIT 1`;
       const statusApproval =
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2";
 
-        var query=`WITH RECURSIVE DateRange AS (
+      var query = `WITH RECURSIVE DateRange AS (
           SELECT DATE_FORMAT('${startPeriode}' ,'%Y-%m-01') AS DATE
           UNION ALL
           SELECT DATE + INTERVAL 1 DAY
@@ -1044,16 +1045,24 @@ LIMIT 1`;
       )
       SELECT
        DateRange.date,
-      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor LEFT JOIN ${database
-      }_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS lembur ,
-      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS tugas_luar ,
-      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database
-      }_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS cuti ,
-      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database
-      }_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}'  LIMIT 1) AS sakit ,
-      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database
-      }_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}'  LIMIT 1) AS izin ,
-      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS dinas_luar ,
+      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS lembur ,
+      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS tugas_luar ,
+      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS cuti ,
+      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }'  LIMIT 1) AS sakit ,
+      (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }'  LIMIT 1) AS izin ,
+      (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS dinas_luar ,
       (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
       
       IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
@@ -1063,13 +1072,9 @@ LIMIT 1`;
       LEFT JOIN ${namaDatabaseDynamic}.attendance ON attendance.atten_date=DateRange.date AND em_id='${em_id}'
       LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
       WHERE DateRange.date <=CURDATE()  AND DateRange.date>='${startPeriode}'
-      ORDER BY DateRange.date DESC;`
+      ORDER BY DateRange.date DESC;`;
 
-    
-
-      
-
-        var query1=`
+      var query1 = `
 
       WITH RECURSIVE DateRange AS (
         SELECT DATE_FORMAT('${endPeriode} ','%Y-%m-01') AS DATE
@@ -1080,16 +1085,24 @@ LIMIT 1`;
     )
     SELECT
      DateRange.date,
-    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database
-    }_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS lembur ,
-    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS tugas_luar ,
-    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database
-    }_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS cuti ,
-    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database
-    }_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS sakit ,
-    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database
-    }_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS izin ,
-    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${sysdata[0].name=="1" || sysdata[0].name==1?"Approve":"Approve2"}' LIMIT 1) AS dinas_luar ,
+    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='1' AND status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS lembur ,
+    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS tugas_luar ,
+    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND date_selected  LIKE CONCAT('%',DateRange.date,'%')  AND ajuan='1' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS cuti ,
+    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS sakit ,
+    (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='3' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS izin ,
+    (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
+        sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
+      }' LIMIT 1) AS dinas_luar ,
     (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
     IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
     IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:00:00')AS jam_pulang,
@@ -1107,15 +1120,13 @@ LIMIT 1`;
 
       const [result] = await conn.query(query);
       let [result2] = await conn.query(query1);
-      let resultFinal=[];
-         resultFinal=result2
-         if (montStart<monthEnd || date1.getFullYear()<date2.getFullYear()){
-        
-          for (var i=0;i<result.length;i++){
-            result2.push(result[i])
-          }
-
-         }
+      let resultFinal = [];
+      resultFinal = result2;
+      if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+        for (var i = 0; i < result.length; i++) {
+          result2.push(result[i]);
+        }
+      }
       await conn.commit();
 
       return res.status(200).send({
@@ -1142,213 +1153,133 @@ LIMIT 1`;
   async kirimAbsensiOffline(req, res) {
     console.log("kirim absen offline");
 
-    var database = req.query.database;
-    // var attenDate=req.query_date;
-    var em_id = req.body.em_id;
-    var emId = req.body.em_id;
-    var attenDate = req.body.atten_date;
-    var signingTime =
-      req.body.signin_time == "" ? "00:00:00" : req.body.signin_time;
-    var signoutTime =
-      req.body.signout_time == "" ? "00:00:00" : req.body.signout_time;
-    var placeIn = req.body.place_in;
-    var placeOut = req.body.place_out;
-    var signinLonglat = req.body.signin_longlat;
-    var signOutLonglat = req.body.signout_longlat;
-    var signinPict = req.body.signin_pict;
-    var signoutPict = req.body.signout_pict;
-    var signinNote = req.body.signin_note;
-    var signoutOutNote = req.body.signout_note;
-    var signinAddr = req.body.signin_addr;
-    var signoutAddr = req.body.signout_addr;
-    var array = attenDate.split("-");
-    var bulan = array[1];
-    var tahun = array[0];
-    var tahunConver = tahun.substring(2, 4);
-    var status = "Pending";
-
-    var nomorAjuan = "";
-
-    let ts = Date.now();
-    let date_ob = new Date(ts);
-    let date = date_ob.getDate();
-    let month = date_ob.getMonth() + 1;
-    let year = date_ob.getFullYear();
-    let hour = date_ob.getHours();
-    let menit = date_ob.getMinutes();
-    var nameFileMasuk = "";
-    var nameFileKeluar = "";
-    var id = req.body.id;
-    if (signinPict == "" || signinPict == null) {
-    } else {
-      var randomstring = require("randomstring");
-
-      var image = signinPict;
-      var bitmap = Buffer.from(image, "base64");
-      var stringRandom = randomstring.generate(5);
-      nameFileMasuk =
-        "absenmasukoffline" +
-        stringRandom +
-        date +
-        month +
-        year +
-        hour +
-        menit +
-        ".png";
-
-      const remoteFilePath = `${remoteDirectory}/${database}/foto_absen/${nameFileMasuk}`;
-      sftp
-        .connect(configSftp)
-        .then(() => {
-          // SFTP connection successful
-          return sftp.put(bitmap, remoteFilePath);
-        })
-        .then(() => {
-          console.log("berhasil upload image");
-
-          sftp.end(); // Disconnect after the upload is complete
-        })
-        .catch((err) => {
-          console.log(`gagal upload image ${err}`);
-          sftp.end(); // Disconnect if an error occurs
-          return res.status(400).send({
-            status: false,
-            message: "Gagal registrasi wajah",
-          });
-        });
-
-      sftp.end();
-    }
-
-    if (signoutPict == "" || signoutPict == null) {
-    } else {
-      var randomstring = require("randomstring");
-
-      var image = signoutPict;
-      var bitmap = Buffer.from(image, "base64");
-      var stringRandom = randomstring.generate(5);
-      nameFileKeluar =
-        "absenkeluaroffline" +
-        stringRandom +
-        date +
-        month +
-        year +
-        hour +
-        menit +
-        ".png";
-
-      const remoteFilePath = `${remoteDirectory}/${database}/foto_absen/${nameFileKeluar}`;
-      sftp
-        .connect(configSftp)
-        .then(() => {
-          // SFTP connection successful
-          return sftp.put(bitmap, remoteFilePath);
-        })
-        .then(() => {
-          console.log("berhasil upload image");
-
-          sftp.end(); // Disconnect after the upload is complete
-        })
-        .catch((err) => {
-          console.log(`gagal upload image ${err}`);
-          sftp.end(); // Disconnect if an error occurs
-          return res.status(400).send({
-            status: false,
-            message: "Gagal registrasi wajah",
-          });
-        });
-
-      sftp.end();
-    }
-
-    const namaDatabaseDynamic = `${database}_hrm${tahunConver}${bulan}`;
-    const databaseMaster = `${database}_hrm`;
-    const connection = await model.createConnection1(databaseMaster);
-    let conn;
     try {
-      conn = await connection.getConnection();
-      await conn.beginTransaction();
-      const [sysdata] = await conn.query(
-        `SELECT * FROM sysdata WHERE KODE='013'`
-      );
-      const [results] = await conn.query(
-        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='4' AND em_id='${em_id}' AND atten_date='${req.body}' AND (status='Approve' OR status='Pending')`
-      );
+        const database = req.query.database;
+        const em_id = req.body.em_id;
+        const attenDate = req.body.atten_date;
+        const signingTime = req.body.signin_time || "00:00:00";
+        const signoutTime = req.body.signout_time || "00:00:00";
+        const placeIn = req.body.place_in;
+        const placeOut = req.body.place_out;
+        const signinLonglat = req.body.signin_longlat;
+        const signOutLonglat = req.body.signout_longlat;
+        const signinPict = req.body.signin_pict;
+        const signoutPict = req.body.signout_pict;
+        const signinNote = req.body.signin_note;
+        const signoutOutNote = req.body.signout_note;
+        const signinAddr = req.body.signin_addr;
+        const signoutAddr = req.body.signout_addr;
 
-      if (results.length > 0) {
-        return res.status(400).send({
-          status: true,
-          message: "Data sudah tersedia",
-          data: results,
-        });
-      }
-      let date;
-      var timestampInSeconds = Math.floor(date / 1000);
-      if (signingTime == "00:00:00" || signingTime == "") {
-        date = new Date(`${attenDate} ${signoutTime}`);
-        timestampInSeconds = Math.floor(date / 1000);
-      } else {
-        date = new Date(`${attenDate} ${signingTime}`);
-        timestampInSeconds = Math.floor(date / 1000);
-      }
+        // Format tanggal
+        const [tahun, bulan] = attenDate.split("-");
+        const tahunConver = tahun.substring(2, 4);
+        const status = "Pending";
+        let nomorAjuan = "";
 
-      const [dataOffline] = await conn.query(` SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND idx='${timestampInSeconds}'  `);
+        // Format timestamp
+        const timestampInSeconds = Math.floor(new Date(`${attenDate} ${signingTime || signoutTime}`).getTime() / 1000);
 
-          
+        // Generate nama file gambar
+        const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "");
+        const stringRandom = randomstring.generate(5);
+        const nameFileMasuk = signinPict ? `absenmasuk_${stringRandom}_${timestamp}.png` : "";
+        const nameFileKeluar = signoutPict ? `absenkeluar_${stringRandom}_${timestamp}.png` : "";
 
-          if (dataOffline.length > 0) {
-            return res.status(400).send({
-              status: true,
-              message: "Data gagal terkirim",
-              data: results,
-            });
-          }
-          const [data] = conn.query(` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE ajuan='5' ORDER BY id DESC `);
+        // Upload gambar jika ada
+        async function uploadImage(imageBase64, filename) {
+            if (!imageBase64) return;
+            const bitmap = Buffer.from(imageBase64, "base64");
+            const remoteFilePath = `${remoteDirectory}/${database}/foto_absen/${filename}`;
 
-              
-              if (data.length > 0) {
-                var text = data[0]["nomor_ajuan"];
-                nomor = parseInt(text.substring(8, 13)) + 1;
-                var nomorStr = String(nomor).padStart(4, "0");
-                nomorAjuan = `RO20${tahunConver}${bulan}` + nomorStr;
-              } else {
-                nomor = 1;
-                var nomorStr = String(nomor).padStart(4, "0");
-                nomorAjuan = `RO20${tahun}${bulan}` + nomorStr;
-              }
-            const [kirim] = await conn.query(`INSERT INTO ${namaDatabaseDynamic}.emp_labor (nomor_ajuan,em_id,atten_date,dari_jam,sampai_jam,tgl_ajuan,status,status_transaksi,
-          signin_note,signout_note,ajuan,em_delegation,signin_pict,signout_pict,place_in,place_out,approve_status,signin_longlat,signout_longlat,signin_addr,signout_addr,uraian,idx)
-        VALUES ('${nomorAjuan}','${em_id}','${attenDate}','${signingTime}','${signoutTime}',CURDATE(),'${status}','1','${signinNote}','${signoutOutNote}','5','','${nameFileMasuk}','${nameFileKeluar}','${placeIn}','${placeOut}','Pending','${signinLonglat}','${signOutLonglat}','${signinAddr}','${signoutAddr}','${signinNote}','${timestampInSeconds}')`);
-            const [transaksi] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan='${nomorAjuan}' AND ajuan='5'`);
-            const [employee] = await conn.query(`SELECT * FROM ${databaseMaster}.employee WHERE em_id='${em_id}'`);
-            utility.insertNotifikasi(
-              employee[0].em_report_to,
-              "Approval Absensi",
-              "Absensi",
-              employee[0].em_id,
-              transaksi[0].id,
-              transaksi[0].nomor_ajuan,
-              employee[0].full_name,
-              namaDatabaseDynamic,
-              databaseMaster
+            try {
+                await sftp.connect(configSftp);
+                await sftp.put(bitmap, remoteFilePath);
+                console.log("Berhasil upload image:", filename);
+            } catch (err) {
+                console.error("Gagal upload image:", err);
+                throw new Error("Gagal registrasi wajah");
+            } finally {
+                await sftp.end();
+            }
+        }
+
+        await Promise.all([
+            uploadImage(signinPict, nameFileMasuk),
+            uploadImage(signoutPict, nameFileKeluar)
+        ]);
+
+        // Nama database
+        const namaDatabaseDynamic = `${database}_hrm${tahunConver}${bulan}`;
+        const databaseMaster = `${database}_hrm`;
+        const connection = await model.createConnection1(databaseMaster);
+        let conn = await connection.getConnection();
+
+        try {
+          console.log(req.body);
+            await conn.beginTransaction();
+
+            // Cek apakah data absensi sudah ada
+            const [existingData] = await conn.query(
+                `SELECT * FROM ${namaDatabaseDynamic}.emp_labor 
+                WHERE em_id = ? AND idx = ? AND (status = 'Approve' OR status = 'Pending')`,
+                [em_id, timestampInSeconds]
             );
+
+            if (existingData.length > 0) {
+                await conn.rollback();
+                return res.status(400).json({ status: false, message: "Data sudah tersedia" });
+            }
+
+            // Generate nomor ajuan
+            const [latestData] = await conn.query(
+                `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor 
+                WHERE ajuan = '5' ORDER BY id DESC LIMIT 1`
+            );
+
+            const nextNumber = latestData.length > 0
+                ? parseInt(latestData[0].nomor_ajuan.slice(-4)) + 1
+                : 1;
+            nomorAjuan = `RO20${tahunConver}${bulan}${String(nextNumber).padStart(4, "0")}`;
+
+            const insert = await conn.query(
+                `INSERT INTO ${namaDatabaseDynamic}.emp_labor 
+                (nomor_ajuan, em_id, atten_date, dari_jam, sampai_jam, tgl_ajuan, status, status_transaksi, 
+                signin_note, signout_note, ajuan, em_delegation, signin_pict, signout_pict, place_in, place_out, 
+                approve_status, signin_longlat, signout_longlat, signin_addr, signout_addr, uraian, idx) 
+                VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, '5', '', ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)`,
+                [nomorAjuan, em_id, attenDate, signingTime, signoutTime, status, '1', signinNote, signoutOutNote,
+                    nameFileMasuk, nameFileKeluar, placeIn, placeOut, signinLonglat, signOutLonglat, signinAddr, signoutAddr,
+                    signinNote, timestampInSeconds]
+            );
+
+            // Kirim notifikasi ke atasan
+            const [employee] = await conn.query(
+                `SELECT em_report_to, em_id, full_name FROM ${databaseMaster}.employee WHERE em_id = ?`,
+                [em_id]
+            );
+
+            if (employee.length > 0) {
+                utility.insertNotifikasi(
+                    employee[0].em_report_to, "Approval Absensi", "Absensi",
+                    employee[0].em_id, nomorAjuan, insert[0].idx,
+                    employee[0].full_name, namaDatabaseDynamic, databaseMaster
+                );
+            }
+
             await conn.commit();
-            return res.status(200).send({
-              status: true,
-              message: "sucess insert data",
-            });
-    } catch (e) {
-      if (conn){
-        await conn.rollback();
-      }
-      console.error('errr', e);
-      return res.status(400).send({
-        status: true,
-        message: "Gagal ambil data",
-        data: [],
-      });
-    } finally {
-      if (conn) await conn.release();
+            return res.status(200).json({ status: true, message: "Success insert data" });
+
+        } catch (error) {
+            await conn.rollback();
+            console.error("Error:", error);
+            return res.status(400).json({ status: false, message: "Gagal menyimpan data" });
+        } finally {
+            conn.release();
+        }
+
+    } catch (error) {
+        console.error("Error utama:", error);
+        return res.status(400).json({ status: false, message: "Terjadi kesalahan server" });
     }
-  },
+}
 };
