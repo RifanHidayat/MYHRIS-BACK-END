@@ -73,7 +73,7 @@ module.exports = {
                     password: 'Siscom3519',
                     timezone: "+00:00",
                     database: database,
-                    connectionLimit: 10,
+                    connectionLimit: 500,
                     queueLimit: 0,
                     connectTimeout: 10000, // Timeout koneksi baru (10 detik)
                     acquireTimeout: 30000,  // Timeout saat mendapatkan koneksi dari pool (30 detik)
