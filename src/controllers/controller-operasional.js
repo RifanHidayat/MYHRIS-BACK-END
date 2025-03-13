@@ -12557,7 +12557,7 @@ o.dinilai,
     // var query7 = `SELECT b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'`;
     var query7 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
       b.full_name, a.*,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b
-      WHERE a.em_id=b.em_id  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='3' AND a.status_transaksi=1
+      WHERE a.em_id=b.em_id  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan IN ('3', '5') AND a.status_transaksi=1
        ORDER BY a.id DESC
       `;
 
@@ -14161,6 +14161,18 @@ a.typeid,
     var status = req.body.status;
     var type = req.body.type;
 
+    const statusAjuan = req.body.leave_status;
+    let ajuanStatus;
+    if (statusAjuan == 'Semua'){
+      ajuanStatus = `a.leave_status != 'Cancel'`
+    } else if(statusAjuan == 'Approve 1'){
+      ajuanStatus = `a.leave_status == 'Approve1'`
+    } else if(statusAjuan == 'Approve 2'){
+      ajuanStatus = `a.leave_status == 'Approve2'`
+    } else {
+      ajuanStatus = `a.leave_status == 'Rejected'`
+    }
+
     const tahun = `${req.body.tahun}`;
     const convertYear = tahun.substring(2, 4);
     const convertBulan = req.body.bulan;
@@ -14188,11 +14200,11 @@ a.typeid,
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
 
-    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE  a.leave_status != 'Cancel'AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.leave_status != 'Cancel'AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.leave_status != 'Cancel'AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.leave_status != 'Cancel'AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
     var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.status != 'Cancel' AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
     var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.status != 'Cancel' AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
@@ -15080,21 +15092,6 @@ GROUP BY TBL.full_name`;
         } finally {
           if (conn) await conn.release();
         }
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `UPDATE employee SET last_login='${last_login}',id_mobile='${req.body.id_mobile}' ,token_notif=null WHERE em_id='${em_id}'`,
-        function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil edit last login!",
-            data: results,
-          });
-        }
-      );
-    });
   },
 
   edit_status_kandidat(req, res) {
