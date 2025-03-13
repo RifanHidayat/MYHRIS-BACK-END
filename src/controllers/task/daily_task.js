@@ -314,7 +314,7 @@ module.exports = {
         data: employee,
       });
     } catch (e) {
-      if (conn){
+      if (conn){le
         await conn.rollback();
       }
       console.error('error', e);
