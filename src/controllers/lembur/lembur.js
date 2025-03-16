@@ -232,8 +232,9 @@ module.exports = {
       console.log(tasks);
       for (var i = 0; i < tasks.length; i++) {
         let task = tasks[i]["task"];
+        let level = tasks[i]['level'];
         const [insertTask] = await conn.query(
-          `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,nomor_ajuan) VALUES('${task}','0','${nomorLb}')`
+          `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,emp_labor_id,level) VALUES('${task}','0','${transaksi[0].id}',${level})`
         );
       }
 
@@ -284,6 +285,162 @@ module.exports = {
         message: "Gagal ambil data",
       });
     } finally {
+      if (conn) await conn.release();
+    }
+  },
+
+  async insertDraft(req, res){
+    const database = req.query.database;
+    let now = new Date();
+
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
+    let date = now.getDate();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    let seconds = now.getSeconds();
+    var bodyValue = req.body;
+    var branchId = req.headers.branch_id;
+    var tasks = req.body.tasks;
+    delete bodyValue.menu_name;
+    delete bodyValue.activity_name;
+    delete bodyValue.created_by;
+    delete bodyValue.tasks;
+    
+
+    var dateNow = `${year}-${month
+      .toString()
+      .padStart(2, "0")}-${date} ${hours}:${minutes}:${seconds}`;
+    bodyValue.tgl_ajuan = utility.dateNow4();
+    bodyValue.created_on = dateNow;
+
+    var attenDate = req.body.atten_date ? req.body.atten_date : new Date().toISOString().split("T")[0];
+    
+    var array = attenDate.split("-");
+
+    const tahun = `${array[0]}`;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (array[1].length == 1) {
+      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
+    } else {
+      convertBulan = array[1];
+    }
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await model.createConnection1(`${database}_hrm`);
+    var nomorLb = `LB20${convertYear}${convertBulan}`;
+    var script = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
+    let conn;
+    try{
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [cekNoAjuan] = await conn.query(
+        `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' ORDER BY id DESC LIMIT 1`
+      );
+      if (cekNoAjuan.length > 0) {
+        var text = cekNoAjuan[0]["nomor_ajuan"];
+        var nomor = parseInt(text.substring(8, 13)) + 1;
+        var nomorStr = String(nomor).padStart(4, "0");
+        nomorLb = nomorLb + nomorStr;
+      } else {
+        var nomor = 1;
+        var nomorStr = String(nomor).padStart(4, "0");
+        nomorLb = nomorLb + nomorStr;
+      }
+      bodyValue.nomor_ajuan = nomorLb;
+      const [begin] = await conn.query(script,[bodyValue]);
+      const [transaksi] = await conn.query(
+        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan ='${bodyValue.nomor_ajuan}'`,
+      );
+      for (var i = 0; i < tasks.length; i++) {
+        let task = tasks[i]["task"];
+        let level = tasks[i]['level'];
+        const [insertTask] = await conn.query(
+          `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,emp_labor_id,level) VALUES('${task}','0','${transaksi[0].id}',${level})`
+        );
+      }
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: 'Insert to draft succesfully',
+      })
+    }catch(e){
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error('Error bang', e);
+    }finally{
+      if (conn) await conn.release();
+    }
+  },
+  
+  async updateDraft(req, res){
+    const database = req.query.database;
+    let now = new Date();
+
+    let year = now.getFullYear();
+    let month = now.getMonth() + 1;
+    let date = now.getDate();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    let seconds = now.getSeconds();
+    var bodyValue = req.body;
+    var branchId = req.headers.branch_id;
+    var tasks = req.body.tasks;
+    var id = req.body.id;
+    delete bodyValue.menu_name;
+    delete bodyValue.activity_name;
+    delete bodyValue.created_by;
+    delete bodyValue.tasks;
+    delete bodyValue.cari;
+    delete bodyValue.id;
+
+    var dateNow = `${year}-${month
+      .toString()
+      .padStart(2, "0")}-${date} ${hours}:${minutes}:${seconds}`;
+    bodyValue.tgl_ajuan = utility.dateNow4();
+    bodyValue.created_on = dateNow;
+
+    var attenDate = req.body.atten_date ? req.body.atten_date : new Date().toISOString().split("T")[0];
+    
+    var array = attenDate.split("-");
+
+    const tahun = `${array[0]}`;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (array[1].length == 1) {
+      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
+    } else {
+      convertBulan = array[1];
+    }
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await model.createConnection1(`${database}_hrm`);
+    var nomorLb = `LB20${convertYear}${convertBulan}`;
+    var script = `UPDATE ${namaDatabaseDynamic}.emp_labor SET ? WHERE id='${id}'`;
+    let conn;
+    try{
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [begin] = await conn.query(script,[bodyValue]);
+      await conn.query(`DELETE FROM ${namaDatabaseDynamic}.emp_labor_task WHERE emp_labor_id = ${id}`);
+      for (var i = 0; i < tasks.length; i++) {
+        let task = tasks[i]["task"];
+        let level = tasks[i]['level'];
+        const [insertTask] = await conn.query(
+          `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,emp_labor_id,level) VALUES('${task}','0','${id}',${level})`
+        );
+      }
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: 'Insert to draft succesfully',
+      })
+    }catch(e){
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error('Error bang', e);
+    }finally{
       if (conn) await conn.release();
     }
   },
@@ -418,6 +575,7 @@ module.exports = {
                     transaksi = "Izin";
 
                     if (isDateInRange(timeParam1, time1, time2)) {
+                      // console.error(`Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`)
                       return res.status(400).send({
                         status: false,
                         message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
@@ -429,6 +587,7 @@ module.exports = {
                     req.body.leave_type == "FULL DAY"
                   ) {
                     if (data[i].ajuan == "1" || data[i].ajuan == 1) {
+                      // console.error(`Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`)
                       return res.status(400).send({
                         status: false,
                         message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
@@ -437,6 +596,7 @@ module.exports = {
                     }
 
                     if (data[i].ajuan == "2" || data[i].ajuan == 2) {
+                      // console.error(`Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`)
                       return res.status(400).send({
                         status: false,
                         message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
@@ -497,6 +657,7 @@ module.exports = {
                       }
 
                       if (isDateInRange(timeParam1, time1, time2)) {
+                        // console.error(`Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`)
                         return res.status(400).send({
                           status: false,
                           message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
@@ -504,6 +665,7 @@ module.exports = {
                         });
                       } else {
                         if (isDateInRange(timeParam2, time1, time2)) {
+                          console.error(`Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`)
                           return res.status(400).send({
                             status: false,
                             message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
@@ -590,7 +752,7 @@ module.exports = {
                                 }
 
                                 connection.query(
-                                  `DELETE FROM ${namaDatabaseDynamic}.emp_labor_task WHERE nomor_ajuan LIKE '%${nomorLb}%'`,
+                                  `DELETE FROM ${namaDatabaseDynamic}.emp_labor_task WHERE emp_labor_id = ${id}`,
                                   (err, user) => {
                                     if (err) {
                                       console.error(
@@ -611,8 +773,10 @@ module.exports = {
 
                                     for (var i = 0; i < tasks.length; i++) {
                                       var task = tasks[i]["task"];
+                                      var level = tasks[i]["level"];
+                                      console.log(tasks);
                                       connection.query(
-                                        `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,nomor_ajuan) VALUES('${task}','0','${nomorLb}')`,
+                                        `INSERT INTO ${namaDatabaseDynamic}.emp_labor_task (task,persentase,emp_labor_id,level) VALUES('${task}','0',${id},${level})`,
                                         (err, user) => {
                                           if (err) {
                                             console.error(
@@ -1301,7 +1465,7 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [results] = await conn.query(
-        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor_task WHERE nomor_ajuan LIKE '${nomorAjuan}'`
+        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor_task WHERE emp_labor_id LIKE '${nomorAjuan}'`
       );
       await conn.commit();
       return res.status(200).send({
