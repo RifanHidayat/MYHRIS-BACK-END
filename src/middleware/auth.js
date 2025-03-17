@@ -64,7 +64,7 @@ module.exports = {
         await conn.commit();
   
         if (results.length == 0) {
-          return res.status(400).json({
+          return res.status(401).json({
             status: false,
             message:
               "Seseorang masuk menggunakan akun anda menyebabkan akun anda keluar secara otomatis",
@@ -73,7 +73,7 @@ module.exports = {
   
         if (results[0].status == "INACTIVE") {
           console.log("token tidak valied");
-          return res.status(400).json({
+          return res.status(401).json({
             status: false,
             message: "Akun anda sudah tidak aktif",
           });
