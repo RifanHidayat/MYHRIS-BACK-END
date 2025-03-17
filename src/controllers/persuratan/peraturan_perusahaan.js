@@ -284,9 +284,10 @@ module.exports = {
       const [employee] = await conn.query(
         `SELECT em_id,branch_id FROM employee WHERE em_email='${email}' AND em_password='${password}'`
       );
-
+      console.log("Query Result:", employee);
       if (employee.length == 0) {
         console.log("data tidak tersedia");
+        await conn.commit();
         return res.status(400).send({
           status: false,
           message: "Kombinasi email & password Anda Salah",
