@@ -111,8 +111,6 @@ router.post('/berhubungan-dengan', lembur.berhubunganDengan);
 router.post('/lembur/detail',auth.isAuth,lembur.detailTask);
 router.post('/tugas-luar',auth.isAuth,tugasLuar.store);
 
-
-
 router.post('/insert-emp_labor',auth.isAuth,operasional.insertData);
 router.post('/insert-emp_leave',auth.isAuth, operasional.insertData);
 
