@@ -34,16 +34,100 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [cekDaily] = await conn.query(
-        `SELECT id FROM daily_task WHERE tgl_buat = '${attenDate}'`
+        `SELECT id FROM daily_task WHERE tgl_buat = '${attenDate}' AND em_id = '${em_id}'`
       );
       console.log("ini cek daily", cekDaily);
       if (cekDaily.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Tugas di tanggal ${attenDate} ini sudah tersedia`,
+        });
+      } else {
+        const queryTask = `
+                INSERT INTO daily_task (em_id, tgl_buat) 
+                VALUES (?, ?)
+            `;
+
         const queryDetail = `
                 INSERT INTO daily_task_detail 
                 (judul, rincian, tgl_finish, daily_task_id, status, level) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
+        const [task] = await conn.query(queryTask, [em_id, attenDate]);
+        const taskId = task.insertId;
+
+        for (const item of listTask) {
+          const { task, judul, status, level, tgl_finish } = item;
+          var tanggal = formatDate(tgl_finish);
+
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
+        }
+      }
+      await conn.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Data Berhasil Ditambahkan",
+      });
+    } catch (error) {
+      await conn.rollback();
+      console.error("Insert Data Error: ", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal menambahkan data: " + error.message,
+      });
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
+  async updateDailyTask(req, res) {
+    console.log("-----insert data kalim----------");
+    console.log("data absen ", req.body);
+
+    var database = req.query.database;
+    var em_id = req.body.em_id;
+    var array = req.body.atten_date.split("-");
+    var listTask = req.body.list_task;
+    var attenDate = req.body.atten_date;
+    var id = req.body.id;
+
+    const tahun = `${array[0]}`;
+    console.log("ini tahun", tahun);
+    const convertYear = tahun.substring(2, 4);
+
+    const convertBulan = array[1].padStart(2, "0");
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await models.createConnection1(namaDatabaseDynamic);
+    let conn;
+
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [cekDaily] = await conn.query(
+        `SELECT * FROM daily_task WHERE em_id = '${em_id}' AND id = '${id}'`
+      );
+      console.log("ini cek daily", cekDaily);
+      if (cekDaily.length > 0) {
         const taskId = cekDaily[0].id;
+        const queryTask = `
+                UPDATE daily_task 
+                SET em_id = ?, tgl_buat = ? 
+                WHERE id = ?
+            `;
+        const queryDetail = `
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+        await conn.query(queryTask, [em_id, attenDate, taskId]);
         console.log(taskId);
         const deleteQuery = `
             DELETE  FROM daily_task_detail 
@@ -59,13 +143,18 @@ module.exports = {
 
           var tanggal = formatDate(tgl_finish);
 
-          await conn.query(queryDetail, [judul, task, tanggal, taskId, status.toString(), level]);
-        
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
         }
         const taskIds = listTask.map((item) => item.id);
         console.log(taskIds);
 
-        
         console.log(dlet);
       } else {
         const queryTask = `
@@ -85,7 +174,14 @@ module.exports = {
           const { task, judul, status, level, tgl_finish } = item;
           var tanggal = formatDate(tgl_finish);
 
-          await conn.query(queryDetail, [judul, task, tanggal, taskId, status.toString(), level]);
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
         }
       }
       await conn.commit();
@@ -174,17 +270,20 @@ module.exports = {
       const date = req.query.date;
       const queryCek = `SELECT tgl_buat FROM daily_task WHERE em_id = ? ORDER BY tgl_buat DESC LIMIT 1`;
       const [cekdata] = await conn.query(queryCek, [em_id]);
-      const tglBuat = cekdata[0].tgl_buat.toISOString().split("T")[0];
+      cekdata.length > 0 && cekdata[0].tgl_buat;
       let tglFinal;
-      const today = new Date();
-      const tglBuatDate = new Date(tglBuat);
-
-      if (tglBuatDate > today) {
-        tglFinal = tglBuat; 
+      if (cekdata.length > 0 && cekdata[0].tgl_buat) {
+        const tglBuat = cekdata[0].tgl_buat.toISOString().split("T")[0];
+        const today = new Date();
+        const tglBuatDate = new Date(tglBuat);
+        if (tglBuatDate > today) {
+          tglFinal = tglBuat;
+        } else {
+          tglFinal = new Date().toISOString().split("T")[0];
+        }
       } else {
         tglFinal = new Date().toISOString().split("T")[0];
       }
-      console.log(tglBuat);
       const querySysData = `SELECT * FROM ${databaseMaster}.sysdata WHERE KODE='013'`;
       const [sysdata] = await conn.query(querySysData);
       const queryTaskPersetujuan1 = `WITH RECURSIVE DateRange AS (
