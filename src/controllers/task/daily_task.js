@@ -39,39 +39,33 @@ module.exports = {
       console.log("ini cek daily", cekDaily);
       if (cekDaily.length > 0) {
         const queryDetail = `
-                UPDATE daily_task_detail 
-    SET judul = ?, rincian = ?, tgl_finish = ?, status = ? 
-    WHERE daily_task_id = ? AND id = ?
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
             `;
         const taskId = cekDaily[0].id;
         console.log(taskId);
+        const deleteQuery = `
+            DELETE  FROM daily_task_detail 
+            WHERE daily_task_id = ?
+        `;
+        const [dlet] = await conn.query(deleteQuery, [taskId]);
 
         for (const item of listTask) {
-          const { id, task, judul, dropdown, tgl_finish } = item;
-
-          var status = dropdown == "Finished" ? "1" : "0";
+          const { task, judul, status, level, tgl_finish } = item;
           var tanggal = formatDate(tgl_finish);
           console.log("ini status", status);
           console.log("ini tanggal", tanggal);
 
-          await conn.query(queryDetail, [
-            judul,
-            task,
-            tanggal,
-            status,
-            taskId,
-            id,
-          ]);
+          var tanggal = formatDate(tgl_finish);
+
+          await conn.query(queryDetail, [judul, task, tanggal, taskId, status.toString(), level]);
+        
         }
         const taskIds = listTask.map((item) => item.id);
         console.log(taskIds);
 
-        const deleteQuery = `
-            DELETE  FROM daily_task_detail 
-            WHERE daily_task_id = ? 
-            AND id NOT IN (${taskIds.map(() => "?").join(", ")})
-        `;
-        const [dlet] = await conn.query(deleteQuery, [taskId, ...taskIds]);
+        
         console.log(dlet);
       } else {
         const queryTask = `
@@ -81,20 +75,17 @@ module.exports = {
 
         const queryDetail = `
                 INSERT INTO daily_task_detail 
-                (judul, rincian, tgl_finish, daily_task_id, status) 
-                VALUES (?, ?, ?, ?, ?)
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
             `;
         const [task] = await conn.query(queryTask, [em_id, attenDate]);
         const taskId = task.insertId;
 
         for (const item of listTask) {
-          const { task, judul, dropdown, tgl_finish } = item;
+          const { task, judul, status, level, tgl_finish } = item;
           var tanggal = formatDate(tgl_finish);
-          var status = dropdown == "Finished" ? "1" : "0";
-          console.log("ini status", status);
-          console.log("ini tanggal", tanggal);
 
-          await conn.query(queryDetail, [judul, task, tanggal, taskId, status]);
+          await conn.query(queryDetail, [judul, task, tanggal, taskId, status.toString(), level]);
         }
       }
       await conn.commit();
@@ -223,6 +214,14 @@ module.exports = {
             (SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }' LIMIT 1) AS dinas_luar ,
+      (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id 
+     AND daily_task_detail.status = '0') AS total_status_0,
+    (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id 
+     AND daily_task_detail.status = '1') AS total_status_1,
+     (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id ) AS jumlah_task,
             (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
             holiday.name  AS hari_libur,daily_task.*
             FROM DateRange 
@@ -260,6 +259,14 @@ module.exports = {
           (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_leave WHERE em_id='${em_id}' AND date_selected LIKE '%DateRange.date%' AND ajuan='4' AND leave_status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }' LIMIT 1) AS dinas_luar ,
+      (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id 
+     AND daily_task_detail.status = '0') AS total_status_0,
+    (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id 
+     AND daily_task_detail.status = '1') AS total_status_1,
+     (SELECT COUNT(*) FROM ${namaDatabaseDynamic}.daily_task_detail 
+     WHERE daily_task_detail.daily_task_id = daily_task.id) AS jumlah_task,
           (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date, 
           holiday.name  AS hari_libur,daily_task.*
           FROM DateRange 
@@ -340,7 +347,6 @@ module.exports = {
       });
     } catch (e) {
       if (conn) {
-        le;
         await conn.rollback();
       }
       console.error("error", e);
@@ -406,8 +412,6 @@ module.exports = {
         message: "Succesfully get data",
         data: result,
       });
-
-      console.log("Berhasil mendapatkan data AllDailyTask");
     } catch (error) {
       if (conn) {
         await conn.rollback();
