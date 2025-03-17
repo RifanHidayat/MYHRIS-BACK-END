@@ -75,7 +75,7 @@ WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_d
     let conn;
     try {
       conn = await connection.getConnection();
-      await coon.beginTransaction();
+      await conn.beginTransaction();
       const queryInsert = `
             INSERT INTO notice_view (notice_id, em_id) 
             VALUES (?, ?)`;
