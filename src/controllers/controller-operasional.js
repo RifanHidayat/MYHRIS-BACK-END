@@ -2810,7 +2810,7 @@ module.exports = {
                                   );
                                   if (tipeSurat == "teguran_lisan") {
                                     console.log(
-                                      `    SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`
+                                      `SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE)`
                                     );
                                     connection.query(
                                       `    SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`,
@@ -12999,7 +12999,7 @@ a.typeid,
     } else if (url_data == "kasbon") {
       queryApproval = query8;
     } else if (url_data == "surat_peringatan") {
-      queryApproval = query10;
+      queryApproval = query11;
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
