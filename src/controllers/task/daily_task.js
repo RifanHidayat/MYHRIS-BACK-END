@@ -202,6 +202,182 @@ module.exports = {
     }
   },
 
+  async insertDraft(req, res) {
+    var database = req.query.database;
+    var em_id = req.body.em_id;
+    var array = req.body.atten_date.split("-");
+    var listTask = req.body.list_task;
+    var attenDate = req.body.atten_date;
+    var id = req.body.id;
+
+    const tahun = `${array[0]}`;
+    console.log("ini tahun", tahun);
+    const convertYear = tahun.substring(2, 4);
+
+    const convertBulan = array[1].padStart(2, "0");
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await models.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+
+      const queryTask = `
+                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
+                VALUES (?, ?, ?)
+            `;
+
+      const queryDetail = `
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+      const [task] = await conn.query(queryTask, [em_id, attenDate]);
+      const taskId = task.insertId;
+
+      for (const item of listTask) {
+        const { task, judul, status, level, tgl_finish } = item;
+        var tanggal = formatDate(tgl_finish);
+
+        await conn.query(queryDetail, [
+          judul,
+          task,
+          tanggal,
+          taskId,
+          status.toString(),
+          level,
+        ]);
+      }
+
+      await conn.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Data Berhasil Ditambahkan",
+      });
+    } catch (error) {
+      await conn.rollback();
+      console.error("Insert Data Error: ", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal menambahkan data: " + error.message,
+      });
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
+  async updateDraft(req, res) {
+    var database = req.query.database;
+    var em_id = req.body.em_id;
+    var array = req.body.atten_date.split("-");
+    var listTask = req.body.list_task;
+    var attenDate = req.body.atten_date;
+    var status = req.body.status;
+    var id = req.body.id;
+
+    const tahun = `${array[0]}`;
+    console.log("ini tahun", tahun);
+    const convertYear = tahun.substring(2, 4);
+
+    const convertBulan = array[1].padStart(2, "0");
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const connection = await models.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [cekDaily] = await conn.query(
+        `SELECT * FROM daily_task WHERE em_id = '${em_id}' AND id = '${id}'`
+      );
+      if (cekDaily.length > 0) {
+        const taskId = cekDaily[0].id.toString();
+        const queryTask = `
+                UPDATE daily_task 
+                SET em_id = ?, tgl_buat = ?, status_pengajuan = ?
+                WHERE id = ?
+            `;
+        const queryDetail = `
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+        await conn.query(queryTask, [em_id, attenDate, status, taskId]);
+        console.log(taskId);
+        const deleteQuery = `
+            DELETE  FROM daily_task_detail 
+            WHERE daily_task_id = ?
+        `;
+        const [dlet] = await conn.query(deleteQuery, [taskId]);
+
+        for (const item of listTask) {
+          const { task, judul, status, level, tgl_finish } = item;
+          var tanggal = formatDate(tgl_finish);
+          console.log("ini status", status);
+          console.log("ini tanggal", tanggal);
+
+          var tanggal = formatDate(tgl_finish);
+
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
+        }
+        const taskIds = listTask.map((item) => item.id);
+        console.log(taskIds);
+
+        console.log(dlet);
+      } else {
+        const queryTask = `
+                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
+                VALUES (?, ?, ?)
+            `;
+
+        const queryDetail = `
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+        const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
+        const taskId = task.insertId;
+
+        for (const item of listTask) {
+          const { task, judul, status, level, tgl_finish } = item;
+          var tanggal = formatDate(tgl_finish);
+
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
+        }
+      }
+
+      await conn.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Data Berhasil Ditambahkan",
+      });
+    } catch (error) {
+      await conn.rollback();
+      console.error("Insert Data Error: ", error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal menambahkan data: " + error.message,
+      });
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
   async getAllDailyTask(req, res) {
     console.log("-----insert data kalim----------");
     console.log("data absen ", req.body);
