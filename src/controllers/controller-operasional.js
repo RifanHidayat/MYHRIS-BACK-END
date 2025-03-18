@@ -4031,6 +4031,7 @@ module.exports = {
     var pesan = "";
 
     console.log(req.body);
+   
 
     console.log(script);
     var dataInsertLog = {
@@ -4082,86 +4083,74 @@ module.exports = {
     const mysql = require("mysql");
     const poolDynamic = mysql.createPool(configDynamic);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (nameTable == "emp_claim") {
-        delete bodyValue.atten_date;
-      }
-      if (err) console.log(err);
-      console.log(req.body.leave_status);
-      let path = name_url.split("?")[0].replace("/", "");
-      if (
-        req.body.leave_status == "Cancel" ||
-        path == "edit-notifikasi" ||
-        req.body.status_transaksi == 0
-      ) {
-        connection.query(script, [bodyValue], function (error, results) {
-          console.log(error);
-          connection.release();
-          if (error != null)
-            connection.query(
-              `INSERT INTO logs_actvity SET ?;`,
-              [dataInsertLog],
-              function (error) {
-                if (error != null) console.log(error);
-              }
-            );
-
-          res.send({
-            status: true,
-            message: "Berhasil di update!",
-            data: results,
-          });
-        });
-      } else {
-        var query = "";
-        var splits = req.body.date_selected.split(",");
-
-        var query = ``;
-        var queryPendingPotongCuti = `
-          SELECT 
-          SUM(e.leave_duration) AS total_leave_duration,
-          e.leave_status AS status,
-          lt.name AS namaAjuan,
-    e.nomor_ajuan AS nomorAjuan
-      FROM ${namaDatabaseDynamic}.emp_leave e
-      JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
-      WHERE e.em_id = '${req.body.em_id}' 
-        AND e.status_transaksi = 1
-        AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve', 'Approve2')
-        AND e.${nameWhere} != '${cariWhere}'
-      `;
-        for (var i = 0; i < splits.length; i++) {
-          console.log(i);
-
-          let subQuery = `  
-            SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-            WHERE em_id='${req.body.em_id}' 
-            AND date_selected LIKE '%${splits[i]}%'  
-            AND status_transaksi=1 
-            AND leave_status IN ('Pending','Approve','Approve2') 
-            AND ${nameWhere} != '${cariWhere}'`;
-
-          if (i === 0) {
-            query = subQuery;
-          } else {
-            query += ` UNION ALL ${subQuery}`;
-          }
+    if (convert1=='emp_labor'){
+      poolDynamic.getConnection(function (err, connection) {
+        if (nameTable == "emp_claim") {
+          delete bodyValue.atten_date;
         }
-        console.log(query);
-        connection.query(query, (err, data) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: false,
-                message: "gagal ambil data",
-                data: [],
-              });
+        if (err) console.log(err);
+        console.log(req.body.leave_status);
+        let path = name_url.split("?")[0].replace("/", "");
+        if (
+          req.body.leave_status == "Cancel" ||
+          path == "edit-notifikasi" ||
+          req.body.status_transaksi == 0
+        ) {
+          connection.query(script, [bodyValue], function (error, results) {
+            console.log(error);
+            connection.release();
+            if (error != null)
+              connection.query(
+                `INSERT INTO logs_actvity SET ?;`,
+                [dataInsertLog],
+                function (error) {
+                  if (error != null) console.log(error);
+                }
+              );
+  
+            res.send({
+              status: true,
+              message: "Berhasil di update!",
+              data: results,
             });
-            return;
+          });
+        } else {
+          var query = "";
+          var splits = req.body.date_selected.split(",");
+  
+          var query = ``;
+          var queryPendingPotongCuti = `
+            SELECT 
+            SUM(e.leave_duration) AS total_leave_duration,
+            e.leave_status AS status,
+            lt.name AS namaAjuan,
+      e.nomor_ajuan AS nomorAjuan
+        FROM ${namaDatabaseDynamic}.emp_leave e
+        JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+        WHERE e.em_id = '${req.body.em_id}' 
+          AND e.status_transaksi = 1
+          AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve', 'Approve2')
+          AND e.${nameWhere} != '${cariWhere}'
+        `;
+          for (var i = 0; i < splits.length; i++) {
+            console.log(i);
+  
+            let subQuery = `  
+              SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+              WHERE em_id='${req.body.em_id}' 
+              AND date_selected LIKE '%${splits[i]}%'  
+              AND status_transaksi=1 
+              AND leave_status IN ('Pending','Approve','Approve2') 
+              AND ${nameWhere} != '${cariWhere}'`;
+  
+            if (i === 0) {
+              query = subQuery;
+            } else {
+              query += ` UNION ALL ${subQuery}`;
+            }
           }
-          connection.query(queryPendingPotongCuti, (err, dataPending) => {
+          console.log(query);
+          connection.query(query, (err, data) => {
             if (err) {
               console.error("Error executing SELECT statement:", err);
               connection.rollback(() => {
@@ -4174,76 +4163,7 @@ module.exports = {
               });
               return;
             }
-            console.log(queryPendingPotongCuti);
-            console.log(dataPending);
-            console.log(jumlahCuti);
-            const totalLeaveDuration =
-              (dataPending[0]?.total_leave_duration || 0) +
-              req.body.leave_duration;
-            console.log("ini total duration", totalLeaveDuration);
-            console.log("ini cut leave", cutLeave);
-            if (cutLeave == 1) {
-              if (totalLeaveDuration > jumlahCuti) {
-                isError = true;
-                pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
-              }
-            }
-
-            console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                        WHERE em_id='${req.body.em_id}' 
-                        AND (date_selected LIKE '%${req.body.date_selected}%')  
-                        AND  status_transaksi=1 
-                         AND leave_status IN ('Pending','Approve','Approve2')`);
-            for (var i = 0; i < data.length; i++) {
-              if (data.length > 0) {
-                if (data[0].leave_type == "HALFDAY") {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan_to}`
-                  );
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  transaksi = "Izin";
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                  }
-                } else if (
-                  req.body.leave_type == "FULLDAY" ||
-                  req.body.leave_type == "FULL DAY" ||
-                  req.body.leave_type == "Full Day"
-                ) {
-                  console.log(data[i].ajuan);
-
-                  if (data[i].ajuan == "1" || data[i].ajuan == 1) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-                  }
-
-                  if (data[i].ajuan == "2" || data[i].ajuan == 2) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-                  }
-                }
-              }
-            }
-            connection.query(query, (err, data) => {
+            connection.query(queryPendingPotongCuti, (err, dataPending) => {
               if (err) {
                 console.error("Error executing SELECT statement:", err);
                 connection.rollback(() => {
@@ -4256,89 +4176,80 @@ module.exports = {
                 });
                 return;
               }
-
-              for (var i = 0; i < data.length; i++) {
-                if (data.length > 0) {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].dari_jam}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].sampai_jam}`
-                  );
-
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (data[i].ajuan == "2") {
-                    transaksi = "Tugas Luar";
-                  }
-
-                  if (data[i].ajuan == "1") {
-                    transaksi = "Lembur";
-                  }
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                  } else {
-                    if (isDateInRange(timeParam2, time1, time2)) {
-                      isError = true;
-                      pesan = `Kamu telah melakukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                    }
-                  }
+              console.log(queryPendingPotongCuti);
+              console.log(dataPending);
+              console.log(jumlahCuti);
+              const totalLeaveDuration =
+                (dataPending[0]?.total_leave_duration || 0) +
+                req.body.leave_duration;
+              console.log("ini total duration", totalLeaveDuration);
+              console.log("ini cut leave", cutLeave);
+              if (cutLeave == 1) {
+                if (totalLeaveDuration > jumlahCuti) {
+                  isError = true;
+                  pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
                 }
               }
-              console.log("is errr", isError);
+  
 
-              if (isError == true || isError == "true") {
-                connection.release();
-                return res.status(500).send({
-                  status: false,
-                  message: pesan,
-                  data: [],
-                });
-              } else {
-                connection.query(
-                  script,
-                  [bodyValue],
-                  function (error, results) {
-                    console.log(error);
-                    connection.release();
-                    if (error != null)
-                      connection.query(
-                        `INSERT INTO logs_actvity SET ?;`,
-                        [dataInsertLog],
-                        function (error) {
-                          if (error != null) console.log(error);
-                        }
-                      );
-
-                    res.send({
-                      status: true,
-                      message: "Berhasil di update!",
-                      data: results,
-                    });
-                  }
-                );
-              }
+    
             });
           });
-        });
-      }
-    });
+        }
+      });
+
+
+
+    }else{
+      poolDynamic.getConnection(function (err, connection) {
+        if (nameTable == "emp_claim") {
+          delete bodyValue.atten_date;
+        }
+        if (err) console.log(err);
+        console.log(req.body.leave_status);
+        let path = name_url.split("?")[0].replace("/", "");
+
+       
+          console.log("is errr", isError);
+
+          if (isError == true || isError == "true") {
+            connection.release();
+            return res.status(500).send({
+              status: false,
+              message: pesan,
+              data: [],
+            });
+          } else {
+            connection.query(
+              script,
+              [bodyValue],
+              function (error, results) {
+                console.log(error);
+                connection.release();
+                if (error != null)
+                  connection.query(
+                    `INSERT INTO logs_actvity SET ?;`,
+                    [dataInsertLog],
+                    function (error) {
+                      if (error != null) console.log(error);
+                    }
+                  );
+
+                res.send({
+                  status: true,
+                  message: "Berhasil di update!",
+                  data: results,
+                });
+              }
+            );
+          }
+   
+      });
+
+
+    }
+
+ 
   },
   async approveWfh(req, res) {
     console.log("-----edit data ----------");
@@ -7104,13 +7015,9 @@ module.exports = {
               ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' AND tgl_ajuan='${dateNow}'`
             );
 
-            console.log(
-              `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' AND tgl_ajuan='${dateNow}'`
-            );
 
             if (cekLembur.length == 0) {
-              //logic Lembur
-              console.log("tes  tes");
+          
               const [sysdataLembur] = await connection.query(
                 `SELECT * FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('041','042') `
               );
@@ -7205,7 +7112,11 @@ module.exports = {
         //Absen 1
 
         if (results.length == 0) {
-          var queryJadwal = `SELECT  IFNULL(work_schedule.time_in ,'08:30:00') as jam_masuk FROM ${namaDatabaseDynamic}.emp_shift  JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE '%${dateNow}%'`;
+          var queryJadwal = `SELECT  
+          IFNULL(work_schedule.time_in ,'08:30:00') as jam_masuk 
+          FROM ${namaDatabaseDynamic}.emp_shift  
+          JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id 
+          WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE '%${dateNow}%'`;
           const [jamMasuk] = await connection.query(queryJadwal);
 
           if (jamMasuk.length > 0) {
@@ -7215,12 +7126,23 @@ module.exports = {
             jam1.setMinutes(jam1.getMinutes() + 1);
             const jam2 = new Date(`${dateNow}T${jamAbsen}`); // 2:30 PM
 
-            var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${req.body.tanggal_absen}' AND leave_status = 'Approve2' AND time_plan >= '${jamAbsen}'`;
-            const [cekIzin] = await connection.query(queryCekIzinTerlambat);
-            const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = 'SIS202412070' AND approve2_status = 'Approve'`;
+            
+            var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected  LIKE '%${req.body.tanggal_absen}%' AND leave_status = 'Approve2'  AND ajuan IN (1,2,3) `;
+
+            const [cekIzin] = await connection.query(queryCekIzinTerlambat);            
+            const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
+            
             const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
 
-            if (cekIzin.length == 0 && cekTugasLuar.length == 0 && lokasiAbsenIn != 'TUGAS LUAR KANTOR') {
+            
+
+            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR') {
+              console.log('masuk sini');
+              
+            
+            }else{
+              console.log('masuk absen terlambat');
+              
               if (jam2 > jam1) {
                 const selisihWaktu = jam1.getTime() - jam2.getTime();
                 // Menghitung selisih dalam menit
@@ -7943,11 +7865,13 @@ module.exports = {
               jam1.setMinutes(jam1.getMinutes() + 1);
               const jam2 = new Date(`${dateNow}T${jamAbsen}`); // jam pulang
 
-              // var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}'`;
-              // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
-              const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = 'SIS202412070' AND approve2_status = 'Approve'`;
+              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}' AND em_id='${em_id}'`;
+              const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+              const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve'`;
               const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
-              if (cekTugasLuar == 0 && lokasiAbsenOut != 'TUGAS LUAR KANTOR') {
+              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR') {
+                
+              }else{
                 if (jam2 < jam1) {
                   const selisihWaktu = jam1.getTime() - jam2.getTime();
 
@@ -7959,6 +7883,7 @@ module.exports = {
                   isNotif = true;
                   statusAbsen = "pulang_cepat";
                 }
+
               }
             }
 
@@ -8539,6 +8464,11 @@ module.exports = {
           }
         }
       }
+
+      console.log("title ",title)
+      console.log("show notif ",isNotif)
+      console.log("description ",deskription)
+      console.log("status absen ",statusAbsen)
 
       await connection.commit();
       return res.status(200).send({

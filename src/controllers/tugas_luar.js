@@ -103,7 +103,7 @@ module.exports = {
         databaseMaster
       );
       utility.insertNotifikasi(
-        sysdata[0].name,
+        sysdata[0].name==null?"":sysdata[0].name,
         "Pengajuan  Tugas Luar",
         "TugasLuar",
         employee[0].em_id,
@@ -115,9 +115,9 @@ module.exports = {
       );
 
       if (sysdata.length > 0) {
-        if (sysdata[0].name == null) {
+        if (sysdata[0].name != null) {
           utility.insertNotifikasi(
-            sysdata[0].name,
+            sysdata[0].name==null?"":sysdata[0].name,
             "Pengajuan  Tugas Luar",
             "TugasLuar",
             employee[0].em_id,
