@@ -19,6 +19,7 @@ module.exports = {
     var array = req.body.atten_date.split("-");
     var listTask = req.body.list_task;
     var attenDate = req.body.atten_date;
+    var status = req.body.status;
     var id = req.body.id;
 
     const tahun = `${array[0]}`;
@@ -44,8 +45,8 @@ module.exports = {
         });
       } else {
         const queryTask = `
-                INSERT INTO daily_task (em_id, tgl_buat) 
-                VALUES (?, ?)
+                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
+                VALUES (?, ?, ?)
             `;
 
         const queryDetail = `
@@ -53,7 +54,7 @@ module.exports = {
                 (judul, rincian, tgl_finish, daily_task_id, status, level) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
-        const [task] = await conn.query(queryTask, [em_id, attenDate]);
+        const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
         const taskId = task.insertId;
 
         for (const item of listTask) {
@@ -98,9 +99,10 @@ module.exports = {
     var listTask = req.body.list_task;
     var attenDate = req.body.atten_date;
     var id = req.body.id;
+    var status = req.body.status;
 
     const tahun = `${array[0]}`;
-    console.log("ini tahun", tahun);
+    console.log("ini id", id);
     const convertYear = tahun.substring(2, 4);
 
     const convertBulan = array[1].padStart(2, "0");
@@ -119,7 +121,7 @@ module.exports = {
         const taskId = cekDaily[0].id;
         const queryTask = `
                 UPDATE daily_task 
-                SET em_id = ?, tgl_buat = ? 
+                SET em_id = ?, tgl_buat = ?, status_pengajuan = ?
                 WHERE id = ?
             `;
         const queryDetail = `
@@ -127,7 +129,7 @@ module.exports = {
                 (judul, rincian, tgl_finish, daily_task_id, status, level) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
-        await conn.query(queryTask, [em_id, attenDate, taskId]);
+        await conn.query(queryTask, [em_id, attenDate, status, taskId]);
         console.log(taskId);
         const deleteQuery = `
             DELETE  FROM daily_task_detail 
@@ -158,8 +160,8 @@ module.exports = {
         console.log(dlet);
       } else {
         const queryTask = `
-                INSERT INTO daily_task (em_id, tgl_buat) 
-                VALUES (?, ?)
+                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
+                VALUES (?, ?, ?)
             `;
 
         const queryDetail = `
@@ -167,7 +169,7 @@ module.exports = {
                 (judul, rincian, tgl_finish, daily_task_id, status, level) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
-        const [task] = await conn.query(queryTask, [em_id, attenDate]);
+        const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
         const taskId = task.insertId;
 
         for (const item of listTask) {
@@ -208,6 +210,7 @@ module.exports = {
     var array = req.body.atten_date.split("-");
     var listTask = req.body.list_task;
     var attenDate = req.body.atten_date;
+    var status = req.body.status;
     var id = req.body.id;
 
     const tahun = `${array[0]}`;
@@ -232,7 +235,7 @@ module.exports = {
                 (judul, rincian, tgl_finish, daily_task_id, status, level) 
                 VALUES (?, ?, ?, ?, ?, ?)
             `;
-      const [task] = await conn.query(queryTask, [em_id, attenDate]);
+      const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
       const taskId = task.insertId;
 
       for (const item of listTask) {
@@ -383,6 +386,7 @@ module.exports = {
     console.log("data absen ", req.body);
     const em_id = req.body.em_id;
     var database = req.query.database;
+    const statusFilter = req.body.atasanStatus;
     let ms = Date.now();
 
     var d = new Date(ms),
@@ -500,7 +504,7 @@ module.exports = {
             (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
             holiday.name  AS hari_libur,daily_task.*
             FROM DateRange 
-            LEFT JOIN ${namaDatabaseDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
+            LEFT JOIN ${namaDatabaseDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}' AND daily_task.status_pengajuan != '${statusFilter}'
             LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
             WHERE DateRange.date <='${tglFinal}'  AND DateRange.date>='${startPeriode}'
             ORDER BY DateRange.date DESC;`;
@@ -545,7 +549,7 @@ module.exports = {
           (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date, 
           holiday.name  AS hari_libur,daily_task.*
           FROM DateRange 
-          LEFT JOIN ${endPeriodeDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}'
+          LEFT JOIN ${endPeriodeDynamic}.daily_task ON daily_task.tgl_buat=DateRange.date AND em_id='${em_id}' AND daily_task.status_pengajuan != '${statusFilter}'
           LEFT JOIN ${database}_hrm.holiday_date ON holiday_date.holiday_date=DateRange.date LEFT JOIN ${database}_hrm.holiday ON holiday.id=holiday_date.holiday_id
           WHERE (DateRange.date <='${tglFinal}' AND DateRange.date<='${endPeriode}')
           ORDER BY DateRange.date DESC;
