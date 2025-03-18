@@ -223,6 +223,8 @@ router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
 router.get('/getDailyMonitoring',dailyTask.employeeMonotoringDaily);
 router.post('/getTaskDaily',dailyTask.getDailyTask);
 router.post('/insertTaskDaily',dailyTask.insertDailyTask);
+router.post('/insertDraftDaily',dailyTask.insertDraft);
+router.post('/updateDraftDaily',dailyTask.updateDraft);
 router.post('/updateTaskDaily',dailyTask.updateDailyTask);
 
 // belum
