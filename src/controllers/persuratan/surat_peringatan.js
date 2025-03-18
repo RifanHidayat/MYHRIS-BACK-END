@@ -35,8 +35,7 @@ module.exports = {
             connection.end();
             return;
           }
-          var querySuratPeringatan = 
-          `SELECT letter.name AS sp,
+          var querySuratPeringatan = `SELECT letter.name AS sp,
           e1.full_name AS nama,
           e1.job_title AS posisi, 
           e2.full_name AS yang_menerbitkan,
@@ -108,10 +107,10 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var database = req.query.database;
     var emId = req.headers.em_id;
 
-    console.log('kesini gak sih');
+    console.log("kesini gak sih");
     const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
-    try{
+    try {
       conn = await connection.getConnection();
       await conn.beginTransaction;
       const queryUnreadCount = `
@@ -126,65 +125,69 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
           WHERE elr.employee_letter_id = el.id
           AND elr.em_id = ?
       )`;
-      const [result] = await conn.query(queryUnreadCount, [emId, emId])
+      const [result] = await conn.query(queryUnreadCount, [emId, emId]);
 
       await conn.commit();
-      return res.status(200).send({ 
-        status: true, 
-        message: "Jumlah surat yang belum dibaca", 
-        unread_count: result[0].unread_count 
+      return res.status(200).send({
+        status: true,
+        message: "Jumlah surat yang belum dibaca",
+        unread_count: result[0].unread_count,
       });
-    }catch(e){
-      if (conn){
+    } catch (e) {
+      if (conn) {
         await conn.rollback();
       }
-      console.error('Error ouy', e);
-      return res.status(400).send({ 
-        status: false, 
-        message: "ERRoe", 
+      console.error("Error ouy", e);
+      return res.status(400).send({
+        status: false,
+        message: "ERRoe",
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
-  
 
   async updateStatusSuratPeringatan(req, res) {
     var database = req.query.database;
     var emId = req.body.em_id;
     var letterId = req.body.letter_id;
-  
+
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
         if (err) {
           console.error("Error connecting to the database:", err);
-          return res.status(500).send({ status: false, message: "Koneksi gagal" });
+          return res
+            .status(500)
+            .send({ status: false, message: "Koneksi gagal" });
         }
-  
+
         const queryInsert = `
           INSERT INTO employee_letter_view (employee_letter_id, em_id) 
           VALUES (?, ?)`;
 
-        console.log('ini em_id ',emId);
+        console.log("ini em_id ", emId);
         connection.query(queryInsert, [letterId, emId], (err, result) => {
           connection.end();
           // console.log(queryInsert);
           if (err) {
             console.error("Error inserting into employee_letter_view:", err);
-            return res.status(400).send({ status: false, message: "Gagal update status" });
+            return res
+              .status(400)
+              .send({ status: false, message: "Gagal update status" });
           }
-  
-          return res.status(200).send({ status: true, message: "Surat peringatan sudah dibaca" });
+
+          return res
+            .status(200)
+            .send({ status: true, message: "Surat peringatan sudah dibaca" });
         });
       });
     } catch (e) {
-      return res.status(500).send({ status: false, message: "Terjadi kesalahan server" });
+      return res
+        .status(500)
+        .send({ status: false, message: "Terjadi kesalahan server" });
     }
   },
-
-
-  
 
   async searchSuratPeringatan(req, res) {
     var database = req.query.database;
@@ -244,43 +247,46 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
               } else {
                 var querySuratPeringatanPending = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' ORDER BY id DESC`;
                 console.log(querySuratPeringatanPending);
-                connection.query(querySuratPeringatanPending, (err, employee) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-
-                  connection.commit((err) => {
+                connection.query(
+                  querySuratPeringatanPending,
+                  (err, employee) => {
                     if (err) {
-                      console.error("Error committing transaction:", err);
+                      console.error("Error executing SELECT statement:", err);
                       connection.rollback(() => {
                         connection.end();
+
                         return res.status(400).send({
-                          status: true,
-                          message: "data tidak tersedia",
+                          status: false,
+                          message: "gagal ambil data",
                           data: [],
                         });
                       });
                       return;
                     }
-                    connection.end();
-                    console.log("Transaction completed successfully!");
-                    return res.status(200).send({
-                      status: true,
-                      message: "data tersedia",
-                      data: employee,
+
+                    connection.commit((err) => {
+                      if (err) {
+                        console.error("Error committing transaction:", err);
+                        connection.rollback(() => {
+                          connection.end();
+                          return res.status(400).send({
+                            status: true,
+                            message: "data tidak tersedia",
+                            data: [],
+                          });
+                        });
+                        return;
+                      }
+                      connection.end();
+                      console.log("Transaction completed successfully!");
+                      return res.status(200).send({
+                        status: true,
+                        message: "data tersedia",
+                        data: employee,
+                      });
                     });
-                  });
-                });
+                  }
+                );
               }
             });
           });
@@ -373,9 +379,11 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var id = req.body.id;
     var status = req.body.status;
     var konsekuensi = req.body.konsekuesi;
+    var listKonsekuensi = req.body.list_konsekuensi;
     var tipeSp = req.body.tipe_sp;
+    // const approveId = req.body.approval_id;
     console.log(req.body);
-
+    const alasanReject = req.body.alasan;
     var branchId = req.body.branch_id;
 
     var databseMaster = `${database}_hrm`;
@@ -386,158 +394,150 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
 
     var databasedinamik = `${database}_hrm${tahun}${bulan}`;
 
+    const connection = await model.createConnection1(databseMaster);
+    let conn;
     try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [employee] = await conn.query(
+        `SELECT * FROM employee WHERE em_id='${emId}'`
+      );
+      const [sysdata] = await conn.query(
+        `SELECT * FROM sysdata WHERE kode='020'`
+      );
+
+      var masaBerlaku = sysdata[0]["name"].split(",");
+      var masaSp1 = masaBerlaku[0];
+      var masaSp2 = masaBerlaku[1];
+      console.log(masaSp1);
+      console.log(masaSp2);
+      var masaBerlakuSP = "";
+      if (tipeSp == "Surat Peringatan 1") {
+        masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp1} MONTH)`;
+      } else if (tipeSp == "Surat Peringatan 2") {
+        masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp2} MONTH)`;
+      } else {
+        masaBerlakuSP = `CURDATE()`;
+      }
+      await conn.query(`UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),eff_date=CURDATE(),approve_id='${emId}',tipe_konsekuensi='${konsekuensi}',
+                  exp_date = ${masaBerlakuSP}  WHERE id='${id}'`);
+
+      const [dataSp] = await conn.query(
+        `SELECT * FROM employee_letter WHERE id='${id}'`
+      );
+      if (konsekuensi == "teguran_lisan") {
+        const [teguranLisan] = await conn.query(
+          `SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY nomor DESC`
+        );
+        var nomorLb = `LI20${tahun}${bulan}`;
+        var nomorStr = "";
+        if (teguranLisan.length > 0) {
+          const lastNomor = teguranLisan[0]["nomor"]; // Ambil nomor dari data terakhir
+          console.log(lastNomor);
+
+          const sequenceStartIndex = 8;
+          const sequenceEndIndex = 13;
+          const lastSequence =
+            parseInt(
+              lastNomor.substring(sequenceStartIndex, sequenceEndIndex)
+            ) + 1;
+
+          nomorStr = String(lastSequence).padStart(4, "0");
+
+          nomorLb = nomorLb + nomorStr;
+        } else {
+          var nomor = 1;
+          nomorStr = String(nomor).padStart(4, "0");
+          nomorLb = nomorLb + nomorStr;
         }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
+        console.log(nomorLb);
+        console.log(nomorStr);
+        const [result] = await conn.query(`INSERT INTO teguran_lisan (
+                                                    nomor,
+                                                    hal,
+                                                    tgl_surat,
+                                                    em_id,
+                                                    letter_id,
+                                                    eff_date,
+                                                    pelanggaran,
+                                                    status,
+                                                    diterbitkan_oleh) VALUE(
+                                                    '${nomorLb}',
+                                                    'Teguran Lisan',
+                                                    '${utility.dateNow2()}',
+                                                    '${dataSp[0].em_id}',
+                                                    '9',
+                                                    '${utility.dateNow2()}',
+                                                    '${alasanReject}',
+                                                    'Pending',
+                                                    '${emId}')`);
+        console.log(listKonsekuensi);
+        var konsekuensiArray = listKonsekuensi.map(item => item.konsekuensi);
+        console.log(konsekuensiArray);
+        console.log(teguranLisan);
 
-          connection.query(
-            `SELECT * FROM employee WHERE em_id='${emId}'`,
-            (err, employee) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              connection.query(`SELECT * FROM sysdata WHERE kode=020`, (err, result) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-  
-                    return res.status(400).send({
-                      status: false,
-                      message: "gagal ambil data",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                var masaBerlaku = result[0]['name'].split(',');
-                var masaSp1 = masaBerlaku[0];
-                var masaSp2 = masaBerlaku[1];
-                console.log(masaSp1);                
-                console.log(masaSp2);       
-                var masaBerlakuSP = '';
-                if (tipeSp == 'Surat Peringatan 1'){
-                  masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp1} MONTH)`;
-                } else if(tipeSp == 'Surat Peringatan 2'){
-                  masaBerlakuSP = `DATE_ADD(CURDATE(), INTERVAL ${masaSp2} MONTH)`;
-                } else {
-                  masaBerlakuSP = `CURDATE()`
-                }
-                connection.query(
-                  `UPDATE employee_letter SET status='${status}',approve_status='${status}',approve_date=CURDATE(),eff_date=CURDATE(),approve_id='${emId}',tipe_konsekuensi='${konsekuensi}',
-                  exp_date = ${masaBerlakuSP}  WHERE id='${id}'`,
-                  (err, employeqqe) => {
-                    if (err) {
-                      console.error("Error executing SELECT statement:", err);
-                      connection.rollback(() => {
-                        connection.end();
-  
-                        return res.status(400).send({
-                          status: false,
-                          message: "gagal ambil data",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-  
-                    connection.query(
-                      `SELECT * FROM employee_letter WHERE id='${id}'`,
-                      (err, dataSp) => {
-                        if (err) {
-                          console.error("Error executing SELECT statement:", err);
-                          connection.rollback(() => {
-                            connection.end();
-  
-                            return res.status(400).send({
-                              status: false,
-                              message: "gagal ambil data",
-                              data: [],
-                            });
-                          });
-                          return;
-                        }
-  
-                        if (
-                          status == "Approve" ||
-                          status == "Approved" ||
-                          status == "Approve"
-                        ) {
-                          var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].alasan}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
-                          console.log(employee[0]);
-  
-                          utility.insertNotifikasiGlobal(
-                            dataSp[0].em_id,
-                            "Info SP",
-                            "sp",
-                            employee[0].em_id,
-                            dataSp[0].id,
-                            "",
-                            dataSp[0].em_id,
-                            databasedinamik,
-                            databseMaster,
-                            text
-                          );
-                        }
-  
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error("Error committing transaction:", err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message: "data tidak tersedia",
-                                data: [],
-                              });
-                            });
-                            return;
-                          }
-  
-                          connection.end();
-                          console.log("Transaction completed successfully!");
-                          return res.status(200).send({
-                            status: true,
-                            message: "data tersedia",
-                            data: employee,
-                          });
-                        });
-                      }
-                    );
-                  }
-                );
-              });
-              
-            }
+        for (var i = 0; i < konsekuensiArray.length; i++) {
+          var data = konsekuensiArray[i].trim();
+          await conn.query(
+            `INSERT INTO teguran_lisan_detail (teguran_lisan_id, name) VALUE('${result.insertId}', '${data}')`
           );
-        });
+        }
+        const [notifTl] = await conn.query(
+          `SELECT * FROM sysdata WHERE kode=045`
+        );
+        const [employeeTl] = await conn.query(
+          `SELECT * FROM employee WHERE em_id='${dataSp[0].em_id}'`
+        );
+        utility.insertNotifikasiGlobal(
+          notifTl[0]["name"],
+          "Teguran Lisan",
+          "Teguran Lisan",
+          emId,
+          employeeTl[0]["id"],
+          nomorLb,
+          employeeTl[0]["full_name"],
+          databasedinamik,
+          databseMaster,
+          `Teguran Lisan Telah di terbitkan Kepada ${employeeTl[0]["full_name"]}, dengan nomor ${nomorLb}`
+        );
+      }
+      if (status == "Approve" || status == "Approved" || status == "Approve") {
+        var text = `Peringatan: Surat Peringatan telah diterbitkan. Anda mendapatkan surat peringatan dengan alasan  ${dataSp[0].alasan}, Anda perlu segera diperbaiki. Mohon perhatian serius!`;
+        console.log(employee[0]);
+
+        utility.insertNotifikasiGlobal(
+          dataSp[0].em_id,
+          "Info SP",
+          "sp",
+          employee[0].em_id,
+          dataSp[0].id,
+          "",
+          dataSp[0].em_id,
+          databasedinamik,
+          databseMaster,
+          text
+        );
+      }
+      await conn.commit();
+      return res.status(200).send({
+        status: false,
+        message: "Berhasil nganuin surat peringatan",
+        data: [],
       });
     } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("this is error brother, can you solve it? ", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
+    } finally {
+      if (conn) {
+        await conn.release();
+      }
     }
   },
 
