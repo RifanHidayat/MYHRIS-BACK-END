@@ -23,17 +23,16 @@ module.exports = {
     const emId = req.headers.em_id;
     console.log(`---------Token --------------- ${token}`);
     console.log(`-----em id---------- ${database}`);
-
-    if (token == undefined) {
-      console.log("tidak ada prosees apapun");
-
-      return next();
-    }
-    
+    const connecting = await models.createConnection1(`${database}_hrm`);
     let conn;
     try {
+      if (token == undefined) {
+        console.log("tidak ada prosees apapun");
+  
+        return next();
+      } else {
         console.log("ceksession");
-        const connecting = await models.createConnection1(`${database}_hrm`);
+        
         conn = await connecting.getConnection();
         await conn.beginTransaction();
         var query = `    SELECT
@@ -79,6 +78,7 @@ module.exports = {
           });
         }
         next();
+      }
     } catch (e) {
       if (conn) {
       await conn.rollback();
