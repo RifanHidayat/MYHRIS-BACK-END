@@ -226,68 +226,58 @@ module.exports = {
       await conn.beginTransaction();
 
       let tanggalFinal = tanggalOld === "" ? attenDate : tanggalOld;
-
-      // Cek apakah ada task di tanggal lama (tanggalFinal)
       const [cekDailyLama] = await conn.query(
         `SELECT id FROM daily_task WHERE em_id = ? AND tgl_buat = ?`,
         [em_id, tanggalFinal]
       );
 
-      // Cek apakah ada task di tanggal baru (attenDate)
       const [cekDailyBaru] = await conn.query(
         `SELECT id FROM daily_task WHERE em_id = ? AND tgl_buat = ?`,
         [em_id, attenDate]
       );
 
-      if (cekDailyLama.length > 0) {
-        const taskIdLama = cekDailyLama[0].id.toString();
-
-        if (cekDailyBaru.length > 0) {
-          // Jika ada task di tanggal baru, hapus dulu sebelum update
-          const taskIdBaru = cekDailyBaru[0].id.toString();
-
-          await conn.query(
-            `DELETE FROM daily_task_detail WHERE daily_task_id = ?`,
-            [taskIdBaru]
-          );
-          await conn.query(`DELETE FROM daily_task WHERE id = ?`, [taskIdBaru]);
-        }
-
-        // Update task lama ke tanggal baru
-        await conn.query(`UPDATE daily_task SET tgl_buat = ? WHERE id = ?`, [
-          attenDate,
-          taskIdLama,
-        ]);
-
-        // Update detail task dengan tanggal baru
-        await conn.query(
-          `UPDATE daily_task_detail SET daily_task_id = ? WHERE daily_task_id = ?`,
-          [taskIdLama, taskIdLama]
-        );
+      const [cekDaily] = await conn.query(
+        `SELECT id FROM daily_task WHERE tgl_buat = '${attenDate}' AND em_id = '${em_id}'`
+      );
+      console.log("ini cek daily", cekDaily);
+      if (cekDaily.length > 0) {
+        return res.status(400).json({
+          status: false,
+          message: `Tugas di tanggal ${attenDate} ini sudah tersedia`,
+        });
       } else {
-        // Jika tidak ada task di tanggal lama, buat task baru
-        const [task] = await conn.query(
-          `INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) VALUES (?, ?, ?)`,
-          [em_id, attenDate, status]
-        );
+        const queryTask = `
+                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
+                VALUES (?, ?, ?)
+            `;
 
+        const queryDetail = `
+                INSERT INTO daily_task_detail 
+                (judul, rincian, tgl_finish, daily_task_id, status, level) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            `;
+        const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
         const taskId = task.insertId;
 
         for (const item of listTask) {
           const { task, judul, status, level, tgl_finish } = item;
-          const tanggal = formatDate(tgl_finish);
+          var tanggal = formatDate(tgl_finish);
 
-          await conn.query(
-            `INSERT INTO daily_task_detail (judul, rincian, tgl_finish, daily_task_id, status, level) VALUES (?, ?, ?, ?, ?, ?)`,
-            [judul, task, tanggal, taskId, status.toString(), level]
-          );
+          await conn.query(queryDetail, [
+            judul,
+            task,
+            tanggal,
+            taskId,
+            status.toString(),
+            level,
+          ]);
         }
       }
 
       await conn.commit();
       res.status(200).json({
         success: true,
-        message: "Data berhasil diperbarui tanpa duplikasi tanggal",
+        message: "Data berhasil di masukan",
       });
     } catch (error) {
       await conn.rollback();
@@ -322,10 +312,15 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [cekDaily] = await conn.query(
-        `SELECT * FROM daily_task WHERE em_id = '${em_id}' AND id = '${id}'`
+        `SELECT * FROM daily_task WHERE em_id = '${em_id}' AND tgl_buat = '${attenDate}' AND id != ${id}`
       );
       if (cekDaily.length > 0) {
-        const taskId = cekDaily[0].id.toString();
+        return res.status(400).json({
+          status: false,
+          message: `Tugas di tanggal ${attenDate} ini sudah tersedia`,
+        });
+      } else {
+        const taskId = id.toString();
         const queryTask = `
                 UPDATE daily_task 
                 SET em_id = ?, tgl_buat = ?, status_pengajuan = ?
@@ -365,33 +360,6 @@ module.exports = {
         console.log(taskIds);
 
         console.log(dlet);
-      } else {
-        const queryTask = `
-                INSERT INTO daily_task (em_id, tgl_buat, status_pengajuan) 
-                VALUES (?, ?, ?)
-            `;
-
-        const queryDetail = `
-                INSERT INTO daily_task_detail 
-                (judul, rincian, tgl_finish, daily_task_id, status, level) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            `;
-        const [task] = await conn.query(queryTask, [em_id, attenDate, status]);
-        const taskId = task.insertId;
-
-        for (const item of listTask) {
-          const { task, judul, status, level, tgl_finish } = item;
-          var tanggal = formatDate(tgl_finish);
-
-          await conn.query(queryDetail, [
-            judul,
-            task,
-            tanggal,
-            taskId,
-            status.toString(),
-            level,
-          ]);
-        }
       }
 
       await conn.commit();
