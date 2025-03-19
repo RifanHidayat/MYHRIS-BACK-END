@@ -13005,6 +13005,7 @@ a.typeid,
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
+    
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
