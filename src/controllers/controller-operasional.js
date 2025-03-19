@@ -13001,7 +13001,8 @@ a.typeid,
     } else if (url_data == "kasbon") {
       queryApproval = query8;
     } else if (url_data == "surat_peringatan") {
-      queryApproval = query10;
+      queryApproval = query11 ;
+
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
