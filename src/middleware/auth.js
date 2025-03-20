@@ -63,7 +63,7 @@ module.exports = {
         await conn.commit();
   
         if (results.length == 0) {
-          return res.status(400).json({
+          return res.status(401).json({
             status: false,
             message:
               "Seseorang masuk menggunakan akun anda menyebabkan akun anda keluar secara otomatis",

@@ -245,7 +245,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                   data: employee,
                 });
               } else {
-                var querySuratPeringatanPending = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' ORDER BY id DESC`;
+                var querySuratPeringatanPending = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status = 'Pending' ORDER BY id DESC`;
                 console.log(querySuratPeringatanPending);
                 connection.query(
                   querySuratPeringatanPending,
