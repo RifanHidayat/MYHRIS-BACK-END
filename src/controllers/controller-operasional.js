@@ -815,8 +815,14 @@ module.exports = {
     var query = "";
     console.log(req.query);
 
-    var startDate = req.query.start_periode;
-    var endDate = req.query.end_periode;
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const startDate =
+      req.query.start_periode?.trim() || firstDay.toISOString().split("T")[0];
+    const endDate =
+      req.query.end_periode?.trim() || lastDay.toISOString().split("T")[0];
     var array = endDate.split("-");
     const connection = await model.createConnection1(`${database}_hrm`);
     var databseDinamik = `${database}_hrm${array[0].substring(
@@ -7220,7 +7226,11 @@ module.exports = {
             const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = 'SIS202412070' AND approve2_status = 'Approve'`;
             const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
 
-            if (cekIzin.length == 0 && cekTugasLuar.length == 0 && lokasiAbsenIn != 'TUGAS LUAR KANTOR') {
+            if (
+              cekIzin.length == 0 &&
+              cekTugasLuar.length == 0 &&
+              lokasiAbsenIn != "TUGAS LUAR KANTOR"
+            ) {
               if (jam2 > jam1) {
                 const selisihWaktu = jam1.getTime() - jam2.getTime();
                 // Menghitung selisih dalam menit
@@ -7947,7 +7957,7 @@ module.exports = {
               // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
               const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = 'SIS202412070' AND approve2_status = 'Approve'`;
               const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
-              if (cekTugasLuar == 0 && lokasiAbsenOut != 'TUGAS LUAR KANTOR') {
+              if (cekTugasLuar == 0 && lokasiAbsenOut != "TUGAS LUAR KANTOR") {
                 if (jam2 < jam1) {
                   const selisihWaktu = jam1.getTime() - jam2.getTime();
 
@@ -13069,11 +13079,11 @@ a.typeid,
     } else if (url_data == "kasbon") {
       queryApproval = query8;
     } else if (url_data == "surat_peringatan") {
-      queryApproval = query11 ;
+      queryApproval = query11;
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
-    
+
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
