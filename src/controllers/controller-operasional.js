@@ -7137,13 +7137,13 @@ module.exports = {
 
             const [cekIzin] = await connection.query(queryCekIzinTerlambat);            
             const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
-            
+            const [cekharilibur] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`);
             const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
 
 
             
 
-            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR') {
+            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
 
               console.log('query cek izin terlambat', queryCekIzinTerlambat);
               
@@ -7239,7 +7239,7 @@ module.exports = {
             )
             SELECT RankedAttendance1.* 
               FROM RankedAttendance1 
-              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
+              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND emp_shift.off_date ='1'
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance1.signin_time
               AND RankedAttendance1.em_id='${em_id}'`;
@@ -7270,14 +7270,14 @@ module.exports = {
 
               SELECT RankedAttendance1.* 
               FROM RankedAttendance1 
-              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
+              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND emp_shift.off_date ='1'
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance1.signin_time
               AND RankedAttendance1.em_id='${em_id}'    
               UNION ALL 
               SELECT RankedAttendance2.* 
               FROM RankedAttendance2 
-              JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date
+              JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date AND emp_shift.off_date ='1'
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance2.signin_time
               AND RankedAttendance2   .em_id='${em_id}'   
@@ -7651,8 +7651,9 @@ module.exports = {
               const [cekIzin] = await connection.query(queryCekIzinTerlambat);
               const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve'`;
               const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
-
-              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR') {
+              const [cekharilibur] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`);
+            
+              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
                 
               }else{
 
@@ -7720,7 +7721,7 @@ module.exports = {
       )
       SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
-        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
+        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND off_date = '1'
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1  AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
         AND RankedAttendance1.em_id='${em_id}'   
@@ -7754,7 +7755,7 @@ module.exports = {
 
         SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
-        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
+        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND off_date = '1'
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1  AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
         AND RankedAttendance1.em_id='${em_id}'   
@@ -7762,7 +7763,7 @@ module.exports = {
         UNION ALL 
         SELECT RankedAttendance2.* 
         FROM RankedAttendance2 
-        JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date
+        JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date AND off_date = '1'
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1 AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance2 .signout_time
         AND RankedAttendance2   .em_id='${em_id}'   
