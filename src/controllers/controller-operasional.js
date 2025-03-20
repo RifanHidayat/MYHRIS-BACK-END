@@ -11776,11 +11776,11 @@ module.exports = {
     }
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
+
     var query1 = `SELECT
     CASE
     WHEN ( a.apply_status IS NULL  OR a.apply_status='Pending')  AND (a.apply_by IS NULL OR a.apply_by='') THEN "Pending"
     WHEN  (a.apply_status IS NULL  OR a.apply_status='Rejected')  AND (a.apply_by!='') AND a.leave_status='Rejected'THEN "Rejected"
-
     ELSE "Approve"
     END AS apply_status,
     CASE
