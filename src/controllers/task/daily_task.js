@@ -703,4 +703,84 @@ module.exports = {
       if (conn) conn.release();
     }
   },
+
+  async getDailyTaskPDF(req, res) {
+    console.log("-----get daily task----------");
+    console.log("Data Absen:", req.body);
+
+    const em_id = req.body.em_id;
+    const id = req.query.id || req.body.id; // Ambil id dari query atau body
+    const database = req.query.database;
+
+    const startPeriode = req.query.start_periode || "2024-02-03";
+    const endPeriode = req.query.end_periode || "2024-02-03";
+
+    const convertYear = startPeriode.substring(2, 4);
+    const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    let namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+
+    // Kondisi untuk perubahan nama database jika periode berbeda
+    const date1 = new Date(startPeriode);
+    const date2 = new Date(endPeriode);
+    const montStart = date1.getMonth() + 1;
+    const monthEnd = date2.getMonth() + 1;
+
+    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+      const endPeriodeDynamic = `${database}_hrm${endPeriode.substring(2, 4)}${
+        endPeriode.split("-")[1]
+      }`;
+      namaDatabaseDynamic = endPeriodeDynamic;
+    }
+
+    console.log("Nama Database Dinamis:", namaDatabaseDynamic);
+
+    const connection = await models.createConnection1(`${database}_hrm`);
+    let conn;
+
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const query = `SELECT 
+    dt.tgl_buat, 
+    dt.em_id, 
+    dtd.judul, 
+    dtd.rincian, 
+    dtd.status, 
+    dtd.tgl_finish, 
+    dtd.level, 
+    e.full_name,
+    e.job_title AS posisi,
+    d.name AS jabatan
+FROM ${namaDatabaseDynamic}.daily_task dt
+INNER JOIN ${namaDatabaseDynamic}.daily_task_detail dtd ON dt.id = dtd.daily_task_id
+INNER JOIN employee e ON dt.em_id = e.em_id
+INNER JOIN designation d ON e.des_id = d.id
+WHERE dt.em_id = '${em_id}' 
+AND dt.status_pengajuan = 'post'
+ORDER BY dt.tgl_buat ASC
+`;
+      console.log(query);
+      const [result] = await conn.query(query, [id]);
+
+      await conn.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: "Succesfully get data",
+        data: result,
+      });
+    } catch (error) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Gagal mendapatkan data AllDailyTask", error);
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
 };
