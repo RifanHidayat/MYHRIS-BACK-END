@@ -9095,6 +9095,7 @@ module.exports = {
       const [results] = await conn.query(
         `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`
       );
+      console.log(`SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -15446,7 +15447,7 @@ GROUP BY TBL.full_name`;
     var query_cuti = `SELECT COUNT(*) as jumlah_cuti FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND status_transaksi='1' AND ajuan='1'`;
     var query_lembur = `SELECT COUNT(*) as jumlah_lembur FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND ajuan='1'`;
     var query_masuk_wfh = `SELECT COUNT(*) as jumlah_masuk_wfh FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND place_in='WFH'`;
-    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='CLD SISCOM' AND atttype='1'`;
+    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1'`;
 
     var query_jumlah_kerja = `SELECT IFNULL( workday,'22') as workday FROM ${database}_hrm.employee WHERE em_id='${em_id}'`;
 
@@ -15517,7 +15518,8 @@ GROUP BY TBL.full_name`;
       const [results] = await conn.query(
         `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
       );
-
+      console.log('ini load aktifitas');
+      console.log(results);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -15528,7 +15530,7 @@ GROUP BY TBL.full_name`;
         data_lembur: results[4],
         data_masukwfh: results[5],
         data_absentepatwaktu: results[6],
-        data_employee: "22",
+        data_employee: results[7],
         data_masuk_kerja: results[0],
       });
     } catch (e) {
