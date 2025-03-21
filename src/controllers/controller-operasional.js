@@ -7134,32 +7134,32 @@ module.exports = {
 
             
             var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected  LIKE '%${req.body.tanggal_absen}%' AND em_id = '${em_id}' AND leave_status = 'Approve2'  AND typeid = '8' AND time_plan >= '${formattedTime}' `;
-
+            const [cekAbsenKeberapaNih] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id ='${em_id}' AND  atten_date = '${req.body.tanggal_absen}' AND signout_time != '00:00:00'`)
             const [cekIzin] = await connection.query(queryCekIzinTerlambat);            
             const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
             const [cekharilibur] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`);
             const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
 
 
-            
+            if (cekAbsenKeberapaNih.length == 0){
+              if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
 
-            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
-
-              console.log('query cek izin terlambat', queryCekIzinTerlambat);
+                console.log('query cek izin terlambat', queryCekIzinTerlambat);
+                
               
-            
-            }else{
-              console.log('query cek izin terlambat', queryCekIzinTerlambat);
-              console.log('masuk absen terlambat');
-
-              if (jam2 > jam1) {
-                const selisihWaktu = jam1.getTime() - jam2.getTime();
-                // Menghitung selisih dalam menit
-                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
-                title = "Absen Datang Terlambat";
-                deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
-                isNotif = true;
-                statusAbsen = "terlambat";
+              }else{
+                console.log('query cek izin terlambat', queryCekIzinTerlambat);
+                console.log('masuk absen terlambat');
+  
+                if (jam2 > jam1) {
+                  const selisihWaktu = jam1.getTime() - jam2.getTime();
+                  // Menghitung selisih dalam menit
+                  const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+                  title = "Absen Datang Terlambat";
+                  deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
+                  isNotif = true;
+                  statusAbsen = "terlambat";
+                }
               }
             }
           }
@@ -7233,8 +7233,11 @@ module.exports = {
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
                 WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
+                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
+                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
 
-                ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
+                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
+                ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
                 FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
             )
             SELECT RankedAttendance1.* 
@@ -7255,16 +7258,22 @@ module.exports = {
                   (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
                   (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
                 WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
+                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
+                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
 
-                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
+                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
+                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
                   FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
               ),RankedAttendance2 AS (
                 SELECT *,
                 (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
                 WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
+                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
+                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
 
-                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
+                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
+                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
                 FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
             )
 
@@ -7285,7 +7294,7 @@ module.exports = {
               
               `;
             }
-            queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE TBL.cuti IS NULL AND TBL.izin IS NULL`;
+            queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE (TBL.total_entries > 1) OR (TBL.cuti IS NULL AND TBL.izin IS NULL AND TBL.lembur IS NULL)`;
 
             console.log("ini query terlambat yakk", queryTerlambat);
 
@@ -7538,7 +7547,7 @@ module.exports = {
                 }
               }
             }else{
-            deskription = `Anda sudah terlambat ${terlambat.length}x. Mohon perhatikan waktu kedatangan di lain kesempatan jika terlambat lagi. Kami akan mengeluarkan anda dari perusahaan ini HAHAHAHAHAHH :v`;
+            deskription = `Anda sudah terlambat ${terlambat.length}x. Mohon perhatikan waktu kedatangan anda di lain kesempatan`;
             }
           }
         } else {
@@ -8032,7 +8041,7 @@ module.exports = {
                   }
                 }
               } else{
-              deskription = `Anda tercatat melakukan absensi pulang cepat  ${pulangCepat.length}x. Mohon perhatikan waktu absensi anda di lain kesempatan. Jika anda melakukan absensi pulang cepat lagi. Kami akan mengeluarkan anda dari perusahaan ini HAHAHAHAHAHH :v`;
+              deskription = `Anda tercatat melakukan absensi pulang cepat  ${pulangCepat.length}x. Mohon perhatikan waktu absensi anda di lain kesempatan.`;
             
               }
             }

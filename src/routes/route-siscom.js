@@ -222,6 +222,7 @@ router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
 router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
 router.get('/getDailyMonitoring',dailyTask.employeeMonotoringDaily);
 router.post('/getTaskDaily',dailyTask.getDailyTask);
+router.post('/getTaskDailyPDF',dailyTask.getDailyTaskPDF);
 router.post('/insertTaskDaily',dailyTask.insertDailyTask);
 router.post('/insertDraftDaily',dailyTask.insertDraft);
 router.post('/updateDraftDaily',dailyTask.updateDraft);
