@@ -91,20 +91,23 @@ module.exports = {
       const [sysdata] = await conn.query(
         `SELECT * FROM sysdata WHERE kode='034'`
       );
+      const delegationIds = employee[0].em_report_to
+          ? Array.isArray(employee[0].em_report_to)
+            ? employee[0].em_report_to
+            : [employee[0].em_report_to]
+          : [];
+
+        const emIds = employee[0].em_report2_to
+          ? Array.isArray(employee[0].em_report2_to)
+            ? employee[0].em_report2_to
+            : [employee[0].em_report2_to]
+          : [];
+
+          
+        const combinedIds = [...delegationIds, ...emIds];
       utility.insertNotifikasi(
-        employee[0].em_report_to,
+        combinedIds,
         "Approval Tugas Luar",
-        "TugasLuar",
-        employee[0].em_id,
-        transaksi[0].id,
-        transaksi[0].nomor_ajuan,
-        employee[0].full_name,
-        namaDatabaseDynamic,
-        databaseMaster
-      );
-      utility.insertNotifikasi(
-        sysdata[0].name==null?"":sysdata[0].name,
-        "Pengajuan  Tugas Luar",
         "TugasLuar",
         employee[0].em_id,
         transaksi[0].id,
@@ -117,11 +120,11 @@ module.exports = {
       if (sysdata.length > 0) {
         if (sysdata[0].name != null) {
           utility.insertNotifikasi(
-            sysdata[0].name==null?"":sysdata[0].name,
-            "Pengajuan  Tugas Luar",
+            sysdata[0].name,
+            "Pengajuan Tugas Luar",
             "TugasLuar",
             employee[0].em_id,
-            transaksi[0].id,
+            null,
             transaksi[0].nomor_ajuan,
             employee[0].full_name,
             namaDatabaseDynamic,

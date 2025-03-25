@@ -73,7 +73,7 @@ module.exports = {
     }
     const databaseMaster = `${database}_hrm`;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    
+
     var nomorLb = `CT20${convertYear}${convertBulan}`;
     var script = `INSERT INTO ${namaDatabaseDynamic}.emp_leave SET ?`;
     var transaksi = "";
@@ -120,12 +120,12 @@ WHERE e.em_id = '${req.body.em_id}'
     AND status_transaksi=1 
     AND leave_status IN ('Pending','Approve','Approve2')`;
 
-    //         let subQueryPending = `
-    // SELECT e.* FROM ${namaDatabaseDynamic}.emp_leave e
-    // JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
-    // WHERE e.em_id = '${req.body.em_id}' 
-    // AND e.status_transaksi = 1
-    // AND lt.cut_leave = 1`;
+            //         let subQueryPending = `
+            // SELECT e.* FROM ${namaDatabaseDynamic}.emp_leave e
+            // JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+            // WHERE e.em_id = '${req.body.em_id}'
+            // AND e.status_transaksi = 1
+            // AND lt.cut_leave = 1`;
 
             if (i === 0) {
               query = subQuery;
@@ -174,8 +174,10 @@ WHERE e.em_id = '${req.body.em_id}'
               console.log(dataPending);
               console.log(jumlahCuti);
               console.log(cutLeave);
-              const totalLeaveDuration = (dataPending[0]?.total_leave_duration || 0) + req.body.leave_duration;
-              if (cutLeave == 1){
+              const totalLeaveDuration =
+                (dataPending[0]?.total_leave_duration || 0) +
+                req.body.leave_duration;
+              if (cutLeave == 1) {
                 if (totalLeaveDuration > jumlahCuti) {
                   isError = true;
                   pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
@@ -464,9 +466,31 @@ WHERE e.em_id = '${req.body.em_id}'
                                           });
                                           return;
                                         }
+                                        const delegationIds = employee[0]
+                                          .em_report_to
+                                          ? Array.isArray(
+                                              employee[0].em_report_to
+                                            )
+                                            ? employee[0].em_report_to
+                                            : [employee[0].em_report_to]
+                                          : [];
 
+                                        const emIds = employee[0].em_report2_to
+                                          ? Array.isArray(
+                                              employee[0].em_report2_to
+                                            )
+                                            ? employee[0].em_report2_to
+                                            : [employee[0].em_report2_to]
+                                          : [];
+
+                                        const combinedIds = [
+                                          ...delegationIds,
+                                          ...emIds,
+                                        ];
+                                        
+                                        console.log('ini syy data cuti ',sysdataCuti[1]);
                                         utility.insertNotifikasi(
-                                          employee[0].em_report_to,
+                                          combinedIds,
                                           "Approval Cuti",
                                           "Cuti",
                                           employee[0].em_id,
@@ -481,7 +505,7 @@ WHERE e.em_id = '${req.body.em_id}'
                                           "Pengajuan Cuti",
                                           "Cuti",
                                           employee[0].em_id,
-                                          transaksi[0].id,
+                                          null,
                                           transaksi[0].nomor_ajuan,
                                           employee[0].full_name,
                                           namaDatabaseDynamic,
@@ -515,7 +539,7 @@ WHERE e.em_id = '${req.body.em_id}'
                                               status: true,
                                               message:
                                                 "Kombinasi email & password Anda Salah",
-                                              tipe: sysdataCuti[0].name,
+                                              tipe: sysdataCuti[1].name,
                                               sisa_cuti:
                                                 cutiData[0].saldo_cut_off +
                                                 cutiData[0]
@@ -535,7 +559,7 @@ WHERE e.em_id = '${req.body.em_id}'
                                               status: true,
                                               message:
                                                 "Kombinasi email & password Anda Salah",
-                                              tipe: sysdataCuti[0].name,
+                                              tipe: sysdataCuti[1].name,
                                               sisa_cuti: 0,
                                               total_cuti: 0,
                                               keterangan:
@@ -1205,7 +1229,7 @@ WHERE e.em_id = '${req.body.em_id}'
     var dates =
       req.query.dates == undefined ? "2024-08,2024-09" : req.query.dates;
 
-    console.log('ini req.query', req.query);
+    console.log("ini req.query", req.query);
 
     var query = ``;
 
@@ -1491,29 +1515,29 @@ WHERE e.em_id = '${req.body.em_id}'
              status IN (1) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);
-        let conn;
-        try {
-          conn = await connection.getConnection();
-          await conn.beginTransaction;
-          const [result] = await conn.query(query);
-          await conn.commit();
-          return res.status(200).send({
-            status: true,
-            message: "Succsefully get tipe cuti",
-            data: result,
-          });
-        } catch (e) {
-          if (conn) {
-            await conn.rollback();
-          }
-          console.error("Error ouy", e);
-          return res.status(400).send({
-            status: false,
-            message: "ERRoe",
-          });
-        } finally {
-          if (conn) await conn.release();
-        }
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction;
+      const [result] = await conn.query(query);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Succsefully get tipe cuti",
+        data: result,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error ouy", e);
+      return res.status(400).send({
+        status: false,
+        message: "ERRoe",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
 
     try {
       const connection = await model.createConnection(database);
