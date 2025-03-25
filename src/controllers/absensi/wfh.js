@@ -41,7 +41,7 @@ module.exports = {
     //     return res.status(400).json({ errors: errors.array() });
     // }
 
-    var time=req.body.time;
+    var time=req.body.waktu;
     var emId=req.body.em_id;
     var status=req.body.status;
     var uraian=req.body.uraian;
