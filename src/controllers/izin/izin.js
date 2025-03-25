@@ -965,18 +965,6 @@ WHERE e.em_id = '${req.body.em_id}'
                                                   return;
                                                 }
 
-                                                utility.insertNotifikasi(
-                                                  employee[0].em_report_to,
-                                                  "Approval Izin",
-                                                  "Izin",
-                                                  employee[0].em_id,
-                                                  transaksi[0].id,
-                                                  transaksi[0].nomor_ajuan,
-                                                  employee[0].full_name,
-                                                  namaDatabaseDynamic,
-                                                  databaseMaster
-                                                );
-
                                                 var queryGlobal = `SELECT * FROM ${databaseMaster}.sysdata WHERE kode = '032'`;
                                                 connection.query(
                                                   queryGlobal,
@@ -1001,12 +989,55 @@ WHERE e.em_id = '${req.body.em_id}'
                                                       );
                                                       return;
                                                     }
+                                                    const delegationIds =
+                                                      employee[0].em_report_to
+                                                        ? Array.isArray(
+                                                            employee[0]
+                                                              .em_report_to
+                                                          )
+                                                          ? employee[0]
+                                                              .em_report_to
+                                                          : [
+                                                              employee[0]
+                                                                .em_report_to,
+                                                            ]
+                                                        : [];
+
+                                                    const emIds = employee[0]
+                                                      .em_report2_to
+                                                      ? Array.isArray(
+                                                          employee[0]
+                                                            .em_report2_to
+                                                        )
+                                                        ? employee[0]
+                                                            .em_report2_to
+                                                        : [
+                                                            employee[0]
+                                                              .em_report2_to,
+                                                          ]
+                                                      : [];
+
+                                                    const combinedIds = [
+                                                      ...delegationIds,
+                                                      ...emIds,
+                                                    ];
                                                     utility.insertNotifikasi(
-                                                      global[0].name,
+                                                      combinedIds,
                                                       "Approval Izin",
                                                       "Izin",
                                                       employee[0].em_id,
                                                       transaksi[0].id,
+                                                      transaksi[0].nomor_ajuan,
+                                                      employee[0].full_name,
+                                                      namaDatabaseDynamic,
+                                                      databaseMaster
+                                                    );
+                                                    utility.insertNotifikasi(
+                                                      global[0].name,
+                                                      "Pengajuan Izin",
+                                                      "Izin",
+                                                      employee[0].em_id,
+                                                      null,
                                                       transaksi[0].nomor_ajuan,
                                                       employee[0].full_name,
                                                       namaDatabaseDynamic,
