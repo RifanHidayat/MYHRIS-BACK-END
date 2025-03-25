@@ -750,10 +750,12 @@ module.exports = {
     dtd.level, 
     e.full_name,
     e.job_title AS posisi,
-    d.name AS jabatan
+    d.name AS jabatan,
+    dep.name AS divisi
 FROM ${namaDatabaseDynamic}.daily_task dt
 INNER JOIN ${namaDatabaseDynamic}.daily_task_detail dtd ON dt.id = dtd.daily_task_id
 INNER JOIN employee e ON dt.em_id = e.em_id
+INNER JOIN department dep ON e.dep_id = dep.id
 INNER JOIN designation d ON e.des_id = d.id
 WHERE dt.em_id = '${em_id}' 
 AND dt.status_pengajuan = 'post'
