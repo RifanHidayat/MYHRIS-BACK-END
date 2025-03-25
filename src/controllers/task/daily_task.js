@@ -615,8 +615,8 @@ module.exports = {
       console.log("tes tes", results[0]);
 
       const [employee] =
-        await conn.query(`SELECT employee.em_email,employee.full_name,employee.em_id FROM employee WHERE em_id  IN (${emidsConver})
-                       UNION ALL SELECT employee.em_email,employee.full_name,employee.em_id FROM employee WHERE em_id='${emId}' `);
+        await conn.query(`SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id  IN (${emidsConver})
+                       UNION ALL SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id='${emId}' `);
       await conn.commit();
       return res.status(200).send({
         status: true,

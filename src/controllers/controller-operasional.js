@@ -9095,6 +9095,7 @@ module.exports = {
       const [results] = await conn.query(
         `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`
       );
+      console.log(`SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -12836,8 +12837,121 @@ a.typeid,
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
+    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL ORDER BY id DESC`;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
+    // var query2 = `SELECT * FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL`;
+
+    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
+      UNION ALL
+      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      ORDER BY idd DESC
+      `;
+
+      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}'  AND atten_date>='${startPeriode}'
+      UNION ALL
+      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      `;
+    }
+
+    console.log(query1);
+    console.log();
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [dataTanggal] = await conn.query(query1);
+      var listTanggal = dataTanggal;
+      let filter1 = [];
+      listTanggal.forEach((element) => {
+        filter1.push(element["atten_date"]);
+      });
+      filter1 = filter1.filter(
+        (value, index, arr) => arr.indexOf(value) == index
+      );
+      const [dataAll] = await conn.query(query2);
+      var allData = dataAll;
+      console.log("");
+      var hasilFinal = [];
+      filter1.forEach((element) => {
+        var turunan = [];
+
+        allData.forEach((element2) => {
+          if (element2["atten_date"] == element) {
+            turunan.push(element2);
+          }
+        });
+
+        var data = {
+          tanggal: element,
+          notifikasi: turunan,
+        };
+        hasilFinal.push(data);
+        hasilFinal = hasilFinal.sort((a, b) => a.tanggal - b.tanggal);
+
+        console.log("hasil final ", hasilFinal);
+      });
+      console.log("hasil final ", hasilFinal);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: hasilFinal,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+  },
+
+  async load_notifikasiApproval(req, res) {
+    console.log("-----load aktifitas notifikasi----------");
+    var database = req.query.database;
+    var em_id = req.body.em_id;
+
+    var getTahun = req.body.tahun;
+    var getBulan = req.body.bulan;
+
+    const tahun = `${getTahun}`;
+    const convertYear = tahun.substring(2, 4);
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${getBulan}`;
+
+    var startPeriode =
+      req.query.start_periode == undefined
+        ? "2024-02-03"
+        : req.query.start_periode;
+    var endPeriode =
+      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    var array1 = startPeriode.split("-");
+    var array2 = endPeriode.split("-");
+
+    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
+      array1[1]
+    }`;
+    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
+      array2[1]
+    }`;
+
+    let date1 = new Date(startPeriode);
+    let date2 = new Date(endPeriode);
+
+    const montStart = date1.getMonth() + 1;
+    const monthEnd = date2.getMonth() + 1;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
+    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
+    // var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
@@ -15446,7 +15560,7 @@ GROUP BY TBL.full_name`;
     var query_cuti = `SELECT COUNT(*) as jumlah_cuti FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND status_transaksi='1' AND ajuan='1'`;
     var query_lembur = `SELECT COUNT(*) as jumlah_lembur FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND ajuan='1'`;
     var query_masuk_wfh = `SELECT COUNT(*) as jumlah_masuk_wfh FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND place_in='WFH'`;
-    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='CLD SISCOM' AND atttype='1'`;
+    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1'`;
 
     var query_jumlah_kerja = `SELECT IFNULL( workday,'22') as workday FROM ${database}_hrm.employee WHERE em_id='${em_id}'`;
 
@@ -15473,7 +15587,7 @@ GROUP BY TBL.full_name`;
     const monthEnd = date2.getMonth() + 1;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query_masuk_kerja = `SELECT atten_date FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
+      query_masuk_kerja = `SELECT atten_date FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
       UNION 
       SELECT atten_date FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
       `;
@@ -15517,7 +15631,8 @@ GROUP BY TBL.full_name`;
       const [results] = await conn.query(
         `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
       );
-
+      console.log('ini load aktifitas');
+      console.log(results);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -15528,7 +15643,7 @@ GROUP BY TBL.full_name`;
         data_lembur: results[4],
         data_masukwfh: results[5],
         data_absentepatwaktu: results[6],
-        data_employee: "22",
+        data_employee: results[7],
         data_masuk_kerja: results[0],
       });
     } catch (e) {
