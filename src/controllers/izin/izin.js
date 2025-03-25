@@ -209,9 +209,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
                       if (results.length > 0) {
                         error = true;
-                        pesan = `Kamu mempunyai pengajuan 
-                              Tugas Luar dengan nomor ${results[0].nomor_ajuan}  pada tanggal 
-                              ${dates[i]} status ${results[0].status}`;
+                        pesan = `Kamu mempunyai pengajuan Tugas Luar dengan nomor ${results[0].nomor_ajuan}  pada tanggal ${results[0].atten_date} status ${results[0].status}`;
                       }
 
                       connection.query(
@@ -376,10 +374,40 @@ WHERE e.em_id = '${req.body.em_id}'
 
                                                     console.log("kenotif 1");
 
-                                                    //notifikasi approval
-                                                    //  utility.insertNotifikasi(employee[0].em_report_to,title,'Izin',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
+                                                    const delegationIds =
+                                                      employee[0].em_report_to
+                                                        ? Array.isArray(
+                                                            employee[0]
+                                                              .em_report_to
+                                                          )
+                                                          ? employee[0]
+                                                              .em_report_to
+                                                          : [
+                                                              employee[0]
+                                                                .em_report_to,
+                                                            ]
+                                                        : [];
+
+                                                    const emIds = employee[0]
+                                                      .em_report2_to
+                                                      ? Array.isArray(
+                                                          employee[0]
+                                                            .em_report2_to
+                                                        )
+                                                        ? employee[0]
+                                                            .em_report2_to
+                                                        : [
+                                                            employee[0]
+                                                              .em_report2_to,
+                                                          ]
+                                                      : [];
+
+                                                    const combinedIds = [
+                                                      ...delegationIds,
+                                                      ...emIds,
+                                                    ];
                                                     utility.insertNotifikasi(
-                                                      employee[0].em_report_to,
+                                                      combinedIds,
                                                       "Approval Izin",
                                                       "Izin",
                                                       employee[0].em_id,
@@ -391,10 +419,10 @@ WHERE e.em_id = '${req.body.em_id}'
                                                     );
                                                     utility.insertNotifikasi(
                                                       sysdata[0].name,
-                                                      "Pengajuan Sakit",
+                                                      "Pengajuan Izin",
                                                       "Izin",
                                                       employee[0].em_id,
-                                                      transaksi[0].id,
+                                                      null,
                                                       transaksi[0].nomor_ajuan,
                                                       employee[0].full_name,
                                                       namaDatabaseDynamic,
@@ -807,9 +835,7 @@ WHERE e.em_id = '${req.body.em_id}'
                             // connection.end();
                             return res.status(400).send({
                               status: true,
-                              message: `Kamu mempunyai pengajuan 
-                              Tugas Luar dengan nomor ${results[0].nomor_ajuan}  pada tanggal 
-                              ${dates[i]} status ${results[0].status}`,
+                              message: `Kamu mempunyai pengajuan Tugas Luar dengan nomor ${results[0].nomor_ajuan}  pada tanggal ${results[0].atten_date} status ${results[0].status}`,
                               data: [],
                             });
                           });
@@ -1644,29 +1670,29 @@ WHERE e.em_id = '${req.body.em_id}'
       query = query + " ORDER BY idd DESC";
     }
     const connection = await model.createConnection1(`${database}_hrm`);
-        let conn;
-        try {
-          conn = await connection.getConnection();
-          await conn.beginTransaction;
-          const [results] = await conn.query(query);
-          await conn.commit();
-          return res.status(200).send({
-            status: true,
-            message: "Succsefully get history izin",
-            data: results,
-          });
-        } catch (e) {
-          if (conn) {
-            await conn.rollback();
-          }
-          console.error("Error ouy", e);
-          return res.status(400).send({
-            status: false,
-            message: "ERRoe",
-          });
-        } finally {
-          if (conn) await conn.release();
-        }
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction;
+      const [results] = await conn.query(query);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Succsefully get history izin",
+        data: results,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error ouy", e);
+      return res.status(400).send({
+        status: false,
+        message: "ERRoe",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   async tipeIzin(req, res) {
@@ -1690,30 +1716,30 @@ WHERE e.em_id = '${req.body.em_id}'
        status IN (2,3) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);
-        let conn;
-        try {
-          conn = await connection.getConnection();
-          await conn.beginTransaction;
-          const [result] = await conn.query(query);
-          await conn.commit();
-          return res.status(200).send({
-            status: true,
-            message: "Succsefully get tipe izin",
-            data: result,
-          });
-        } catch (e) {
-          if (conn) {
-            await conn.rollback();
-          }
-          console.error("Error ouy", e);
-          return res.status(400).send({
-            status: false,
-            message: "ERRoe",
-          });
-        } finally {
-          if (conn) await conn.release();
-        }
-      
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction;
+      const [result] = await conn.query(query);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Succsefully get tipe izin",
+        data: result,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("Error ouy", e);
+      return res.status(400).send({
+        status: false,
+        message: "ERRoe",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
