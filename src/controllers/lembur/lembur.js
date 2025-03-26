@@ -260,7 +260,10 @@ module.exports = {
             : [bodyValue.em_ids]
           : [];
 
-        const combinedIds = [...delegationIds, ...emIds];
+          const combinedIds = [...new Set([
+            ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
+            ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
+          ])];
 
         utility.insertNotifikasi(
           combinedIds,
@@ -287,7 +290,11 @@ module.exports = {
           : [];
 
           
-        const combinedIds = [...delegationIds, ...emIds];
+          const combinedIds = [...new Set([
+            ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
+            ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
+          ])];
+        console.log('ini combinasi id', combinedIds);
         utility.insertNotifikasi(
           combinedIds,
           "Approval Lembur",

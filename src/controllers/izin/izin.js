@@ -402,10 +402,10 @@ WHERE e.em_id = '${req.body.em_id}'
                                                           ]
                                                       : [];
 
-                                                    const combinedIds = [
-                                                      ...delegationIds,
-                                                      ...emIds,
-                                                    ];
+                                                      const combinedIds = [...new Set([
+                                                        ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
+                                                        ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
+                                                      ])];
                                                     utility.insertNotifikasi(
                                                       combinedIds,
                                                       "Approval Izin",
@@ -1017,10 +1017,10 @@ WHERE e.em_id = '${req.body.em_id}'
                                                           ]
                                                       : [];
 
-                                                    const combinedIds = [
-                                                      ...delegationIds,
-                                                      ...emIds,
-                                                    ];
+                                                      const combinedIds = [...new Set([
+                                                        ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
+                                                        ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
+                                                      ])];
                                                     utility.insertNotifikasi(
                                                       combinedIds,
                                                       "Approval Izin",
