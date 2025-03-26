@@ -815,14 +815,8 @@ module.exports = {
     var query = "";
     console.log(req.query);
 
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
-    const startDate =
-      req.query.start_periode?.trim() || firstDay.toISOString().split("T")[0];
-    const endDate =
-      req.query.end_periode?.trim() || lastDay.toISOString().split("T")[0];
+    var startDate = req.query.start_periode;
+    var endDate = req.query.end_periode;
     var array = endDate.split("-");
     const connection = await model.createConnection1(`${database}_hrm`);
     var databseDinamik = `${database}_hrm${array[0].substring(
@@ -7133,33 +7127,30 @@ module.exports = {
             const jam2 = new Date(`${dateNow}T${jamAbsen}`); // 2:30 PM
 
             
-            var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected  LIKE '%${req.body.tanggal_absen}%' AND em_id = '${em_id}' AND leave_status = 'Approve2'  AND typeid = '8' AND time_plan >= '${formattedTime}' `;
-            const [cekAbsenKeberapaNih] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id ='${em_id}' AND  atten_date = '${req.body.tanggal_absen}' AND signout_time != '00:00:00'`)
+            var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected  LIKE '%${req.body.tanggal_absen}%' AND leave_status = 'Approve2'  AND ajuan='2' `;
+
             const [cekIzin] = await connection.query(queryCekIzinTerlambat);            
             const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
-            const [cekharilibur] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`);
+            
             const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
 
+            
 
-            if (cekAbsenKeberapaNih.length == 0){
-              if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
-
-                console.log('query cek izin terlambat', queryCekIzinTerlambat);
-                
+            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR') {
+              console.log('masuk sini');
               
-              }else{
-                console.log('query cek izin terlambat', queryCekIzinTerlambat);
-                console.log('masuk absen terlambat');
-  
-                if (jam2 > jam1) {
-                  const selisihWaktu = jam1.getTime() - jam2.getTime();
-                  // Menghitung selisih dalam menit
-                  const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
-                  title = "Absen Datang Terlambat";
-                  deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
-                  isNotif = true;
-                  statusAbsen = "terlambat";
-                }
+            
+            }else{
+              console.log('masuk absen terlambat');
+              
+              if (jam2 > jam1) {
+                const selisihWaktu = jam1.getTime() - jam2.getTime();
+                // Menghitung selisih dalam menit
+                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+                title = "Absen Datang Terlambat";
+                deskription = `Pemberitahuan: Anda datang terlambat. Mohon perhatikan waktu kedatangan di lain kesempatan`;
+                isNotif = true;
+                statusAbsen = "terlambat";
               }
             }
           }
@@ -7231,18 +7222,13 @@ module.exports = {
             var queryTerlambat = `WITH RankedAttendance1 AS (
                 SELECT *, 
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
-                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
-                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
-                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
-
-                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
-                ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
+              
+                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                 FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
             )
             SELECT RankedAttendance1.* 
               FROM RankedAttendance1 
-              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND emp_shift.off_date ='1'
+              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance1.signin_time
               AND RankedAttendance1.em_id='${em_id}'`;
@@ -7256,37 +7242,26 @@ module.exports = {
                 WITH RankedAttendance1 AS (
                   SELECT *, 
                   (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
-                  (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
-                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
-                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
-
-                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
-                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
+                
+                         ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                   FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
               ),RankedAttendance2 AS (
                 SELECT *,
                 (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
-                (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
-                (SELECT nomor_ajuan FROM ${startPeriodeDynamic}.emp_labor
-                WHERE em_id='${em_id}' AND  emp_labor.status='Approve2'  AND atten_date  LIKE CONCAT('%',attendance.atten_date,'%')  LIMIT 1) AS lembur ,
-
-                COUNT(*) OVER (PARTITION BY atten_date) AS total_entries,
-                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id ASC) AS row_num
+                       ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
                 FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
             )
 
               SELECT RankedAttendance1.* 
               FROM RankedAttendance1 
-              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND emp_shift.off_date ='1'
+              JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance1.signin_time
               AND RankedAttendance1.em_id='${em_id}'    
               UNION ALL 
               SELECT RankedAttendance2.* 
               FROM RankedAttendance2 
-              JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date AND emp_shift.off_date ='1'
+              JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date
               LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
               WHERE row_num = 1 AND IFNULL(work_schedule.time_in,'08:30') < RankedAttendance2.signin_time
               AND RankedAttendance2   .em_id='${em_id}'   
@@ -7294,14 +7269,19 @@ module.exports = {
               
               `;
             }
-            queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE (TBL.total_entries > 1) OR (TBL.cuti IS NULL AND TBL.izin IS NULL AND TBL.lembur IS NULL)`;
+            queryTerlambat = `SELECT * FROM (${queryTerlambat}) AS TBL WHERE TBL.cuti IS NULL`;
 
             console.log("ini query terlambat yakk", queryTerlambat);
 
             const [terlambat] = await connection.query(queryTerlambat);
             console.log("masuk sini ", terlambat.length);
             console.log("masuk sini ", sysdata[0].name);
-            deskription = `Anda sudah terlambat ${terlambat.length}x. Mohon perhatikan waktu kedatangan di lain kesempatan jika terlambat mencapai ${parseInt(sysdata[1].name)}x. Kami akan mengeluarkan surat peringatan`;
+            deskription = `Anda sudah terlambat ${
+              terlambat.length
+            }x. Mohon perhatikan waktu kedatangan di lain kesempatan 
+              jika terlambat mencapai ${parseInt(
+                sysdata[1].name
+              )}x. Kami akan mengeluarkan surat peringatan`;
             console.log("ini employe", employee);
             utility.insertNotifikasiAbsensi(
               sysdata[2].name,
@@ -7315,8 +7295,9 @@ module.exports = {
               namaDatabasMaster
             );
 
-            const [settingTipeAbsen] = await connection.query(`SELECT name FROM sysdata WHERE kode = '048'`)
-            if (settingTipeAbsen[0].name == '1') {
+            
+            var nilai = "Y";
+            if (nilai == "Y") {
               if (terlambat.length >= parseInt(sysdata[1].name)) {
                 var status = "Pending";
                 var alasan = `Absen datang terlambat ${terlambat.length}x.`;
@@ -7546,8 +7527,238 @@ module.exports = {
                   }
                 }
               }
-            }else{
-            deskription = `Anda sudah terlambat ${terlambat.length}x. Mohon perhatikan waktu kedatangan anda di lain kesempatan`;
+            } else {
+              if (terlambat.length == parseInt(sysdata[1].name)) {
+                statusSpName = "Surat Peringatan 1";
+                (statussp = "sp1"), (idSp = "2");
+              }
+
+              if (terlambat.length == parseInt(sysdata[3].name)) {
+                statusSpName = "Surat Peringatan 2";
+                statussp = "sp2";
+                idSp = "3";
+              }
+
+              if (terlambat.length == parseInt(sysdata[1].name)) {
+                var status = "Pending";
+                var alasan = "Absen datang terlambat";
+                var approveStatus = "Pending";
+                var titleAbsen = "Absen Datang Terlambat";
+
+                const [cekDataSp] =
+                  await connection.query(`SELECT * FROM employee_letter
+                   WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') 
+                   AND alasan LIKE '%${alasan}%'
+                   AND eff_date >=CURDATE() AND CURDATE()<=exp_date AND title='${titleAbsen}' ORDER BY id DESC`);
+
+                if (cekDataSp.length > 0) {
+                  // suda dapat sp1
+                  if (cekDataSp[0]["letter_id"] == "2") {
+                    if (terlambat.length >= parseInt(sysdata[3].name)) {
+                      // SP 2
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtgl2}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else {
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
+                    }
+                  } else if (cekDataSp[0]["letter_id"] == "3") {
+                    if (terlambat.length >= parseInt(sysdata[4].name)) {
+                      // SP 3
+                      deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                          `;
+
+                      const [dataSp] = await connection.query(
+                        `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                      );
+                      nomorSp = `SP${year}${convertBulan}`;
+                      if (dataSp.length > 0) {
+                        var text = dataSp[0]["nomor"];
+                        var nomor = parseInt(text.substring(9, 14)) + 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      } else {
+                        var nomor = 1;
+                        var nomorStr = String(nomor).padStart(4, "0");
+                        nomorSp = nomorSp + nomorStr;
+                      }
+
+                      const [data] =
+                        await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                      const [insertDetail] = await connection.query(
+                        `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                      );
+
+                      const [sysdataSP] = await connection.query(
+                        ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                      );
+                      if (sysdataSP.length > 0) {
+                        if (sysdataSP[0].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[0].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                        if (sysdataSP[1].name != null) {
+                          utility.insertNotifikasiAbsensiSp(
+                            sysdataSP[1].name,
+                            "Absensi Terlambat",
+                            statusAbsen,
+                            employee[0].em_id,
+                            "",
+                            sysdataSP[0].nomor,
+                            employee[0].full_name,
+                            namaDatabaseDynamic,
+                            namaDatabasMaster,
+                            statusSpName
+                          );
+                        }
+                      }
+                    } else {
+                      deskription = `Anda sudah terlambat ${terlambat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                        `;
+                    }
+                  }
+                } else {
+                  // SP 1
+                  deskription = `Anda tercatat melakukan absensi datang terlambat ${terlambat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                    `;
+                  const [dataSp] = await connection.query(
+                    `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                  );
+                  nomorSp = `SP${year}${convertBulan}`;
+                  if (dataSp.length > 0) {
+                    var text = dataSp[0]["nomor"];
+                    var nomor = parseInt(text.substring(9, 14)) + 1;
+                    var nomorStr = String(nomor).padStart(4, "0");
+                    nomorSp = nomorSp + nomorStr;
+                  } else {
+                    var nomor = 1;
+                    var nomorStr = String(nomor).padStart(4, "0");
+                    nomorSp = nomorSp + nomorStr;
+                  }
+
+                  const [data] =
+                    await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title)
+                   VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${fixtgl}','','${status}','${approveStatus}','${titleAbsen}') `);
+
+                  const [insertDetail] = await connection.query(
+                    `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                  );
+                  //  const [sysdataSP] = await connection.query(` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026)`);
+                  // if (sysdataSP.length>0){
+
+                  //   if (sysdataSP[0].name!=null){
+
+                  //     utility.insertNotifikasiAbsensiSp(sysdataSP[0].name,'Absensi Terlambat',statusAbsen,employee[0].emId,'','',employee[0].full_name,namaDatabaseDynamic,namaDatabasMaster)
+
+                  //   }
+
+                  // }
+
+                  const [sysdataSP] = await connection.query(
+                    ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                  );
+                  if (sysdataSP.length > 0) {
+                    if (sysdataSP[0].name != null) {
+                      utility.insertNotifikasiAbsensiSp(
+                        sysdataSP[0].name,
+                        "Absensi Terlambat",
+                        statusAbsen,
+                        employee[0].em_id,
+                        "",
+                        sysdataSP[0].nomor,
+                        employee[0].full_name,
+                        namaDatabaseDynamic,
+                        namaDatabasMaster,
+                        statusSpName
+                      );
+                    }
+                    if (sysdataSP[1].name != null) {
+                      utility.insertNotifikasiAbsensiSp(
+                        sysdataSP[1].name,
+                        "Absensi Terlambat",
+                        statusAbsen,
+                        employee[0].em_id,
+                        "",
+                        "",
+                        employee[0].full_name,
+                        namaDatabaseDynamic,
+                        namaDatabasMaster,
+                        statusSpName
+                      );
+                    }
+                  }
+                }
+              } else {
+              }
             }
           }
         } else {
@@ -7656,18 +7867,14 @@ module.exports = {
               jam1.setMinutes(jam1.getMinutes() + 1);
               const jam2 = new Date(`${dateNow}T${jamAbsen}`); // jam pulang
 
-              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}' AND em_id='${em_id}' AND typeid = '9'`;
+              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}' AND em_id='${em_id}'`;
               const [cekIzin] = await connection.query(queryCekIzinTerlambat);
               const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve'`;
               const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
-              const [cekharilibur] = await connection.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`);
-            
-              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR' || cekharilibur.length > 0) {
+              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR') {
                 
               }else{
-
                 if (jam2 < jam1) {
-                  console.log('ini  query pulang cepat', queryCekIzinTerlambat);
                   const selisihWaktu = jam1.getTime() - jam2.getTime();
 
                   // Menghitung selisih dalam menit
@@ -7722,15 +7929,13 @@ module.exports = {
               var queryPulangCepaat = `  WITH RankedAttendance1 AS (
           SELECT *, 
           (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
-        (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='9' LIMIT 1) AS izin ,
-
+        
                  ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
           FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_out != 'TUGAS LUAR KANTOR'
       )
       SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
-        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND off_date = '1'
+        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1  AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
         AND RankedAttendance1.em_id='${em_id}'   
@@ -7746,25 +7951,20 @@ module.exports = {
           WITH RankedAttendance1 AS (
             SELECT *, 
             (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
-          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
-
+          
                    ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
             FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_out != 'TUGAS LUAR KANTOR'
         ),RankedAttendance2 AS (
           SELECT *,
           (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
-          (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id 
-                WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND emp_leave.typeid='8' LIMIT 1) AS izin ,
-
-          ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
+                 ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
           FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
           
       ) 
 
         SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
-        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date AND off_date = '1'
+        JOIN ${startPeriodeDynamic}.emp_shift ON RankedAttendance1.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance1.atten_date
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1  AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance1 .signout_time
         AND RankedAttendance1.em_id='${em_id}'   
@@ -7772,7 +7972,7 @@ module.exports = {
         UNION ALL 
         SELECT RankedAttendance2.* 
         FROM RankedAttendance2 
-        JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date AND off_date = '1'
+        JOIN ${endPeriodeDynamic}.emp_shift ON RankedAttendance2.em_id=emp_shift.em_id AND emp_shift.atten_date=RankedAttendance2.atten_date
         LEFT JOIN ${namaDatabasMaster}.work_schedule ON emp_shift.work_id=work_schedule.id
         WHERE row_num = 1 AND IFNULL(work_schedule.time_out, '18:00') > RankedAttendance2 .signout_time
         AND RankedAttendance2   .em_id='${em_id}'   
@@ -7781,7 +7981,7 @@ module.exports = {
         
         `;
               }
-              queryPulangCepaat = `SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL AND TBL.izin IS NULL`;
+              queryPulangCepaat = `SELECT * FROM (${queryPulangCepaat}) AS TBL WHERE TBL.cuti IS NULL`;
 
               console.log("ini query pulang cepat ", queryPulangCepaat);
               const [pulangCepat] = await connection.query(queryPulangCepaat);
@@ -7804,8 +8004,8 @@ module.exports = {
               var statussp = "";
               var idSp = "";
 
-              const [settingTipeAbsen] = await connection.query(`SELECT name FROM sysdata WHERE kode = '048'`)
-              if (settingTipeAbsen[0].name == '1') {
+              var nilai = "Y";
+              if (nilai == "Y") {
                 if (pulangCepat.length >= sysdata[1].name) {
                   var status = "Pending";
                   var alasan = `Absen Pulang cepat ${pulangCepat.length}x`;
@@ -8040,9 +8240,222 @@ module.exports = {
                     }
                   }
                 }
-              } else{
-              deskription = `Anda tercatat melakukan absensi pulang cepat  ${pulangCepat.length}x. Mohon perhatikan waktu absensi anda di lain kesempatan.`;
-            
+              } else {
+                if (pulangCepat.length >= sysdata[1].name) {
+                  var status = "Pending";
+                  var alasan = "Absen Pulang cepat";
+                  var approveStatus = "Pending";
+
+                  const [cekDataSp] = await connection.query(
+                    `SELECT * FROM employee_letter WHERE em_id='${req.body.em_id}' AND status IN ('Pending','Appprove','Approved') AND alasan LIKE '%${alasan}%'`
+                  );
+
+                  if (cekDataSp.length > 0) {
+                    // suda dapat sp1
+                    if (cekDataSp[0]["letter_id"] == "2") {
+                      if (pulangCepat.length == parseInt(sysdata[3].name)) {
+                        // SP 2
+                        deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 1 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
+                    }
+
+                    if (cekDataSp[0]["letter_id"] == "3") {
+                      if (pulangCepat.length >= parseInt(sysdata[4].name)) {
+                        // SP 3
+                        deskription = `Anda tercatat melakukan absensi datang pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                            `;
+
+                        const [dataSp] = await connection.query(
+                          `SELECT * FROM ${namaDatabasMaster}.employee_letter WHERE nomor LIKE '%SP%' AND nomor IS NOT NULL  ORDER BY id DESC LIMIT 1`
+                        );
+                        nomorSp = `SP${year}${convertBulan}`;
+                        if (dataSp.length > 0) {
+                          var text = dataSp[0]["nomor"];
+                          var nomor = parseInt(text.substring(9, 14)) + 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        } else {
+                          var nomor = 1;
+                          var nomorStr = String(nomor).padStart(4, "0");
+                          nomorSp = nomorSp + nomorStr;
+                        }
+
+                        const [data] =
+                          await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                     VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleAbsen}','${fixtglSp2}') `);
+
+                        const [insertDetail] = await connection.query(
+                          `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                        );
+
+                        const [sysdataSP] = await connection.query(
+                          ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                        );
+                        if (sysdataSP.length > 0) {
+                          if (sysdataSP[0].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[0].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                          if (sysdataSP[1].name != null) {
+                            utility.insertNotifikasiAbsensiSp(
+                              sysdataSP[1].name,
+                              "Absensi Pulang Cepat",
+                              statusAbsen,
+                              employee[0].em_id,
+                              nomorSp,
+                              nomorSp,
+                              employee[0].full_name,
+                              namaDatabaseDynamic,
+                              namaDatabasMaster,
+                              statusSpName
+                            );
+                          }
+                        }
+                      } else {
+                        deskription = `Anda sudah absensi pulang cepat ${pulangCepat.length} x dan sudah menerima Surat Peringatan 2 dengan nomor ${cekDataSp[0].nomor}. Mohon perhatikan dan perbaiki kualitas absensi Anda. 
+                          `;
+                      }
+                    }
+                  } else {
+                    deskription = `Anda tercatat melakukan absensi pulang cepat ${pulangCepat.length}x. Kami akan mengeluarkan ${statusSpName}. Mohon perhatikan waktu absensi anda di lain kesempatan
+                  `;
+
+                    const [dataSp] = await connection.query(
+                      `SELECT * FROM employee_letter WHERE nomor LIKE '%SP%'  ORDER BY id DESC LIMIT 1`
+                    );
+
+                    nomorSp = `SP${year}${convertBulan}`;
+
+                    if (dataSp.length > 0) {
+                      var text = dataSp[0]["nomor"];
+                      var nomor = parseInt(text.substring(9, 14)) + 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    } else {
+                      var nomor = 1;
+                      var nomorStr = String(nomor).padStart(4, "0");
+                      nomorSp = nomorSp + nomorStr;
+                    }
+
+                    var status = "Pending";
+                    var alasan = "Absen pulang cepat";
+                    var approveStatus = "Pending";
+                    var titleNew = "Absen Pulang Cepat";
+
+                    const [data] =
+                      await connection.query(`INSERT INTO employee_letter (nomor,tgl_surat,em_id,letter_id,eff_date,upload_file,status,approve_status,title,exp_date)
+                      VALUES ('${nomorSp}','${utility.dateNow2()}','${em_id}','${idSp}','${utility.dateNow2()}','','${status}','${approveStatus}','${titleNew}','${fixtgl}') `);
+
+                    const [insertDetail] = await connection.query(
+                      `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUES('${data.insertId}','${alasan}')`
+                    );
+
+                    const [sysdataSP] = await connection.query(
+                      ` SELECT name FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('026','027')`
+                    );
+                    if (sysdataSP.length > 0) {
+                      if (sysdataSP[0].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[0].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                      if (sysdataSP[1].name != null) {
+                        utility.insertNotifikasiAbsensiSp(
+                          sysdataSP[1].name,
+                          "Absensi Pulang Cepat",
+                          statusAbsen,
+                          employee[0].em_id,
+                          nomorSp,
+                          nomorSp,
+                          employee[0].full_name,
+                          namaDatabaseDynamic,
+                          namaDatabasMaster,
+                          statusSpName
+                        );
+                      }
+                    }
+                  }
+                }
               }
             }
           } else {
@@ -9095,7 +9508,6 @@ module.exports = {
       const [results] = await conn.query(
         `SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`
       );
-      console.log(`SELECT * FROM logs_actvity WHERE createdUserID='${em_id}' ORDER BY idx DESC LIMIT ${offset}, ${limit};`);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -9386,7 +9798,7 @@ module.exports = {
 
     var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
-  WHERE a.em_id=b.em_id AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
+  WHERE a.em_id=b.em_id AND a.status_pengajuan != 'draft'
   AND (
     (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
     OR 
@@ -11990,7 +12402,7 @@ o.dinilai,
    
 
      o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id 
-     AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
+     AND a.status_pengajuan != 'draft'
    
      ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
      -- Kondisi dinilai = 'Y' untuk mengganti em_delegation dan em_ids
@@ -12589,14 +13001,12 @@ a.typeid,
     } else if (url_data == "kasbon") {
       queryApproval = query8;
     } else if (url_data == "surat_peringatan") {
-
-      queryApproval = query11;
-
+      queryApproval = query11 ;
 
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
-
+    
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
@@ -12837,121 +13247,8 @@ a.typeid,
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL ORDER BY id DESC`;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
-    // var query2 = `SELECT * FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL`;
-
-    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
-      UNION ALL
-      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
-      ORDER BY idd DESC
-      `;
-
-      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}'  AND atten_date>='${startPeriode}'
-      UNION ALL
-      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
-      `;
-    }
-
-    console.log(query1);
-    console.log();
-    const connection = await model.createConnection1(namaDatabaseDynamic);
-    let conn;
-    try {
-      conn = await connection.getConnection();
-      await conn.beginTransaction();
-      const [dataTanggal] = await conn.query(query1);
-      var listTanggal = dataTanggal;
-      let filter1 = [];
-      listTanggal.forEach((element) => {
-        filter1.push(element["atten_date"]);
-      });
-      filter1 = filter1.filter(
-        (value, index, arr) => arr.indexOf(value) == index
-      );
-      const [dataAll] = await conn.query(query2);
-      var allData = dataAll;
-      console.log("");
-      var hasilFinal = [];
-      filter1.forEach((element) => {
-        var turunan = [];
-
-        allData.forEach((element2) => {
-          if (element2["atten_date"] == element) {
-            turunan.push(element2);
-          }
-        });
-
-        var data = {
-          tanggal: element,
-          notifikasi: turunan,
-        };
-        hasilFinal.push(data);
-        hasilFinal = hasilFinal.sort((a, b) => a.tanggal - b.tanggal);
-
-        console.log("hasil final ", hasilFinal);
-      });
-      console.log("hasil final ", hasilFinal);
-      await conn.commit();
-      return res.status(200).send({
-        status: true,
-        message: "Berhasil ambil!",
-        data: hasilFinal,
-      });
-    } catch (e) {
-      if (conn) {
-        await conn.rollback();
-      }
-      console.error("error", e);
-      return res.status(400).send({
-        status: false,
-        jumlah_data: results.length,
-        message: "Gagal ambil data",
-      });
-    } finally {
-      if (conn) await conn.release();
-    }
-  },
-
-  async load_notifikasiApproval(req, res) {
-    console.log("-----load aktifitas notifikasi----------");
-    var database = req.query.database;
-    var em_id = req.body.em_id;
-
-    var getTahun = req.body.tahun;
-    var getBulan = req.body.bulan;
-
-    const tahun = `${getTahun}`;
-    const convertYear = tahun.substring(2, 4);
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${getBulan}`;
-
-    var startPeriode =
-      req.query.start_periode == undefined
-        ? "2024-02-03"
-        : req.query.start_periode;
-    var endPeriode =
-      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
-    var array1 = startPeriode.split("-");
-    var array2 = endPeriode.split("-");
-
-    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
-      array1[1]
-    }`;
-    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
-      array2[1]
-    }`;
-
-    let date1 = new Date(startPeriode);
-    let date2 = new Date(endPeriode);
-
-    const montStart = date1.getMonth() + 1;
-    const monthEnd = date2.getMonth() + 1;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
-    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
-    // var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
@@ -15560,7 +15857,7 @@ GROUP BY TBL.full_name`;
     var query_cuti = `SELECT COUNT(*) as jumlah_cuti FROM ${namaDatabaseDynamic}.emp_leave WHERE em_id='${em_id}' AND status_transaksi='1' AND ajuan='1'`;
     var query_lembur = `SELECT COUNT(*) as jumlah_lembur FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND ajuan='1'`;
     var query_masuk_wfh = `SELECT COUNT(*) as jumlah_masuk_wfh FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND place_in='WFH'`;
-    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1'`;
+    var query_absen_tepat_waktu = `SELECT signin_time FROM ${namaDatabaseDynamic}.attendance WHERE em_id='CLD SISCOM' AND atttype='1'`;
 
     var query_jumlah_kerja = `SELECT IFNULL( workday,'22') as workday FROM ${database}_hrm.employee WHERE em_id='${em_id}'`;
 
@@ -15587,7 +15884,7 @@ GROUP BY TBL.full_name`;
     const monthEnd = date2.getMonth() + 1;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query_masuk_kerja = `SELECT atten_date FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
+      query_masuk_kerja = `SELECT atten_date FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
       UNION 
       SELECT atten_date FROM ${endPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atttype='1' AND  (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  
       `;
@@ -15631,8 +15928,7 @@ GROUP BY TBL.full_name`;
       const [results] = await conn.query(
         `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
       );
-      console.log('ini load aktifitas');
-      console.log(results);
+
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -15643,7 +15939,7 @@ GROUP BY TBL.full_name`;
         data_lembur: results[4],
         data_masukwfh: results[5],
         data_absentepatwaktu: results[6],
-        data_employee: results[7],
+        data_employee: "22",
         data_masuk_kerja: results[0],
       });
     } catch (e) {
