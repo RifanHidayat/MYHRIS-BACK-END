@@ -24,7 +24,11 @@ const {
     placeCoordinate,
     placeCoordinatePengaju,
     requestAbsen,
-    dailyTask
+    dailyTask,
+    
+    auditShow,
+    auditDetail,
+    auditApproval
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -342,6 +346,11 @@ router.post("/teguran_lisan_status",teguranLisan.updateStatusTeguranLisan);
 router.get("/teguran_lisan/count",teguranLisan.getUnreadSuratCount);
 router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
+
+
+router.get("/audit",auditShow.show);
+router.get("/audit/:id",auditDetail.detail);
+router.post("/audit/approval",auditApproval.approval);
 
 
 module.exports = router;
