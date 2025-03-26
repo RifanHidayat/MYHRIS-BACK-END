@@ -483,10 +483,10 @@ WHERE e.em_id = '${req.body.em_id}'
                                             : [employee[0].em_report2_to]
                                           : [];
 
-                                        const combinedIds = [
-                                          ...delegationIds,
-                                          ...emIds,
-                                        ];
+                                          const combinedIds = [...new Set([
+                                            ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
+                                            ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
+                                          ])];
                                         
                                         console.log('ini syy data cuti ',sysdataCuti[1]);
                                         utility.insertNotifikasi(

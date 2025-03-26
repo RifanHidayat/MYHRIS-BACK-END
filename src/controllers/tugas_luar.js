@@ -92,19 +92,27 @@ module.exports = {
         `SELECT * FROM sysdata WHERE kode='034'`
       );
       const delegationIds = employee[0].em_report_to
-          ? Array.isArray(employee[0].em_report_to)
-            ? employee[0].em_report_to
-            : [employee[0].em_report_to]
-          : [];
+        ? Array.isArray(employee[0].em_report_to)
+          ? employee[0].em_report_to
+          : [employee[0].em_report_to]
+        : [];
 
-        const emIds = employee[0].em_report2_to
-          ? Array.isArray(employee[0].em_report2_to)
-            ? employee[0].em_report2_to
-            : [employee[0].em_report2_to]
-          : [];
+      const emIds = employee[0].em_report2_to
+        ? Array.isArray(employee[0].em_report2_to)
+          ? employee[0].em_report2_to
+          : [employee[0].em_report2_to]
+        : [];
 
-          
-        const combinedIds = [...delegationIds, ...emIds];
+      const combinedIds = [
+        ...new Set([
+          ...delegationIds.flatMap((id) =>
+            id.split(",").map((i) => i.trim().toUpperCase())
+          ),
+          ...emIds.flatMap((id) =>
+            id.split(",").map((i) => i.trim().toUpperCase())
+          ),
+        ]),
+      ];
       utility.insertNotifikasi(
         combinedIds,
         "Approval Tugas Luar",
