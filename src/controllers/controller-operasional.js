@@ -12916,6 +12916,7 @@ a.typeid,
   },
 
   async load_notifikasiApproval(req, res) {
+    
     console.log("-----load aktifitas notifikasi----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
