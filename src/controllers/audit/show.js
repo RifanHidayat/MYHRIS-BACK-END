@@ -1,4 +1,4 @@
-const models = require("../../../utils/models");
+const models = require("../../utils/models");
 const utility = require("../../utils/utility");
 
 const ipServer = process.env.API_URL;
