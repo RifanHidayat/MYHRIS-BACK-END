@@ -11,21 +11,22 @@ module.exports = {
     var date = req.body.date;
     var emId=req.headers.em_id;
     var dateNow=utility.dateNow2();
-    var fullName=req.query.full_name;
-    var tipeForm=req.query.tipe_form;
+    var fullName=req.body.full_name;
+    var tipeForm=req.body.tipe_form;
     var status=req.body.status;
+    var id=req.params.id;
 
     const tahun = `${gettahun}`;
     const convertYear = tahun.substring(2, 4);
     // const convertBulan = getbulan;
-    var convertBulan;
-    if (getbulan.length == 1) {
-      convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
-    } else {
-      convertBulan = getbulan;
-    }
+    // var convertBulan;
+    // if (getbulan.length == 1) {
+    //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
+    // } else {
+    //   convertBulan = getbulan;
+    // }
 
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startPeriode =
       req.query.start_periode == undefined
@@ -54,9 +55,9 @@ var fixquery=``
   if (tipeForm=='Lembur' || tipeForm=='Pengajuan Absen' || tipeForm=='Tugas Luar' || tipeForm=='WFH'){
     namaTable='emp_labor';
     if (status==''){
-        fixquery=`UPDATE ${namaDatabaseDynamic}.emp_labor SET audit_id='',audit_status='',audit_date='' ,status='Approve2', approve2_status='Approve' WHERE id='${id}' `
+        fixquery=`UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='',audit_status='',audit_date=''  , audit_name='' ,status='Approve2', approve2_status='Approve' WHERE id='${id}' `
     }else{
-        fixquery=`UPDATE ${namaDatabaseDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,status='Rejected', approve2_status='Rejected' WHERE id='${id}' `
+        fixquery=`UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}',audit_name='${fullName}' ,status='Rejected', approve2_status='Rejected' WHERE id='${id}' `
 
     }
    
@@ -64,9 +65,9 @@ var fixquery=``
     namaTable='emp_leave';
 
     if (status==''){
-        fixquery=`UPDATE ${namaDatabaseDynamic}.emp_leave SET audit_id='',audit_status='',audit_date='' ,leave_status='Approve', apply2_status='Approve' id='${id}'`
+        fixquery=`UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='',audit_status='',audit_date='' , audit_name='' ,leave_status='Approve', apply2_status='Approve' WHERE  id='${id}'`
     }else{
-        fixquery=`UPDATE ${namaDatabaseDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,leave_status='Rejected', apply2_status='Rejected' id='${id}'`
+        fixquery=`UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,audit_name='${fullName}'  ,leave_status='Rejected', apply2_status='Rejected' WHERE  id='${id}'`
 
     }
     
@@ -87,7 +88,7 @@ var fixquery=``
       await conn.commit();
       return res.status(200).send({
         status: true,
-        message: "Data berhasil diambil",
+        message: "Berhasil update data",
         data: results,
       });
     } catch (e) {
@@ -97,7 +98,7 @@ var fixquery=``
       console.error("Error:", e.message);
       return res.status(400).send({
         status: false,
-        message: "Gagal ambil data",
+        message: e.message,
         data: [],
       });
     } finally {

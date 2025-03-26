@@ -350,7 +350,7 @@ router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
 
 router.get("/audit",auditShow.show);
 router.get("/audit/:id",auditDetail.detail);
-router.post("/audit/approval",auditApproval.approval);
+router.post("/audit/:id/approval",auditApproval.approval);
 
 
 module.exports = router;

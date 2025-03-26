@@ -1,4 +1,4 @@
-const models = require("../../../utils/models");
+const models = require("../../utils/models");
 const utility = require("../../utils/utility");
 
 const ipServer = process.env.API_URL;
@@ -13,21 +13,21 @@ module.exports = {
     var em_id = req.body.em_id;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
-    var date = req.body.date;
+
     var tipeForm=req.query.tipe_form;
 
-    const tahun = `${gettahun}`;
-    const convertYear = tahun.substring(2, 4);
-    // const convertBulan = getbulan;
-    var convertBulan;
-    if (getbulan.length == 1) {
-      convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
-    } else {
-      convertBulan = getbulan;
-    }
+    // const tahun = `${gettahun}`;
+    // const convertYear = tahun.substring(2, 4);
+    // // const convertBulan = getbulan;
+    // var convertBulan;
+    // if (getbulan.length == 1) {
+    //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
+    // } else {
+    //   convertBulan = getbulan;
+    // }
 
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
+    // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    
     var startPeriode =
       req.query.start_periode == undefined
         ? "2024-02-03"
@@ -59,7 +59,7 @@ module.exports = {
  
 
    
-    var fixquery=`SELECT * FROM ${namaDatabaseDynamic}.${namaTable}`
+    var fixquery=`SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
 
 
     const connection = await models.createConnection1(`${database}_hrm`);
@@ -73,7 +73,7 @@ module.exports = {
       return res.status(200).send({
         status: true,
         message: "Data berhasil diambil",
-        data: results,
+        data: results.length>0?results[0]:[],
       });
     } catch (e) {
       if (conn) {
@@ -82,7 +82,7 @@ module.exports = {
       console.error("Error:", e.message);
       return res.status(400).send({
         status: false,
-        message: "Gagal ambil data",
+        message: e.message,
         data: [],
       });
     } finally {

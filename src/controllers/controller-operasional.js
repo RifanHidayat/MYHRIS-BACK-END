@@ -5700,6 +5700,11 @@ module.exports = {
     (SELECT NAME FROM sysdata WHERE kode='041') AS durasi_absen_keluar,
     (SELECT NAME FROM sysdata WHERE kode= '038') AS tipe_alpha,
     a.em_tracking  AS is_tracking,
+    CASE 
+    WHEN (SELECT COUNT(*) FROM sysdata WHERE kode='046' AND name LIKE '%${em_id}%') > 0 THEN 1
+    ELSE 0
+    END AS is_audit,
+   
     branch_id,
     a.file_face,
     a.loan_limit,
