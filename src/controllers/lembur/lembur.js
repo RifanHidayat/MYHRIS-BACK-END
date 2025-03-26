@@ -1518,9 +1518,9 @@ module.exports = {
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
-      const [results] = await conn.query(
-        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor_task WHERE emp_labor_id LIKE '${nomorAjuan}'`
-      );
+      const query = `SELECT a.* FROM emp_labor_task a JOIN emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' OR a.nomor_ajuan = b.nomor_ajuan`;
+      console.log(query);
+      const [results] = await conn.query(query);
       await conn.commit();
       return res.status(200).send({
         status: true,
