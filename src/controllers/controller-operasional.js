@@ -11980,6 +11980,7 @@ c.input_time,
 a.approve_id,
 a.approve_date,
 a.id,
+c.full_name AS nama_delegasi,
 
 CASE
     WHEN o.dinilai = 'N' THEN b.em_report2_to
@@ -11989,7 +11990,10 @@ o.dinilai,
     
    
 
-     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id 
+     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a 
+     JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  
+     JOIN ${database}_hrm.employee c ON c.em_id = a.em_delegation
+     WHERE a.em_id=b.em_id 
      AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
    
      ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
@@ -12916,7 +12920,7 @@ a.typeid,
   },
 
   async load_notifikasiApproval(req, res) {
-    
+
     console.log("-----load aktifitas notifikasi----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
