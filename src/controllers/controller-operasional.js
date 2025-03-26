@@ -9386,7 +9386,7 @@ module.exports = {
 
     var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
-  WHERE a.em_id=b.em_id AND a.status_pengajuan != 'draft'
+  WHERE a.em_id=b.em_id AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
   AND (
     (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
     OR 
@@ -11990,7 +11990,7 @@ o.dinilai,
    
 
      o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id 
-     AND a.status_pengajuan != 'draft'
+     AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
    
      ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
      -- Kondisi dinilai = 'Y' untuk mengganti em_delegation dan em_ids
