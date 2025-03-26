@@ -72,7 +72,8 @@ router.post('/spesifik_approval', operasional.spesifik_approval);
 router.post('/list_approve_payroll', operasional.listApprovalPayroll);
 router.post('/spesifik_approval_multi', operasional.spesifik_approval_multi);
 router.post('/load_notifikasi',auth.isAuth, operasional.load_notifikasi);
-router.post('/load_notifikasi_approval',auth.isAuth, operasional.load_notifikasiApproval);
+router.post('/load_notifikasi_approval',auth.isAuth, operasional.load_notifikasiApproval); 
+
 
 router.post('/load_laporan_absensi',auth.isAuth, operasional.load_laporan_absensi);
 router.post('/load_laporan_absensi_filter_lokasi', auth.isAuth,operasional.load_laporan_absensi_filter_lokasi);
