@@ -9527,7 +9527,6 @@ module.exports = {
       console.error("error", e);
       return res.status(400).send({
         status: false,
-        jumlah_data: results.length,
         message: "Gagal ambil data",
       });
     } finally {

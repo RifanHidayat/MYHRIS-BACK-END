@@ -28,7 +28,8 @@ const {
     
     auditShow,
     auditDetail,
-    auditApproval
+    auditApproval,
+    auditFilter,
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -348,9 +349,10 @@ router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
 
 
-router.get("/audit",auditShow.show);
+router.post("/audit",auditShow.show);
 router.get("/audit/:id",auditDetail.detail);
 router.post("/audit/:id/approval",auditApproval.approval);
+router.post('/audit/filter/employee',auditFilter.filtterEmployee)
 
 
 module.exports = router;

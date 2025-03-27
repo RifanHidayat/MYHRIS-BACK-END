@@ -31,6 +31,7 @@ const dailyTask = require('./task/daily_task');
 const auditShow = require('./audit/show');
 const auditDetail = require('./audit/detail');
 const auditApproval = require('./audit/approval');
+const auditFilter = require('./audit/filter');
 
 
 module.exports ={
@@ -56,5 +57,6 @@ module.exports ={
 	dailyTask,
 	auditShow,
 	auditApproval,
-	auditDetail
+	auditDetail,
+	auditFilter
 };
