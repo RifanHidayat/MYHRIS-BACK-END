@@ -402,9 +402,6 @@ module.exports = {
     var bulan = req.body.bulan;
     var tahun = req.body.tahun;
 
-    var startPeriode = req.body.start_periode;
-    var endPeriode = req.body.end_periode;
-
     const convertYear = tahun.substring(2, 4);
     var convertBulan;
     if (bulan.length == 1) {
@@ -413,13 +410,9 @@ module.exports = {
       convertBulan = bulan;
     }
     var namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    var startPeriode =
-      req.query.start_periode == undefined
-        ? "2024-02-03"
-        : req.query.start_periode;
-    var endPeriode =
-      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    const lastDay = new Date(tahun, parseInt(convertBulan), 0).getDate();
+    var startPeriode = `${tahun}-${bulan}-01`
+    var endPeriode = `${tahun}-${bulan}-${lastDay}`
     var array1 = startPeriode.split("-");
     var array2 = endPeriode.split("-");
 
@@ -649,8 +642,17 @@ module.exports = {
     const startPeriode = req.query.start_periode || "2024-02-03";
     const endPeriode = req.query.end_periode || "2024-02-03";
 
-    const convertYear = startPeriode.substring(2, 4);
-    const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    // const convertYear = startPeriode.substring(2, 4);
+    // const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    const tahun = req.body.tahun;
+    const bulan = req.body.bulan;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (bulan.length == 1) {
+      convertBulan = bulan <= 9 ? `0${bulan}` : bulan;
+    } else {
+      convertBulan = bulan;
+    }
     let namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     // Kondisi untuk perubahan nama database jika periode berbeda
