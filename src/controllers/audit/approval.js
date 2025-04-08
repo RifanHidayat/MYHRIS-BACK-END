@@ -15,10 +15,12 @@ module.exports = {
     var tipeForm = req.body.tipe_form;
     var status = req.body.status;
     var id = req.params.id;
+    var konsekuensi = req.body.konsekuensi;
+    var listKonsekuensi = req.body.list_konsekuensi;
 
-    const tahun = `${gettahun}`;
-    const convertYear = tahun.substring(2, 4);
-    // const convertBulan = getbulan;
+    // const tahun = `${gettahun}`;
+    // const convertYear = tahun.substring(2, 4);
+    // // const convertBulan = getbulan;
     // var convertBulan;
     // if (getbulan.length == 1) {
     //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
@@ -52,6 +54,7 @@ module.exports = {
 
     var namaTable = "";
     var fixquery = ``;
+    console.log(req.body);
     if (
       tipeForm == "Lembur" ||
       tipeForm == "Pengajuan Absen" ||
@@ -60,7 +63,7 @@ module.exports = {
     ) {
       namaTable = "emp_labor";
       if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='',audit_status='',audit_date=''  , audit_name='' ,status='Approve2', approve2_status='Approve' WHERE id='${id}' `;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_status='Approve',audit_date='${dateNow}',status='Approve2', approve2_status='Approve' WHERE id='${id}' `;
       } else {
         fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}',audit_name='${fullName}' ,status='Rejected', approve2_status='Rejected' WHERE id='${id}' `;
       }
@@ -68,7 +71,7 @@ module.exports = {
       namaTable = "emp_leave";
 
       if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='',audit_status='',audit_date='' , audit_name='' ,leave_status='Approve', apply2_status='Approve' WHERE  id='${id}'`;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_status='Approve',audit_date='${dateNow}',leave_status='Approve', apply2_status='Approve' WHERE  id='${id}'`;
       } else {
         fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,audit_name='${fullName}'  ,leave_status='Rejected', apply2_status='Rejected' WHERE  id='${id}'`;
       }
@@ -82,6 +85,177 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [results] = await conn.query(fixquery);
+      if (konsekuensi === "teguran_lisan") {
+        const queryTeguranLisan = `SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`;
+        const [teguranLisan] = await conn.query(queryTeguranLisan);
+
+        var nomorLb = `LI20${array1[0].substring(2, 4)}${array1[1]}`;
+        var nomorStr = "";
+        if (teguranLisan.length > 0) {
+          const lastNomor = teguranLisan[0]["nomor"]; // Ambil nomor dari data terakhir
+          console.log(lastNomor);
+
+          const sequenceStartIndex = 8;
+          const sequenceEndIndex = 13;
+          const lastSequence =
+            parseInt(
+              lastNomor.substring(sequenceStartIndex, sequenceEndIndex)
+            ) + 1;
+
+          nomorStr = String(lastSequence).padStart(4, "0");
+
+          nomorLb = nomorLb + nomorStr;
+        } else {
+          var nomor = 1;
+          nomorStr = String(nomor).padStart(4, "0");
+          nomorLb = nomorLb + nomorStr;
+        }
+        console.log(nomorLb);
+        console.log(nomorStr);
+        console.log(req.body.apply_id);
+        console.log(req.body.apply2_id);
+        console.log(`ini id yang ngasih teguran ${approveId}`);
+
+        const queryInsert = `INSERT INTO teguran_lisan (
+                                                  nomor,
+                                                  hal,
+                                                  tgl_surat,
+                                                  em_id,
+                                                  letter_id,
+                                                  eff_date,
+                                                  pelanggaran,
+                                                  status,
+                                                  diterbitkan_oleh) VALUE(
+                                                  '${nomorLb}',
+                                                  'Teguran Lisan',
+                                                  '${utility.dateNow2()}',
+                                                  '${emId}',
+                                                  '9',
+                                                  '${utility.dateNow2()}',
+                                                  '${alasanReject}',
+                                                  'Pending',
+                                                  '${approveId}')`;
+        const insertTeguran = await conn.query(queryInsert);
+
+        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET id_surat=${insertTeguran.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+        await conn.query(queryInsertTeguranLisanId);
+
+        var konsekuensiArray = listKonsekuensi.split(",");
+        console.log(konsekuensiArray);
+        console.log(insertTeguran);
+
+        for (var i = 0; i < konsekuensiArray.length; i++) {
+          var data = konsekuensiArray[i].trim();
+          const queryDetail = `INSERT INTO teguran_lisan_detail (teguran_lisan_id,name) VALUE('${insertTeguran.insertId}','${data}')`;
+          conn.query(queryDetail);
+          console.log(queryDetail);
+        }
+        const [notifTl] = await conn.query(
+          `SELECT * FROM sysdata WHERE kode=045`
+        );
+
+        utility.insertNotifikasiGlobal(
+          notifTl[0]["name"],
+          "Teguran Lisan",
+          "Teguran Lisan",
+          emId,
+          employee[0]["id"],
+          nomorLb,
+          employee[0]["full_name"],
+          endPeriodeDynamic,
+          databaseMaster,
+          `Teguran Lisan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+        );
+      } else if (konsekuensi === "surat_peringatan") {
+        const queryCekSuratPeringatan = `SELECT * FROM employee_letter WHERE exp_date>=CURDATE() AND status='Approve' AND em_id='${emId}' ORDER BY id DESC`;
+        const [suratPeringatan] = await conn.query();
+
+        var letterId = "";
+
+        if (suratPeringatan.length > 0) {
+          var letterIdTemp = suratPeringatan[0]["letter_id"];
+          if (letterIdTemp == "2" || letterIdTemp == 2) {
+            letterId = "3";
+          }
+          if (letterIdTemp == "3" || letterIdTemp == 3) {
+            letterId = "4";
+          }
+        } else {
+          letterId = "2";
+        }
+        const queryCekNomor = `SELECT * FROM employee_letter WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`;
+        const [teguranLisan] = await conn.query(queryCekNomor);
+
+        var nomorLb = `SP20${array1[0].substring(2, 4)}${array1[1]}`;
+        var nomorStr = "";
+        if (teguranLisan.length > 0) {
+          var text = teguranLisan[0]["nomor"];
+          var nomor = parseInt(text.substring(8, 13)) + 1;
+          nomorStr = String(nomor).padStart(4, "0");
+          nomorLb = nomorLb + nomorStr;
+        } else {
+          var nomor = 1;
+          nomorStr = String(nomor).padStart(4, "0");
+          nomorLb = nomorLb + nomorStr;
+        }
+        console.log(nomorLb);
+        console.log(letterId);
+        console.log(nomorStr);
+        console.log(utility.mounthNow());
+
+        const queryInsert = `INSERT INTO employee_letter (
+                                                    nomor,
+                                                    tgl_surat,
+                                                    em_id,
+                                                    letter_id,
+                                                    eff_date,
+                                                    alasan,
+                                                    status,
+                                                    diterbitkan_oleh) 
+                                                    VALUE(
+                                                    '${nomorLb}',
+                                                    '${utility.dateNow2()}',
+                                                    '${emId}',
+                                                    '${letterId}',
+                                                    '${utility.dateNow2()}',
+                                                    '${alasanReject}',
+                                                    'Pending',
+                                                    '${approveId}')`;
+        const [insertSuratPeringatan] = await conn.query(queryInsert);
+
+        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET id_surat=${insertSuratPeringatan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+        console.log(queryInsertTeguranLisanId);
+        await conn.query(queryInsertTeguranLisanId);
+        var konsekuensiArray = listKonsekuensi.split(",");
+        for (var i = 0; i < konsekuensiArray.length; i++) {
+          var data = konsekuensiArray[i].trim();
+          console.log(data);
+          await conn.query(
+            `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUE('${insertSuratPeringatan.insertId}','${data}')`
+          );
+        }
+        const [notifTl] = await conn.query(
+          `SELECT * FROM sysdata WHERE kode=026`
+        );
+
+        console.log(notifTl);
+
+        utility.insertNotifikasiGlobal(
+          notifTl[0]["name"],
+          "Surat Peringatan",
+          "Surat Peringatan",
+          emId,
+          employee[0]["id"],
+          nomorLb,
+          employee[0]["full_name"],
+          namaDatabaseDynamic,
+          databaseMaster,
+          `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+        );
+      } else {
+        console.log("tidak ada konsekensi alias", konsekuensi);
+      }
+      console.log("--------Surat Teguran || Surat Peringatan-----------");
       await conn.commit();
       return res.status(200).send({
         status: true,

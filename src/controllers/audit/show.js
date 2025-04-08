@@ -26,12 +26,12 @@ module.exports = {
     const tahun = `${gettahun}`;
     const convertYear = tahun.substring(2, 4);
     // const convertBulan = getbulan;
-    // var convertBulan;
-    // if (getbulan.length == 1) {
-    //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
-    // } else {
-    //   convertBulan = getbulan;
-    // }
+    var convertBulan;
+    if (getbulan.length == 1) {
+      convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
+    } else {
+      convertBulan = getbulan;
+    }
 
     // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
@@ -44,11 +44,9 @@ module.exports = {
     var array1 = startPeriode.split("-");
     var array2 = endPeriode.split("-");
 
-    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
-      array1[1]
-    }`;
-    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
-      array2[1]
+    const startPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    const endPeriodeDynamic = `${database}_hrm${convertYear}${
+      convertBulan
     }`;
 
     let date1 = new Date(startPeriode);
@@ -56,8 +54,7 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query = `  SELECT emp_labor.id, employee.em_id,employee.branch_id, nomor_ajuan AS nomor, employee.full_name,designation.name AS jabatan, 
-    'FULLDAY' AS tipe_form  ,emp_labor.status, emp_labor.atten_date AS atten_date, emp_labor.uraian AS keterangan,
+    var query = `  SELECT emp_labor.id, employee.em_id,employee.branch_id, nomor_ajuan AS nomor, employee.full_name,designation.name AS jabatan,emp_labor.status, emp_labor.atten_date AS atten_date, emp_labor.uraian AS keterangan,
     CASE  
        WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
        WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -70,8 +67,7 @@ module.exports = {
     FROM ${startPeriodeDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
     
     UNION ALL
-    SELECT emp_leave.id, employee.em_id, nomor_ajuan AS nomor,employee.branch_id, employee.full_name,designation.name AS jabatan, 'FULLDAY' AS 
-    tipe_form ,emp_leave.leave_status, emp_leave.atten_date AS atten_date, emp_leave.reason AS keterangan,
+    SELECT emp_leave.id, employee.em_id, nomor_ajuan AS nomor,employee.branch_id, employee.full_name,designation.name AS jabatan, emp_leave.leave_status, emp_leave.atten_date AS atten_date, emp_leave.reason AS keterangan,
       CASE  
        WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
        WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
@@ -86,7 +82,7 @@ module.exports = {
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query = ` nomor_ajuan AS nomor, SELECT employee.em_id, employee.branch_id, employee.full_name,designation.name AS jabatan, 
-      'FULLDAY' AS tipe_form ,nomor_ajuan ,emp_labor.status as stat, 
+      nomor_ajuan ,emp_labor.status as stat, 
       CASE  
          WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
          WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -116,7 +112,7 @@ module.exports = {
     WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
     AND status LIKE '%${status}%' 
     AND status_audit LIKE '%${statusAudit}%' 
-    AND tipe_form LIKE '%${tipeForm}%'
+    AND tipe_pengajuan LIKE '%${tipeForm}%'
     LIMIT ${limit} OFFSET ${offset}`
 
 
