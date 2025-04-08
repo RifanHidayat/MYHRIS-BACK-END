@@ -10,18 +10,18 @@ module.exports = {
   async show(req, res) {
     console.log("get employ attt");
     var database = req.query.database;
-    var em_id = req.body.em_id;
+    var emId = req.body.em_id;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
     var date = req.body.date;
-    var limit=req.query.limit;
-    var offset=req.query.offset;
+    var limit=req.body.limit;
+    var offset=req.body.offset;
 
-    var  status=req.query.status;
-    var statusAudit=req.query.status_audit;
-    var tipeForm=req.query.tipe_form
-    var branchId=req.query.branch_id;
-    var emId=req.query.em_id;
+    var  status=req.body.status;
+    var statusAudit=req.body.status_audit;
+    var tipeForm=req.body.tipe_form
+    var branchId=req.body.branch_id;
+    // var emId=req.query.em_id;
 
     const tahun = `${gettahun}`;
     const convertYear = tahun.substring(2, 4);
@@ -57,7 +57,7 @@ module.exports = {
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
     var query = `  SELECT emp_labor.id, employee.em_id,employee.branch_id, nomor_ajuan AS nomor, employee.full_name,designation.name AS jabatan, 
-    'FULLDAY' AS tipe_form  ,emp_labor.status,
+    'FULLDAY' AS tipe_form  ,emp_labor.status, emp_labor.atten_date AS atten_date, emp_labor.uraian AS keterangan,
     CASE  
        WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
        WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -71,7 +71,7 @@ module.exports = {
     
     UNION ALL
     SELECT emp_leave.id, employee.em_id, nomor_ajuan AS nomor,employee.branch_id, employee.full_name,designation.name AS jabatan, 'FULLDAY' AS 
-    tipe_form ,emp_leave.leave_status,
+    tipe_form ,emp_leave.leave_status, emp_leave.atten_date AS atten_date, emp_leave.reason AS keterangan,
       CASE  
        WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
        WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
@@ -86,7 +86,7 @@ module.exports = {
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query = ` nomor_ajuan AS nomor, SELECT employee.em_id, employee.branch_id, employee.full_name,designation.name AS jabatan, 
-      'FULLDAY' AS tipe_form ,nomor_ajuan ,emp_labor.status as stat,
+      'FULLDAY' AS tipe_form ,nomor_ajuan ,emp_labor.status as stat, 
       CASE  
          WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
          WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -113,10 +113,10 @@ module.exports = {
     }
 
     var fixquery=`SELECT * FROM  (${query}) AS TBL 
-    WHERE em_id LIKE '%${emId}%' OR branch_id LIKE '%${branchId}%' 
-    OR status LIKE '%${status}%' 
-    OR status_audit LIKE '%${statusAudit}%' 
-    OR tipe_pengajuan LIKE '%${tipeForm}%'
+    WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
+    AND status LIKE '%${status}%' 
+    AND status_audit LIKE '%${statusAudit}%' 
+    AND tipe_form LIKE '%${tipeForm}%'
     LIMIT ${limit} OFFSET ${offset}`
 
 
@@ -125,7 +125,7 @@ module.exports = {
     // var query= `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`
 
     const connection = await models.createConnection1(startPeriodeDynamic);
-
+    console.log(req.query);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -149,7 +149,6 @@ module.exports = {
       });
     } finally {
       if (conn) conn.release();
-      // if (connection) connection.end();
     }
   },
 };

@@ -402,9 +402,6 @@ module.exports = {
     var bulan = req.body.bulan;
     var tahun = req.body.tahun;
 
-    var startPeriode = req.body.start_periode;
-    var endPeriode = req.body.end_periode;
-
     const convertYear = tahun.substring(2, 4);
     var convertBulan;
     if (bulan.length == 1) {
@@ -413,13 +410,9 @@ module.exports = {
       convertBulan = bulan;
     }
     var namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    var startPeriode =
-      req.query.start_periode == undefined
-        ? "2024-02-03"
-        : req.query.start_periode;
-    var endPeriode =
-      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    const lastDay = new Date(tahun, parseInt(convertBulan), 0).getDate();
+    var startPeriode = `${tahun}-${bulan}-01`;
+    var endPeriode = `${tahun}-${bulan}-${lastDay}`;
     var array1 = startPeriode.split("-");
     var array2 = endPeriode.split("-");
 
@@ -593,10 +586,13 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [results] = await conn.query(
-        `SELECT IFNULL(em_daily_task ,'') as em_daily_task FROM employee WHERE em_id='${emId}' LIMIT 1 `
+        `SELECT IFNULL(em_daily_task ,'') as em_daily_task, branch_access FROM employee WHERE em_id='${emId}' LIMIT 1 `
       );
       console.log(results);
       var emids = results[0].em_daily_task.split(",");
+      const branchAccess = results[0].branch_access
+        .split(",")
+        .map((item) => String(parseInt(item)));
       var emidsConver = "";
       for (var i = 0; i < emids.length; i++) {
         emidsConver = emidsConver + `'${emids[i]}',`;
@@ -607,6 +603,7 @@ module.exports = {
       console.log(results);
       var emids = results[0].em_daily_task.split(",");
       var emidsConver = "";
+
       for (var i = 0; i < emids.length; i++) {
         emidsConver = emidsConver + `'${emids[i]}',`;
       }
@@ -615,8 +612,11 @@ module.exports = {
       console.log("tes tes", results[0]);
 
       const [employee] =
-        await conn.query(`SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id  IN (${emidsConver})
+        await conn.query(`SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id  IN (${emidsConver}) AND branch_id IN (${branchAccess})
                        UNION ALL SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id='${emId}' `);
+      console.log(`SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id  IN (${emidsConver})
+        UNION ALL SELECT employee.branch_id,employee.full_name,employee.em_id FROM employee WHERE em_id='${emId}' `);
+
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -649,8 +649,17 @@ module.exports = {
     const startPeriode = req.query.start_periode || "2024-02-03";
     const endPeriode = req.query.end_periode || "2024-02-03";
 
-    const convertYear = startPeriode.substring(2, 4);
-    const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    // const convertYear = startPeriode.substring(2, 4);
+    // const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    const tahun = req.body.tahun;
+    const bulan = req.body.bulan;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (bulan.length == 1) {
+      convertBulan = bulan <= 9 ? `0${bulan}` : bulan;
+    } else {
+      convertBulan = bulan;
+    }
     let namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     // Kondisi untuk perubahan nama database jika periode berbeda
@@ -714,9 +723,18 @@ module.exports = {
 
     const startPeriode = req.query.start_periode || "2024-02-03";
     const endPeriode = req.query.end_periode || "2024-02-03";
+    const tahun = req.body.tahun;
+    const bulan = req.body.bulan;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (bulan.length == 1) {
+      convertBulan = bulan <= 9 ? `0${bulan}` : bulan;
+    } else {
+      convertBulan = bulan;
+    }
 
-    const convertYear = startPeriode.substring(2, 4);
-    const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
+    // const convertYear = startPeriode.substring(2, 4);
+    // const convertBulan = startPeriode.split("-")[1].padStart(2, "0");
     let namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     // Kondisi untuk perubahan nama database jika periode berbeda
@@ -784,5 +802,4 @@ ORDER BY dt.tgl_buat ASC
       if (conn) conn.release();
     }
   },
-
 };

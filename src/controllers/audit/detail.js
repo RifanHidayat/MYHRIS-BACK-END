@@ -15,6 +15,7 @@ module.exports = {
     const gettahun = req.body.tahun;
 
     var tipeForm=req.query.tipe_form;
+    console.log(tipeForm);
 
     // const tahun = `${gettahun}`;
     // const convertYear = tahun.substring(2, 4);
@@ -51,18 +52,17 @@ module.exports = {
     const monthEnd = date2.getMonth() + 1;
     var namaTable='';
 
-  if (tipeForm=='Lembur' || tipeForm=='Pengajuan Absen' || tipeForm=='Tugas Luar' || tipeForm=='WFH'){
+  if (tipeForm=='Lembur' || tipeForm=='Pengajuan Absen' || tipeForm=='Tugas Luar' || tipeForm=='WFH'|| tipeForm =='Absen Offline'){
     namaTable='emp_labor';
   }else{
     namaTable='emp_leave';
   }
- 
 
-   
     var fixquery=`SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
 
 
     const connection = await models.createConnection1(`${database}_hrm`);
+    console.log(fixquery);
 
     let conn;
     try {

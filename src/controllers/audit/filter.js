@@ -3,22 +3,22 @@ const utility = require("../../utils/utility");
 
 const ipServer = process.env.API_URL;
 module.exports = {
-  async approval(req, res) {
+
+
+
+
+  async filtterEmployee(req, res) {
+    console.log("get employ attt");
     var database = req.query.database;
     var em_id = req.body.em_id;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
-    var date = req.body.date;
-    var emId = req.headers.em_id;
-    var dateNow = utility.dateNow2();
-    var fullName = req.body.full_name;
-    var tipeForm = req.body.tipe_form;
-    var status = req.body.status;
-    var id = req.params.id;
 
-    const tahun = `${gettahun}`;
-    const convertYear = tahun.substring(2, 4);
-    // const convertBulan = getbulan;
+    var tipeForm=req.query.tipe_form;
+
+    // const tahun = `${gettahun}`;
+    // const convertYear = tahun.substring(2, 4);
+    // // const convertBulan = getbulan;
     // var convertBulan;
     // if (getbulan.length == 1) {
     //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
@@ -27,7 +27,7 @@ module.exports = {
     // }
 
     // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
+    
     var startPeriode =
       req.query.start_periode == undefined
         ? "2024-02-03"
@@ -49,35 +49,22 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
+    var namaTable='';
 
-    var namaTable = "";
-    var fixquery = ``;
-    if (
-      tipeForm == "Lembur" ||
-      tipeForm == "Pengajuan Absen" ||
-      tipeForm == "Tugas Luar" ||
-      tipeForm == "WFH"
-    ) {
-      namaTable = "emp_labor";
-      if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='',audit_status='',audit_date=''  , audit_name='' ,status='Approve2', approve2_status='Approve' WHERE id='${id}' `;
-      } else {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}',audit_name='${fullName}' ,status='Rejected', approve2_status='Rejected' WHERE id='${id}' `;
-      }
-    } else {
-      namaTable = "emp_leave";
+  if (tipeForm=='Lembur' || tipeForm=='Pengajuan Absen' || tipeForm=='Tugas Luar' || tipeForm=='WFH'){
+    namaTable='emp_labor';
+  }else{
+    namaTable='emp_leave';
+  }
+ 
 
-      if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='',audit_status='',audit_date='' , audit_name='' ,leave_status='Approve', apply2_status='Approve' WHERE  id='${id}'`;
-      } else {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,audit_name='${fullName}'  ,leave_status='Rejected', apply2_status='Rejected' WHERE  id='${id}'`;
-      }
-    }
+   
+    var fixquery=`SELECT em_id, full_name FROM employee where em_id != '${em_id}'`
+
 
     const connection = await models.createConnection1(`${database}_hrm`);
 
     let conn;
-    console.log(fixquery);
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
@@ -85,7 +72,7 @@ module.exports = {
       await conn.commit();
       return res.status(200).send({
         status: true,
-        message: "Berhasil update data",
+        message: "Data berhasil diambil",
         data: results,
       });
     } catch (e) {
