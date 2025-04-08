@@ -256,7 +256,7 @@ module.exports = {
         data: {
           route: url,
           em_id_pengajuan: emIdPengajuan,
-          idx: idx.toString(),
+          idx: `${idx}`,
         },
 
         notification: {

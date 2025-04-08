@@ -24,7 +24,12 @@ const {
     placeCoordinate,
     placeCoordinatePengaju,
     requestAbsen,
-    dailyTask
+    dailyTask,
+    
+    auditShow,
+    auditDetail,
+    auditApproval,
+    auditFilter,
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -72,6 +77,8 @@ router.post('/spesifik_approval', operasional.spesifik_approval);
 router.post('/list_approve_payroll', operasional.listApprovalPayroll);
 router.post('/spesifik_approval_multi', operasional.spesifik_approval_multi);
 router.post('/load_notifikasi',auth.isAuth, operasional.load_notifikasi);
+router.post('/load_notifikasi_approval',auth.isAuth, operasional.load_notifikasiApproval); 
+
 
 router.post('/load_laporan_absensi',auth.isAuth, operasional.load_laporan_absensi);
 router.post('/load_laporan_absensi_filter_lokasi', auth.isAuth,operasional.load_laporan_absensi_filter_lokasi);
@@ -104,12 +111,12 @@ router.post('/kirimAbsen',auth.isAuth, operasional.runTransaction);
 router.post('/kirimPengajuanTMK', auth.isAuth,operasional.kirimTidakMasukKerja);
 
 router.post('/lembur',auth.isAuth,lembur.store);
+router.post('/lembur_draft',auth.isAuth,lembur.insertDraft);
+router.post('/lembur_draft_update',auth.isAuth,lembur.updateDraft);
 router.post('/atas-perintah',auth.isAuth,lembur.atasPerintah);
 router.post('/berhubungan-dengan', lembur.berhubunganDengan);
 router.post('/lembur/detail',auth.isAuth,lembur.detailTask);
 router.post('/tugas-luar',auth.isAuth,tugasLuar.store);
-
-
 
 router.post('/insert-emp_labor',auth.isAuth,operasional.insertData);
 router.post('/insert-emp_leave',auth.isAuth, operasional.insertData);
@@ -222,7 +229,11 @@ router.post('/cuti-tipe',auth.isAuth,cuti.tipeCuti );
 router.post('/getAllTaskDaily',dailyTask.getAllDailyTask);
 router.get('/getDailyMonitoring',dailyTask.employeeMonotoringDaily);
 router.post('/getTaskDaily',dailyTask.getDailyTask);
+router.post('/getTaskDailyPDF',dailyTask.getDailyTaskPDF);
 router.post('/insertTaskDaily',dailyTask.insertDailyTask);
+router.post('/insertDraftDaily',dailyTask.insertDraft);
+router.post('/updateDraftDaily',dailyTask.updateDraft);
+router.post('/updateTaskDaily',dailyTask.updateDailyTask);
 
 // belum
 
@@ -336,6 +347,12 @@ router.post("/teguran_lisan_status",teguranLisan.updateStatusTeguranLisan);
 router.get("/teguran_lisan/count",teguranLisan.getUnreadSuratCount);
 router.get('/teguran_lisan/:id',teguranLisan.teguranLisanPdf);
 router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
+
+
+router.post("/audit",auditShow.show);
+router.get("/audit/:id",auditDetail.detail);
+router.post("/audit/:id/approval",auditApproval.approval);
+router.post('/audit/filter/employee',auditFilter.filtterEmployee)
 
 
 module.exports = router;

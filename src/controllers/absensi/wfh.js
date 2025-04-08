@@ -41,7 +41,7 @@ module.exports = {
     //     return res.status(400).json({ errors: errors.array() });
     // }
 
-    var time=req.body.time;
+    var time=req.body.waktu;
     var emId=req.body.em_id;
     var status=req.body.status;
     var uraian=req.body.uraian;
@@ -50,7 +50,7 @@ module.exports = {
     var nomorAjuan=`WH${tahun}${convertBulan}`;
     var signingAddr=req.body.lokasi;
     var sigingLonglat=req.body.latLang;
-   
+    console.log('ini body wfh', req.body);
     
     try{ 
         var database = req.query.database;
@@ -96,7 +96,7 @@ module.exports = {
                 
                 connection.query( `INSERT INTO ${namaDatabaseDynamic}.emp_labor
                 (nomor_ajuan,em_id,dari_jam,sampai_jam,durasi,atten_date,status,status_transaksi,approve_status,uraian,em_delegation,ajuan,place_in,signin_longlat,signin_addr,tgl_ajuan) 
-                VALUES ('${nomorAjuan}','${emId}',CURTIME(),CURDATE(),'00:00','${date}','Pending','1','Pending','${uraian}','${emId}','4','${place}','${sigingLonglat}','${signingAddr}',CURDATE()) `, (err, results) => {
+                VALUES ('${nomorAjuan}','${emId}','${time}',CURDATE(),'00:00','${date}','Pending','1','Pending','${uraian}','${emId}','4','${place}','${sigingLonglat}','${signingAddr}',CURDATE()) `, (err, results) => {
                   if (err) {
                     console.error('Error executing SELECT statement:', err);
                     connection.rollback(() => {

@@ -1081,7 +1081,7 @@ module.exports = {
       ) {
         if (convert2 == "emp_labor") {
           url = ` 
-            SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  AND branch_id='${branchId}'  ORDER BY id DESC`;
+            SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')    ORDER BY id DESC`;
 
           if (
             montStart < monthEnd ||
@@ -1114,6 +1114,7 @@ module.exports = {
       } else {
         url = `SELECT * FROM ${convert2} WHERE em_id='${em_id}' ORDER BY id DESC`;
       }
+      console.log(url);
       const [results] = await conn.query(url);
       await conn.commit();
       return res.status(200).send({
@@ -4030,6 +4031,7 @@ module.exports = {
     var pesan = "";
 
     console.log(req.body);
+   
 
     console.log(script);
     var dataInsertLog = {
@@ -4081,82 +4083,74 @@ module.exports = {
     const mysql = require("mysql");
     const poolDynamic = mysql.createPool(configDynamic);
 
-    poolDynamic.getConnection(function (err, connection) {
-      if (nameTable == "emp_claim") {
-        delete bodyValue.atten_date;
-      }
-      if (err) console.log(err);
-      console.log(req.body.leave_status);
-      let path = name_url.split("?")[0].replace("/", "");
-      if (req.body.leave_status == "Cancel" || path == "edit-notifikasi") {
-        connection.query(script, [bodyValue], function (error, results) {
-          console.log(error);
-          connection.release();
-          if (error != null)
-            connection.query(
-              `INSERT INTO logs_actvity SET ?;`,
-              [dataInsertLog],
-              function (error) {
-                if (error != null) console.log(error);
-              }
-            );
-
-          res.send({
-            status: true,
-            message: "Berhasil di update!",
-            data: results,
-          });
-        });
-      } else {
-        var query = "";
-        var splits = req.body.date_selected.split(",");
-
-        var query = ``;
-        var queryPendingPotongCuti = `
-          SELECT 
-          SUM(e.leave_duration) AS total_leave_duration,
-          e.leave_status AS status,
-          lt.name AS namaAjuan,
-    e.nomor_ajuan AS nomorAjuan
-      FROM ${namaDatabaseDynamic}.emp_leave e
-      JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
-      WHERE e.em_id = '${req.body.em_id}' 
-        AND e.status_transaksi = 1
-        AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve', 'Approve2')
-        AND e.${nameWhere} != '${cariWhere}'
-      `;
-        for (var i = 0; i < splits.length; i++) {
-          console.log(i);
-
-          let subQuery = `  
-            SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-            WHERE em_id='${req.body.em_id}' 
-            AND date_selected LIKE '%${splits[i]}%'  
-            AND status_transaksi=1 
-            AND leave_status IN ('Pending','Approve','Approve2') 
-            AND ${nameWhere} != '${cariWhere}'`;
-
-          if (i === 0) {
-            query = subQuery;
-          } else {
-            query += ` UNION ALL ${subQuery}`;
-          }
+    if (convert1=='emp_labor'){
+      poolDynamic.getConnection(function (err, connection) {
+        if (nameTable == "emp_claim") {
+          delete bodyValue.atten_date;
         }
-        console.log(query);
-        connection.query(query, (err, data) => {
-          if (err) {
-            console.error("Error executing SELECT statement:", err);
-            connection.rollback(() => {
-              connection.end();
-              return res.status(400).send({
-                status: false,
-                message: "gagal ambil data",
-                data: [],
-              });
+        if (err) console.log(err);
+        console.log(req.body.leave_status);
+        let path = name_url.split("?")[0].replace("/", "");
+        if (
+          req.body.leave_status == "Cancel" ||
+          path == "edit-notifikasi" ||
+          req.body.status_transaksi == 0
+        ) {
+          connection.query(script, [bodyValue], function (error, results) {
+            console.log(error);
+            connection.release();
+            if (error != null)
+              connection.query(
+                `INSERT INTO logs_actvity SET ?;`,
+                [dataInsertLog],
+                function (error) {
+                  if (error != null) console.log(error);
+                }
+              );
+  
+            res.send({
+              status: true,
+              message: "Berhasil di update!",
+              data: results,
             });
-            return;
+          });
+        } else {
+          var query = "";
+          var splits = req.body.date_selected.split(",");
+  
+          var query = ``;
+          var queryPendingPotongCuti = `
+            SELECT 
+            SUM(e.leave_duration) AS total_leave_duration,
+            e.leave_status AS status,
+            lt.name AS namaAjuan,
+      e.nomor_ajuan AS nomorAjuan
+        FROM ${namaDatabaseDynamic}.emp_leave e
+        JOIN ${databaseMaster}.leave_types lt ON e.typeId = lt.id
+        WHERE e.em_id = '${req.body.em_id}' 
+          AND e.status_transaksi = 1
+          AND lt.cut_leave = 1 AND e.leave_status IN ('Pending', 'Approve', 'Approve2')
+          AND e.${nameWhere} != '${cariWhere}'
+        `;
+          for (var i = 0; i < splits.length; i++) {
+            console.log(i);
+  
+            let subQuery = `  
+              SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
+              WHERE em_id='${req.body.em_id}' 
+              AND date_selected LIKE '%${splits[i]}%'  
+              AND status_transaksi=1 
+              AND leave_status IN ('Pending','Approve','Approve2') 
+              AND ${nameWhere} != '${cariWhere}'`;
+  
+            if (i === 0) {
+              query = subQuery;
+            } else {
+              query += ` UNION ALL ${subQuery}`;
+            }
           }
-          connection.query(queryPendingPotongCuti, (err, dataPending) => {
+          console.log(query);
+          connection.query(query, (err, data) => {
             if (err) {
               console.error("Error executing SELECT statement:", err);
               connection.rollback(() => {
@@ -4169,76 +4163,7 @@ module.exports = {
               });
               return;
             }
-            console.log(queryPendingPotongCuti);
-            console.log(dataPending);
-            console.log(jumlahCuti);
-            const totalLeaveDuration =
-              (dataPending[0]?.total_leave_duration || 0) +
-              req.body.leave_duration;
-            console.log("ini total duration", totalLeaveDuration);
-            console.log("ini cut leave", cutLeave);
-            if (cutLeave == 1) {
-              if (totalLeaveDuration > jumlahCuti) {
-                isError = true;
-                pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
-              }
-            }
-
-            console.log(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                        WHERE em_id='${req.body.em_id}' 
-                        AND (date_selected LIKE '%${req.body.date_selected}%')  
-                        AND  status_transaksi=1 
-                         AND leave_status IN ('Pending','Approve','Approve2')`);
-            for (var i = 0; i < data.length; i++) {
-              if (data.length > 0) {
-                if (data[0].leave_type == "HALFDAY") {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].time_plan_to}`
-                  );
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  transaksi = "Izin";
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                  }
-                } else if (
-                  req.body.leave_type == "FULLDAY" ||
-                  req.body.leave_type == "FULL DAY" ||
-                  req.body.leave_type == "Full Day"
-                ) {
-                  console.log(data[i].ajuan);
-
-                  if (data[i].ajuan == "1" || data[i].ajuan == 1) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan Cuti  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-                  }
-
-                  if (data[i].ajuan == "2" || data[i].ajuan == 2) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan Sakit  pada tanggal ${req.body.date_selected}  dengan status ${data[i].leave_status}`;
-                  }
-                }
-              }
-            }
-            connection.query(query, (err, data) => {
+            connection.query(queryPendingPotongCuti, (err, dataPending) => {
               if (err) {
                 console.error("Error executing SELECT statement:", err);
                 connection.rollback(() => {
@@ -4251,89 +4176,80 @@ module.exports = {
                 });
                 return;
               }
-
-              for (var i = 0; i < data.length; i++) {
-                if (data.length > 0) {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[i].atten_date}T${data[i].dari_jam}`
-                  );
-                  var time2 = new Date(
-                    `${data[i].atten_date}T${data[i].sampai_jam}`
-                  );
-
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (data[i].ajuan == "2") {
-                    transaksi = "Tugas Luar";
-                  }
-
-                  if (data[i].ajuan == "1") {
-                    transaksi = "Lembur";
-                  }
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    isError = true;
-                    pesan = `Kamu telah melakukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                  } else {
-                    if (isDateInRange(timeParam2, time1, time2)) {
-                      isError = true;
-                      pesan = `Kamu telah melakukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`;
-                    }
-                  }
+              console.log(queryPendingPotongCuti);
+              console.log(dataPending);
+              console.log(jumlahCuti);
+              const totalLeaveDuration =
+                (dataPending[0]?.total_leave_duration || 0) +
+                req.body.leave_duration;
+              console.log("ini total duration", totalLeaveDuration);
+              console.log("ini cut leave", cutLeave);
+              if (cutLeave == 1) {
+                if (totalLeaveDuration > jumlahCuti) {
+                  isError = true;
+                  pesan = `Kamu mempunyai ${dataPending[0]?.namaAjuan} dengan Status ${dataPending[0]?.status} dan nomor ajuan ${dataPending[0]?.nomorAjuan} sehingga sisa cuti kamu tidak mencukupi`;
                 }
               }
-              console.log("is errr", isError);
+  
 
-              if (isError == true || isError == "true") {
-                connection.release();
-                return res.status(500).send({
-                  status: false,
-                  message: pesan,
-                  data: [],
-                });
-              } else {
-                connection.query(
-                  script,
-                  [bodyValue],
-                  function (error, results) {
-                    console.log(error);
-                    connection.release();
-                    if (error != null)
-                      connection.query(
-                        `INSERT INTO logs_actvity SET ?;`,
-                        [dataInsertLog],
-                        function (error) {
-                          if (error != null) console.log(error);
-                        }
-                      );
-
-                    res.send({
-                      status: true,
-                      message: "Berhasil di update!",
-                      data: results,
-                    });
-                  }
-                );
-              }
+    
             });
           });
-        });
-      }
-    });
+        }
+      });
+
+
+
+    }else{
+      poolDynamic.getConnection(function (err, connection) {
+        if (nameTable == "emp_claim") {
+          delete bodyValue.atten_date;
+        }
+        if (err) console.log(err);
+        console.log(req.body.leave_status);
+        let path = name_url.split("?")[0].replace("/", "");
+
+       
+          console.log("is errr", isError);
+
+          if (isError == true || isError == "true") {
+            connection.release();
+            return res.status(500).send({
+              status: false,
+              message: pesan,
+              data: [],
+            });
+          } else {
+            connection.query(
+              script,
+              [bodyValue],
+              function (error, results) {
+                console.log(error);
+                connection.release();
+                if (error != null)
+                  connection.query(
+                    `INSERT INTO logs_actvity SET ?;`,
+                    [dataInsertLog],
+                    function (error) {
+                      if (error != null) console.log(error);
+                    }
+                  );
+
+                res.send({
+                  status: true,
+                  message: "Berhasil di update!",
+                  data: results,
+                });
+              }
+            );
+          }
+   
+      });
+
+
+    }
+
+ 
   },
   async approveWfh(req, res) {
     console.log("-----edit data ----------");
@@ -5784,6 +5700,11 @@ module.exports = {
     (SELECT NAME FROM sysdata WHERE kode='041') AS durasi_absen_keluar,
     (SELECT NAME FROM sysdata WHERE kode= '038') AS tipe_alpha,
     a.em_tracking  AS is_tracking,
+    CASE 
+    WHEN (SELECT COUNT(*) FROM sysdata WHERE kode='046' AND name LIKE '%${em_id}%') > 0 THEN 1
+    ELSE 0
+    END AS is_audit,
+   
     branch_id,
     a.file_face,
     a.loan_limit,
@@ -7099,13 +7020,9 @@ module.exports = {
               ` SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' AND tgl_ajuan='${dateNow}'`
             );
 
-            console.log(
-              `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' AND tgl_ajuan='${dateNow}'`
-            );
 
             if (cekLembur.length == 0) {
-              //logic Lembur
-              console.log("tes  tes");
+          
               const [sysdataLembur] = await connection.query(
                 `SELECT * FROM ${namaDatabasMaster}.sysdata WHERE kode IN ('041','042') `
               );
@@ -7200,7 +7117,11 @@ module.exports = {
         //Absen 1
 
         if (results.length == 0) {
-          var queryJadwal = `SELECT  IFNULL(work_schedule.time_in ,'08:30:00') as jam_masuk FROM ${namaDatabaseDynamic}.emp_shift  JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE '%${dateNow}%'`;
+          var queryJadwal = `SELECT  
+          IFNULL(work_schedule.time_in ,'08:30:00') as jam_masuk 
+          FROM ${namaDatabaseDynamic}.emp_shift  
+          JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id 
+          WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE '%${dateNow}%'`;
           const [jamMasuk] = await connection.query(queryJadwal);
 
           if (jamMasuk.length > 0) {
@@ -7210,10 +7131,23 @@ module.exports = {
             jam1.setMinutes(jam1.getMinutes() + 1);
             const jam2 = new Date(`${dateNow}T${jamAbsen}`); // 2:30 PM
 
-            var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${req.body.tanggal_absen}' AND leave_status = 'Approve2' AND time_plan >= '${jamAbsen}'`;
-            const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+            
+            var queryCekIzinTerlambat = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected  LIKE '%${req.body.tanggal_absen}%' AND leave_status = 'Approve2'  AND ajuan='2' `;
 
-            if (cekIzin.length == 0) {
+            const [cekIzin] = await connection.query(queryCekIzinTerlambat);            
+            const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
+            
+            const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
+
+            
+
+            if (cekIzin.length > 0 || cekTugasLuar.length > 0 || lokasiAbsenIn == 'TUGAS LUAR KANTOR') {
+              console.log('masuk sini');
+              
+            
+            }else{
+              console.log('masuk absen terlambat');
+              
               if (jam2 > jam1) {
                 const selisihWaktu = jam1.getTime() - jam2.getTime();
                 // Menghitung selisih dalam menit
@@ -7295,7 +7229,7 @@ module.exports = {
                 (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
               
                        ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
-                FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
+                FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
             )
             SELECT RankedAttendance1.* 
               FROM RankedAttendance1 
@@ -7315,7 +7249,7 @@ module.exports = {
                   (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
                 
                          ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
-                  FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
+                  FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_in != 'TUGAS LUAR KANTOR'
               ),RankedAttendance2 AS (
                 SELECT *,
                 (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
@@ -7365,6 +7299,8 @@ module.exports = {
               namaDatabaseDynamic,
               namaDatabasMaster
             );
+
+            
             var nilai = "Y";
             if (nilai == "Y") {
               if (terlambat.length >= parseInt(sysdata[1].name)) {
@@ -7936,21 +7872,25 @@ module.exports = {
               jam1.setMinutes(jam1.getMinutes() + 1);
               const jam2 = new Date(`${dateNow}T${jamAbsen}`); // jam pulang
 
-              // var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}'`;
-              // const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+              var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}' AND em_id='${em_id}'`;
+              const [cekIzin] = await connection.query(queryCekIzinTerlambat);
+              const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve'`;
+              const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
+              if ( cekIzin.length>0 ||cekTugasLuar.length > 0 ||  lokasiAbsenOut == 'TUGAS LUAR KANTOR') {
+                
+              }else{
+                if (jam2 < jam1) {
+                  const selisihWaktu = jam1.getTime() - jam2.getTime();
 
-              // if (cekIzin == 0){
-              if (jam2 < jam1) {
-                const selisihWaktu = jam1.getTime() - jam2.getTime();
+                  // Menghitung selisih dalam menit
+                  const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
 
-                // Menghitung selisih dalam menit
-                const selisihMenit = Math.floor(selisihWaktu / 60000); // 60000 ms = 1 menit
+                  title = "Absen Pulang Cepat";
+                  deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
+                  isNotif = true;
+                  statusAbsen = "pulang_cepat";
+                }
 
-                title = "Absen Pulang Cepat";
-                deskription = `Anda pulang lebih awal. Pastikan untuk tetap menjaga komitmen kerja di lain waktu`;
-                isNotif = true;
-                statusAbsen = "pulang_cepat";
-                // }
               }
             }
 
@@ -7996,7 +7936,7 @@ module.exports = {
           (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND b.category='FULLDAY'  LIMIT 1) AS cuti ,
         
                  ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
-          FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
+          FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_out != 'TUGAS LUAR KANTOR'
       )
       SELECT RankedAttendance1.* 
         FROM RankedAttendance1 
@@ -8018,7 +7958,7 @@ module.exports = {
             (SELECT b.name FROM ${startPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti ,
           
                    ROW_NUMBER() OVER (PARTITION BY atten_date ORDER BY attendance.id DESC) AS row_num
-            FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}'
+            FROM ${startPeriodeDynamic}.attendance WHERE em_id='${em_id}' AND signout_time != '00:00:00' AND atten_date>='${startPeriode}' AND atten_date <='${endPeriode}' AND place_out != 'TUGAS LUAR KANTOR'
         ),RankedAttendance2 AS (
           SELECT *,
           (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' AND leave_status='Approve2'  AND date_selected  LIKE CONCAT('%',attendance.atten_date,'%')  AND ajuan='1'  LIMIT 1) AS cuti , 
@@ -8531,6 +8471,11 @@ module.exports = {
           }
         }
       }
+
+      console.log("title ",title)
+      console.log("show notif ",isNotif)
+      console.log("description ",deskription)
+      console.log("status absen ",statusAbsen)
 
       await connection.commit();
       return res.status(200).send({
@@ -9582,7 +9527,6 @@ module.exports = {
       console.error("error", e);
       return res.status(400).send({
         status: false,
-        jumlah_data: results.length,
         message: "Gagal ambil data",
       });
     } finally {
@@ -9672,7 +9616,7 @@ module.exports = {
     var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.leave_status='Pending' AND a.ajuan='1'   AND a.status_transaksi=1`;
     var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
-  WHERE a.em_id=b.em_id 
+  WHERE a.em_id=b.em_id AND a.status_pengajuan != 'draft'
   AND (
     (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
     OR 
@@ -9858,7 +9802,7 @@ module.exports = {
 
     var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
-  WHERE a.em_id=b.em_id 
+  WHERE a.em_id=b.em_id AND a.status_pengajuan != 'draft'
   AND (
     (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
     OR 
@@ -11836,11 +11780,11 @@ module.exports = {
     }
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
+
     var query1 = `SELECT
     CASE
     WHEN ( a.apply_status IS NULL  OR a.apply_status='Pending')  AND (a.apply_by IS NULL OR a.apply_by='') THEN "Pending"
     WHEN  (a.apply_status IS NULL  OR a.apply_status='Rejected')  AND (a.apply_by!='') AND a.leave_status='Rejected'THEN "Rejected"
-
     ELSE "Approve"
     END AS apply_status,
     CASE
@@ -12290,7 +12234,8 @@ a.typeid,
     } else {
       convertBulan = getbulan;
     }
-    var namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+   let namaDatabaseDynamic; 
+   namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startPeriode =
       req.query.start_periode == undefined
@@ -12324,6 +12269,12 @@ a.typeid,
 
       namaDatabaseDynamic = startPeriodeDynamic;
     }
+
+    console.log(date1.getFullYear());
+    console.log(date2.getFullYear());
+    
+    console.log(namaDatabaseDynamic);
+
 
     // var query1 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND  (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan IN ('2', '3')`;
     // var query2 = `SELECT c.n.l, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='1'`;
@@ -12452,6 +12403,7 @@ c.input_time,
 a.approve_id,
 a.approve_date,
 a.id,
+c.full_name AS nama_delegasi,
 
 CASE
     WHEN o.dinilai = 'N' THEN b.em_report2_to
@@ -12461,8 +12413,13 @@ o.dinilai,
     
    
 
-     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id 
-   
+
+     o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a 
+     JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  
+     JOIN ${database}_hrm.employee c ON c.em_id = a.em_delegation
+     WHERE a.em_id=b.em_id 
+     AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
+
      ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
      -- Kondisi dinilai = 'Y' untuk mengganti em_delegation dan em_ids
      AND (
@@ -12557,7 +12514,7 @@ o.dinilai,
     // var query7 = `SELECT b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status='Pending'`;
     var query7 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,  
       b.full_name, a.*,a.status as leave_status FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b
-      WHERE a.em_id=b.em_id  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='3' AND a.status_transaksi=1
+      WHERE a.em_id=b.em_id  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan IN ('3', '5') AND a.status_transaksi=1
        ORDER BY a.id DESC
       `;
 
@@ -13060,10 +13017,12 @@ a.typeid,
     } else if (url_data == "kasbon") {
       queryApproval = query8;
     } else if (url_data == "surat_peringatan") {
-      queryApproval = query10;
+      queryApproval = query11 ;
+
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
     }
+    
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
@@ -13304,8 +13263,124 @@ a.typeid,
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
+
+    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL ORDER BY id DESC`;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
+    // var query2 = `SELECT * FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL`;
+
+    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
+      UNION ALL
+      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      ORDER BY idd DESC
+      `;
+
+      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}'  AND atten_date>='${startPeriode}'
+      UNION ALL
+      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      `;
+    }
+
+    console.log(query1);
+    console.log();
+    const connection = await model.createConnection1(namaDatabaseDynamic);
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [dataTanggal] = await conn.query(query1);
+      var listTanggal = dataTanggal;
+      let filter1 = [];
+      listTanggal.forEach((element) => {
+        filter1.push(element["atten_date"]);
+      });
+      filter1 = filter1.filter(
+        (value, index, arr) => arr.indexOf(value) == index
+      );
+      const [dataAll] = await conn.query(query2);
+      var allData = dataAll;
+      console.log("");
+      var hasilFinal = [];
+      filter1.forEach((element) => {
+        var turunan = [];
+
+        allData.forEach((element2) => {
+          if (element2["atten_date"] == element) {
+            turunan.push(element2);
+          }
+        });
+
+        var data = {
+          tanggal: element,
+          notifikasi: turunan,
+        };
+        hasilFinal.push(data);
+        hasilFinal = hasilFinal.sort((a, b) => a.tanggal - b.tanggal);
+
+        console.log("hasil final ", hasilFinal);
+      });
+      console.log("hasil final ", hasilFinal);
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil!",
+        data: hasilFinal,
+      });
+    } catch (e) {
+      if (conn) {
+        await conn.rollback();
+      }
+      console.error("error", e);
+      return res.status(400).send({
+        status: false,
+        jumlah_data: results.length,
+        message: "Gagal ambil data",
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
+  },
+
+  async load_notifikasiApproval(req, res) {
+
+    console.log("-----load aktifitas notifikasi----------");
+    var database = req.query.database;
+    var em_id = req.body.em_id;
+
+    var getTahun = req.body.tahun;
+    var getBulan = req.body.bulan;
+
+    const tahun = `${getTahun}`;
+    const convertYear = tahun.substring(2, 4);
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${getBulan}`;
+
+    var startPeriode =
+      req.query.start_periode == undefined
+        ? "2024-02-03"
+        : req.query.start_periode;
+    var endPeriode =
+      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    var array1 = startPeriode.split("-");
+    var array2 = endPeriode.split("-");
+
+    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
+      array1[1]
+    }`;
+    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
+      array2[1]
+    }`;
+
+    let date1 = new Date(startPeriode);
+    let date2 = new Date(endPeriode);
+
+    const montStart = date1.getMonth() + 1;
+    const monthEnd = date2.getMonth() + 1;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
+    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' ORDER BY id DESC`;
+    // var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}'`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
+
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
@@ -14161,6 +14236,34 @@ a.typeid,
     var status = req.body.status;
     var type = req.body.type;
 
+    const statusAjuan = req.body.leave_status;
+    let ajuanStatus;
+    if (type == "cuti" || type == "tidak_hadir") {
+      if (statusAjuan == "Rejected") {
+        ajuanStatus = `a.leave_status = 'Rejected'`;
+      } else if (statusAjuan == "Approve 1") {
+        ajuanStatus = `a.leave_status = 'Approve1'`;
+      } else if (statusAjuan == "Approve 2") {
+        ajuanStatus = `a.leave_status = 'Approve2'`;
+      } else if (statusAjuan == "Pending") {
+        ajuanStatus = `a.leave_status = 'Pending'`;
+      } else {
+        ajuanStatus = `a.leave_status != 'Cancel'`;
+      }
+    } else {
+      if (statusAjuan == "Rejected") {
+        ajuanStatus = `a.status = 'Rejected'`;
+      } else if (statusAjuan == "Approve 1") {
+        ajuanStatus = `a.status = 'Approve1'`;
+      } else if (statusAjuan == "Approve 2") {
+        ajuanStatus = `a.status = 'Approve2'`;
+      } else if (statusAjuan == "Pending") {
+        ajuanStatus = `a.status = 'Pending'`;
+      } else {
+        ajuanStatus = `a.status != 'Cancel'`;
+      }
+    }
+
     const tahun = `${req.body.tahun}`;
     const convertYear = tahun.substring(2, 4);
     const convertBulan = req.body.bulan;
@@ -14188,23 +14291,23 @@ a.typeid,
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
 
-    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_tidak_hadir = `SELECT  a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan IN ('2','3') AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_tidak_hadir = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan IN ('2','3')  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query1_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_cuti = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
-    var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
-    var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+    var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
-    var query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_dinasluar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
-    var query1_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
-    var query2_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND b.dep_id='${status}'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query1_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
+    var query2_klaim = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.created_on)='${req.body.bulan}' AND year(a.created_on)='${req.body.tahun}' AND b.dep_id='${status}'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
     console.log(req.query);
 
@@ -14433,12 +14536,12 @@ GROUP BY TBL.full_name`;
     const convertBulan = req.body.bulan;
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    var query_tidak_hadir = `SELECT a.*, b.name, b.category,b.input_time FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan IN ('2', '3') AND a.em_id='${em_id}' ORDER BY a.id DESC`;
-    var query_cuti = `SELECT a.*, b.name, b.category FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan='1' AND a.em_id='${em_id}' ORDER BY a.id DESC`;
-    var query_lembur = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='1' AND a.em_id='${em_id}' ORDER BY a.id DESC`;
-    var query_tugas_luar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='2' AND a.em_id='${em_id}' ORDER BY a.id DESC`;
-    var query_dinasluar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_leave a WHERE a.ajuan='4' AND a.em_id='${em_id}' ORDER BY a.id DESC`;
-    var query_klaim = `SELECT a.*, b.name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.cost b ON a.cost_id=b.id WHERE a.em_id='${em_id}' ORDER BY a.id DESC`;
+    var query_tidak_hadir = `SELECT a.*, b.name, b.category,b.input_time FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan IN ('2', '3') AND a.em_id='${em_id}' AND a.leave_status != 'Cancel' ORDER BY a.id DESC`;
+    var query_cuti = `SELECT a.*, b.name, b.category FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan='1' AND a.em_id='${em_id}' AND a.leave_status != 'Cancel' ORDER BY a.id DESC`;
+    var query_lembur = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='1' AND a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
+    var query_tugas_luar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='2' AND a.em_id='${em_id}'  AND a.status != 'Cancel' ORDER BY a.id DESC`;
+    var query_dinasluar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_leave a WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
+    var query_klaim = `SELECT a.*, b.name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.cost b ON a.cost_id=b.id WHERE a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
 
     var startPeriode =
       req.query.start_periode == undefined
@@ -15054,47 +15157,32 @@ GROUP BY TBL.full_name`;
     var em_id = req.body.em_id;
     var last_login = req.body.last_login;
     const connection = await model.createConnection1(`${database}_hrm`);
-        let conn;
-        try {
-          conn = await connection.getConnection();
-          await conn.beginTransaction();
-          var query = `UPDATE employee SET last_login='${last_login}',id_mobile='${req.body.id_mobile}' ,token_notif=null WHERE em_id='${em_id}'`;
-          const [results] = await conn.query(query);
-          await conn.commit();
-          console.log("Transaction completed successfully!");
-          return res.status(200).send({
-            status: true,
-            message: "Susccesfuly edit last login",
-            data: results,
-          });
-        } catch (e) {
-          console.error("errror,", e);
-          if (conn) {
-            await conn.rollback();
-          }
-          return res.status(400).send({
-            status: true,
-            message: "Gagal ambil data",
-            data: [],
-          });
-        } finally {
-          if (conn) await conn.release();
-        }
-    poolDynamic.getConnection(function (err, connection) {
-      if (err) console.log(err);
-      connection.query(
-        `UPDATE employee SET last_login='${last_login}',id_mobile='${req.body.id_mobile}' ,token_notif=null WHERE em_id='${em_id}'`,
-        function (error, results) {
-          connection.release();
-          if (error != null) console.log(error);
-          res.send({
-            status: true,
-            message: "Berhasil edit last login!",
-            data: results,
-          });
-        }
-      );
-    });
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      var query = `UPDATE employee SET last_login='${last_login}',id_mobile='${req.body.id_mobile}' ,token_notif=null WHERE em_id='${em_id}'`;
+      const [results] = await conn.query(query);
+      await conn.commit();
+      console.log("Transaction completed successfully!");
+      return res.status(200).send({
+        status: true,
+        message: "Susccesfuly edit last login",
+        data: results,
+      });
+    } catch (e) {
+      console.error("errror,", e);
+      if (conn) {
+        await conn.rollback();
+      }
+      return res.status(400).send({
+        status: true,
+        message: "Gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
   },
 
   edit_status_kandidat(req, res) {
@@ -16031,36 +16119,40 @@ GROUP BY TBL.full_name`;
 
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
     const connection = await model.createConnection1(`${database}_hrm`);
-        let conn;
-        try {
-          conn = await connection.getConnection();
-          await conn.beginTransaction();
-          const [sysdata] = await conn.query(`SELECT name FROM sysdata WHERE kode='013'`);
-          const [results] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE typeId='${typeId}' AND em_id='${em_id}' AND start_date>CURDATE() AND  end_date<CURDATE() AND leave_status='${
-                  sysdata[0].name == "1" || sysdata[0].name == 1
-                    ? "Approve"
-                    : "Approve2"
-                }' ORDER BY ID DESC`);
-          await conn.commit();
-          console.log("Transaction completed successfully!");
-          return res.status(200).send({
-            status: true,
-            message: "Susccesfuly get cuti melahirkan",
-            data: results,
-          });
-        } catch (e) {
-          console.error("errror,", e);
-          if (conn) {
-            await conn.rollback();
-          }
-          return res.status(400).send({
-            status: true,
-            message: "Gagal ambil data",
-            data: [],
-          });
-        } finally {
-          if (conn) await conn.release();
-        }
+    let conn;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [sysdata] = await conn.query(
+        `SELECT name FROM sysdata WHERE kode='013'`
+      );
+      const [results] = await conn.query(
+        `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE typeId='${typeId}' AND em_id='${em_id}' AND start_date>CURDATE() AND  end_date<CURDATE() AND leave_status='${
+          sysdata[0].name == "1" || sysdata[0].name == 1
+            ? "Approve"
+            : "Approve2"
+        }' ORDER BY ID DESC`
+      );
+      await conn.commit();
+      console.log("Transaction completed successfully!");
+      return res.status(200).send({
+        status: true,
+        message: "Susccesfuly get cuti melahirkan",
+        data: results,
+      });
+    } catch (e) {
+      console.error("errror,", e);
+      if (conn) {
+        await conn.rollback();
+      }
+      return res.status(400).send({
+        status: true,
+        message: "Gagal ambil data",
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release();
+    }
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {

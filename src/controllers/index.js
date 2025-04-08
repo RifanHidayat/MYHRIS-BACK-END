@@ -27,6 +27,13 @@ const placeCoordinatePengaju = require('./placeCordinate/placeCoordinatePengaju'
 const requestAbsen = require('./absensi/request_absen/requestAbsen');
 const notifikasi  = require('./notifikasi/push_notifikasi');
 const dailyTask = require('./task/daily_task');
+//audit
+const auditShow = require('./audit/show');
+const auditDetail = require('./audit/detail');
+const auditApproval = require('./audit/approval');
+const auditFilter = require('./audit/filter');
+
+
 module.exports ={
 	operasional,
 	login,
@@ -47,5 +54,9 @@ module.exports ={
 	placeCoordinate,
 	placeCoordinatePengaju,
 	requestAbsen,
-	dailyTask
+	dailyTask,
+	auditShow,
+	auditApproval,
+	auditDetail,
+	auditFilter
 };

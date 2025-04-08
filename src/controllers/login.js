@@ -343,7 +343,7 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [result] = await conn.query(
-        `SELECT * FROM mobile_versions `
+        `SELECT * FROM mobile_versions WHERE apk = 'sisrajj'`
       );
       await conn.commit();
       console.log("Transaction completed successfully!");
@@ -375,7 +375,7 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [result] = await conn.query(
-        `SELECT * FROM mobile_versions ORDER BY id DESC LIMIT 1`
+        `SELECT * FROM mobile_versions WHERE apk = 'sisrajj' ORDER BY id DESC LIMIT 1`
       );
       await conn.commit();
       console.log("Transaction completed successfully!");
