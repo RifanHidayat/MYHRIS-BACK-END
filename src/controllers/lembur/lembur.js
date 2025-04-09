@@ -1518,7 +1518,23 @@ module.exports = {
     } else {
       convertBulan = array[1];
     }
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+
+    var startPeriode =
+      req.query.start_periode == undefined
+        ? "2024-02-03"
+        : req.query.start_periode;
+    var endPeriode =
+      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    var array1 = startPeriode.split("-");
+    var array2 = endPeriode.split("-");
+
+    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
+      array1[1]
+    }`;
+    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
+      array2[1]
+    }`;
+    const namaDatabaseDynamic = startPeriodeDynamic;
 
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;

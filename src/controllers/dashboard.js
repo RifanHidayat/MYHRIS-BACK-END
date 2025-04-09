@@ -108,6 +108,7 @@ module.exports = {
       await connection.beginTransaction();
 
       var query = `SELECT work_schedule.time_in,work_schedule.time_out FROM ${namaDatabaseDynamic}.emp_shift JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id AND atten_date='${date}' AND em_id='${emId}'`;
+      console.log(query);
       const [records] = await connection.query(query);
 
       if (records.length === 0) {
