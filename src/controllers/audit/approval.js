@@ -5,7 +5,7 @@ const ipServer = process.env.API_URL;
 module.exports = {
   async approval(req, res) {
     var database = req.query.database;
-    var em_id = req.body.em_id;
+    var databaseMaster = `${database}_hrm`;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
     var date = req.body.date;
@@ -17,6 +17,7 @@ module.exports = {
     var id = req.params.id;
     var konsekuensi = req.body.konsekuensi;
     var listKonsekuensi = req.body.list_konsekuensi;
+    var alasanReject = req.body.alasan;
 
     // const tahun = `${gettahun}`;
     // const convertYear = tahun.substring(2, 4);
@@ -54,6 +55,7 @@ module.exports = {
 
     var namaTable = "";
     var fixquery = ``;
+    var fixQueryEmployee = ``;
     console.log(req.body);
     if (
       tipeForm == "Lembur" ||
@@ -62,6 +64,7 @@ module.exports = {
       tipeForm == "WFH"
     ) {
       namaTable = "emp_labor";
+      fixQueryEmployee = `SELECT a.em_id, a.audit_surat_id, b.full_name FROM ${endPeriodeDynamic}.emp_labor a INNER JOIN ${databaseMaster}.employee b ON a.em_id = b.em_id WHERE a.id='${id}'`;
       if (status == "") {
         fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_status='Approve',audit_date='${dateNow}',status='Approve2', approve2_status='Approve' WHERE id='${id}' `;
       } else {
@@ -69,7 +72,7 @@ module.exports = {
       }
     } else {
       namaTable = "emp_leave";
-
+      fixQueryEmployee = `SELECT a.em_id,a.audit_surat_id, b.full_name FROM ${endPeriodeDynamic}.emp_leave  INNER JOIN ${databaseMaster}.employee b ON a.em_id = b.em_id WHERE id='${id}'`;
       if (status == "") {
         fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_status='Approve',audit_date='${dateNow}',leave_status='Approve', apply2_status='Approve' WHERE  id='${id}'`;
       } else {
@@ -85,6 +88,14 @@ module.exports = {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [results] = await conn.query(fixquery);
+      const [getData] = await conn.query(fixQueryEmployee);
+      console.log(getData);
+      const emIdUser = getData[0].em_id;
+      const fullNameUser = getData[0].full_name;
+      console.log(emIdUser);
+      if (status == '') {
+        const queryHapus = `DELETE FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${id}'`
+      }
       if (konsekuensi === "teguran_lisan") {
         const queryTeguranLisan = `SELECT * FROM teguran_lisan WHERE MONTH(tgl_surat) = MONTH(CURRENT_DATE) AND YEAR(tgl_surat) = YEAR(CURRENT_DATE) ORDER BY id DESC LIMIT 1`;
         const [teguranLisan] = await conn.query(queryTeguranLisan);
@@ -112,9 +123,7 @@ module.exports = {
         }
         console.log(nomorLb);
         console.log(nomorStr);
-        console.log(req.body.apply_id);
-        console.log(req.body.apply2_id);
-        console.log(`ini id yang ngasih teguran ${approveId}`);
+        console.log(`ini id yang ngasih teguran ${emId}`);
 
         const queryInsert = `INSERT INTO teguran_lisan (
                                                   nomor,
@@ -129,18 +138,18 @@ module.exports = {
                                                   '${nomorLb}',
                                                   'Teguran Lisan',
                                                   '${utility.dateNow2()}',
-                                                  '${emId}',
+                                                  '${emIdUser}',
                                                   '9',
                                                   '${utility.dateNow2()}',
                                                   '${alasanReject}',
                                                   'Pending',
-                                                  '${approveId}')`;
-        const insertTeguran = await conn.query(queryInsert);
+                                                  '${emId}')`;
+        const [insertTeguran] = await conn.query(queryInsert);
 
-        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET id_surat=${insertTeguran.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET audit_surat_id=${insertTeguran.insertId} WHERE id='${id}'`;
         await conn.query(queryInsertTeguranLisanId);
-
-        var konsekuensiArray = listKonsekuensi.split(",");
+        console.log('ini listkonsekuensi', listKonsekuensi);
+        const konsekuensiArray = listKonsekuensi.map(k => k.konsekuensi);
         console.log(konsekuensiArray);
         console.log(insertTeguran);
 
@@ -158,17 +167,17 @@ module.exports = {
           notifTl[0]["name"],
           "Teguran Lisan",
           "Teguran Lisan",
-          emId,
-          employee[0]["id"],
+          emIdUser,
+          insertTeguran.insertId,
           nomorLb,
-          employee[0]["full_name"],
+          fullNameUser,
           endPeriodeDynamic,
           databaseMaster,
-          `Teguran Lisan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+          `Teguran Lisan Telah di terbitkan Kepada ${fullNameUser}, dengan nomor ${nomorLb}`
         );
       } else if (konsekuensi === "surat_peringatan") {
         const queryCekSuratPeringatan = `SELECT * FROM employee_letter WHERE exp_date>=CURDATE() AND status='Approve' AND em_id='${emId}' ORDER BY id DESC`;
-        const [suratPeringatan] = await conn.query();
+        const [suratPeringatan] = await conn.query(queryCekSuratPeringatan);
 
         var letterId = "";
 
@@ -215,18 +224,19 @@ module.exports = {
                                                     VALUE(
                                                     '${nomorLb}',
                                                     '${utility.dateNow2()}',
-                                                    '${emId}',
+                                                    '${emIdUser}',
                                                     '${letterId}',
                                                     '${utility.dateNow2()}',
                                                     '${alasanReject}',
                                                     'Pending',
-                                                    '${approveId}')`;
+                                                    '${emId}')`;
         const [insertSuratPeringatan] = await conn.query(queryInsert);
 
-        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET id_surat=${insertSuratPeringatan.insertId} WHERE ${nameWhere} = '${cariWhere}'`;
+        var queryInsertTeguranLisanId = `UPDATE ${endPeriodeDynamic}.${namaTable} SET audit_surat_id=${insertSuratPeringatan.insertId} WHERE id = '${id}'`;
         console.log(queryInsertTeguranLisanId);
         await conn.query(queryInsertTeguranLisanId);
-        var konsekuensiArray = listKonsekuensi.split(",");
+        console.log('ini listkonsekuensi', listKonsekuensi);
+        const konsekuensiArray = listKonsekuensi.map(k => k.konsekuensi);
         for (var i = 0; i < konsekuensiArray.length; i++) {
           var data = konsekuensiArray[i].trim();
           console.log(data);
@@ -244,13 +254,13 @@ module.exports = {
           notifTl[0]["name"],
           "Surat Peringatan",
           "Surat Peringatan",
-          emId,
-          employee[0]["id"],
+          emIdUser,
+          insertSuratPeringatan.insertId,
           nomorLb,
-          employee[0]["full_name"],
-          namaDatabaseDynamic,
+          fullNameUser,
+          endPeriodeDynamic,
           databaseMaster,
-          `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+          `Surat Peringatan Telah di terbitkan Kepada ${fullNameUser}, dengan nomor ${nomorLb}`
         );
       } else {
         console.log("tidak ada konsekensi alias", konsekuensi);
@@ -266,7 +276,7 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error("Error:", e.message);
+      console.error("Error:", e);
       return res.status(400).send({
         status: false,
         message: e.message,
