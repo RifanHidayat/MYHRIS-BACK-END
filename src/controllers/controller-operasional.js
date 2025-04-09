@@ -814,9 +814,14 @@ module.exports = {
     var database = req.query.database;
     var query = "";
     console.log(req.query);
+const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    var startDate = req.query.start_periode;
-    var endDate = req.query.end_periode;
+    const startDate =
+      req.query.start_periode?.trim() || firstDay.toISOString().split("T")[0];
+    const endDate =
+      req.query.end_periode?.trim() || lastDay.toISOString().split("T")[0];
     var array = endDate.split("-");
     const connection = await model.createConnection1(`${database}_hrm`);
     var databseDinamik = `${database}_hrm${array[0].substring(
@@ -9773,7 +9778,7 @@ module.exports = {
     var convert1 = parseInt(getbulan);
     var convertBulan = convert1 <= 9 ? `0${convert1}` : convert1;
 
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    var namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startPeriode =
       req.query.start_periode == undefined
@@ -9796,13 +9801,14 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
+    namaDatabaseDynamic = startPeriodeDynamic;
 
     var query1 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan IN ('2', '3')    AND a.status_transaksi=1`;
     var query2 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b  JOIN  ${database}_hrm.branch ON b.branch_id=branch.id WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.status_transaksi=1`;
 
     var query3 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
-  WHERE a.em_id=b.em_id AND a.status_pengajuan != 'draft'
+  WHERE a.em_id=b.em_id AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
   AND (
     (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
     OR 
@@ -12258,7 +12264,9 @@ a.typeid,
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-
+    console.log('ini monstrt', montStart);
+    console.log('ini monend', monthEnd);
+    namaDatabaseDynamic = startPeriodeDynamic;
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       conditionStatus = `${conditionStatus} AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'`;
       if (url_data == "Klaim" || url_data == "klaim") {
@@ -13264,10 +13272,10 @@ a.typeid,
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
 
-    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL ORDER BY id DESC`;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
-    // var query2 = `SELECT * FROM notifikasi WHERE em_id = 'SIS202412070' AND em_id_pengajuan != 'SIS202412070' AND idx IS NOT NULL`;
+    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
+    // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
+    // var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
+    var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
@@ -13283,7 +13291,6 @@ a.typeid,
     }
 
     console.log(query1);
-    console.log();
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
