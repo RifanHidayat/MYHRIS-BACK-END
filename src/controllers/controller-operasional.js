@@ -9417,7 +9417,7 @@ const today = new Date();
 
     var query8 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b 
   JOIN  ${database}_hrm.branch ON b.branch_id=branch.id
-  WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status IN ('Pending', 'Approve') AND (a.ajuan='3' OR a.ajuan='5') AND a.status_transaksi=1`;
+  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.status IN ('Pending', 'Approve') AND (a.ajuan='3' OR a.ajuan='5') AND a.status_transaksi=1`;
 
     var query9 = `SELECT a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b 
   JOIN  ${database}_hrm.branch ON b.branch_id=branch.id
@@ -9522,6 +9522,7 @@ const today = new Date();
       const [results] = await conn.query(
         `${query1};${query2};${query3};${query4};${query5};${query6};${query7};${query8};${query9};${query10};${query11};${query12}`
       );
+      console.log(query8);
       await conn.commit();
       return res.status(200).send({
         status: true,
