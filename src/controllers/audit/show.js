@@ -8,7 +8,7 @@ module.exports = {
 
 
   async show(req, res) {
-    console.log("get employ attt");
+    console.log("body", req.body);
     var database = req.query.database;
     var emId = req.body.em_id;
     const getbulan = req.body.bulan;
@@ -16,6 +16,7 @@ module.exports = {
     var date = req.body.date;
     var limit=req.body.limit;
     var offset=req.body.offset;
+    var allData=req.body.all_data;
 
     var  status=req.body.status;
     var statusAudit=req.body.status_audit;
@@ -52,9 +53,47 @@ module.exports = {
     let date1 = new Date(startPeriode);
     let date2 = new Date(endPeriode);
 
+    let queryFilterStatus = ``;
+    console.log("status audit", statusAudit);
+    if (statusAudit === 'Draft'){
+      queryFilterStatus = `AND status_audit =''`;
+    }else {
+      queryFilterStatus = `AND status_audit LIKE '%${statusAudit}%'`;
+    }
+    let queryAllData = ``;
+    if (allData == false){
+      queryAllData = `LIMIT ${limit} OFFSET ${offset}`;
+    } else {
+      queryAllData = ``;
+    }
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query = `  SELECT emp_labor.id, employee.em_id,employee.branch_id, nomor_ajuan AS nomor, employee.full_name,designation.name AS jabatan,emp_labor.status, emp_labor.atten_date AS atten_date, emp_labor.uraian AS keterangan,
+    var query = `SELECT  
+        JSON_OBJECT(
+            'full_name', e1.full_name,
+            'em_id', e1.em_id
+        ) AS approve1,
+      
+        JSON_OBJECT(
+            'full_name', e2.full_name,
+            'em_id', e2.em_id
+        ) AS approve2,
+      
+        JSON_OBJECT(
+            'full_name', e3.full_name,
+            'em_id', e3.em_id
+        ) AS users,
+    emp_labor.id, 
+    employee.em_id,
+    employee.branch_id, 
+    nomor_ajuan AS nomor, 
+    employee.full_name,
+    designation.name AS jabatan,
+    emp_labor.status, 
+    emp_labor.atten_date AS atten_date, 
+    emp_labor.uraian AS keterangan,
+    emp_labor.audit_tipe_surat AS konsekuensi,
+    emp_labor.audit_surat_name AS penerima_konsekuensi,
     CASE  
        WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
        WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -64,10 +103,41 @@ module.exports = {
        ELSE NULL
       END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
       
-    FROM ${startPeriodeDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
+    FROM ${startPeriodeDynamic}.emp_labor 
+    JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id 
+    LEFT JOIN ${database}_hrm.employee e1 ON emp_labor.approve_id = e1.em_id
+    LEFT JOIN ${database}_hrm.employee e2 ON emp_labor.approve2_id = e2.em_id
+    LEFT JOIN ${database}_hrm.employee e3 ON emp_labor.em_id = e3.em_id
+    LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
     
     UNION ALL
-    SELECT emp_leave.id, employee.em_id, nomor_ajuan AS nomor,employee.branch_id, employee.full_name,designation.name AS jabatan, emp_leave.leave_status, emp_leave.atten_date AS atten_date, emp_leave.reason AS keterangan,
+    SELECT 
+    JSON_OBJECT(
+            'full_name', e1.full_name,
+            'em_id', e1.em_id
+        ) AS approve1,
+      
+        JSON_OBJECT(
+            'full_name', e2.full_name,
+            'em_id', e2.em_id
+        ) AS approve2,
+      
+        JSON_OBJECT(
+            'full_name', e3.full_name,
+            'em_id', e3.em_id
+        ) AS users,
+    emp_leave.id, 
+    employee.em_id, 
+    employee.branch_id,
+    nomor_ajuan AS nomor, 
+    employee.full_name,
+    designation.name AS jabatan, 
+    emp_leave.leave_status, 
+    emp_leave.atten_date AS atten_date, 
+    emp_leave.reason AS keterangan,
+    emp_leave.audit_tipe_surat AS konsekuensi,
+    emp_leave.audit_surat_name AS penerima_konsekuensi,
+
       CASE  
        WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
        WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
@@ -75,7 +145,11 @@ module.exports = {
        WHEN emp_leave.nomor_ajuan LIKE '%DL%'THEN 'Dinas Luar'
        ELSE NULL
       END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
-     FROM ${startPeriodeDynamic}.emp_leave  JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id 
+     FROM ${startPeriodeDynamic}.emp_leave  
+     JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id 
+     LEFT JOIN ${database}_hrm.employee e1 ON emp_leave.apply_id = e1.em_id
+    LEFT JOIN ${database}_hrm.employee e2 ON emp_leave.apply2_id = e2.em_id
+    LEFT JOIN ${database}_hrm.employee e3 ON emp_leave.em_id = e3.em_id
      LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
 
     `;
@@ -111,9 +185,9 @@ module.exports = {
     var fixquery=`SELECT * FROM  (${query}) AS TBL 
     WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
     AND status LIKE '%${status}%' 
-    AND status_audit LIKE '%${statusAudit}%' 
+    ${queryFilterStatus} 
     AND tipe_pengajuan LIKE '%${tipeForm}%'
-    LIMIT ${limit} OFFSET ${offset}`
+    ${queryAllData}`
 
 
     console.log(`data ${fixquery}`)

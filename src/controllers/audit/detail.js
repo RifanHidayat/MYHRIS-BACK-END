@@ -58,7 +58,25 @@ module.exports = {
     namaTable='emp_leave';
   }
 
-    var fixquery=`SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
+    var fixquery=
+    // `SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
+    `SELECT 
+  JSON_OBJECT(
+    'approve1', e1.full_name,
+    'approve2', e2.full_name,
+    'employee', e3.full_name
+  ) AS user_names,
+  JSON_OBJECT(
+    'approve1_id', e1.em_id,
+    'approve2_id', e2.em_id,
+    'employee_id', e3.em_id
+  ) AS user_ids,
+  a.*
+FROM 
+  sisrajj_hrm2504.emp_labor a
+LEFT JOIN employee e1 ON a.approve_id = e1.em_id
+LEFT JOIN employee e2 ON a.approve2_id = e2.em_id
+LEFT JOIN employee e3 ON a.em_id = e3.em_id WHERE id='${req.params.id}`
 
 
     const connection = await models.createConnection1(`${database}_hrm`);
