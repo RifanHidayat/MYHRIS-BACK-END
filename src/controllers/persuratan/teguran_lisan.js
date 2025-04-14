@@ -194,7 +194,10 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var emId = req.body.em_id;
     var branchId = req.headers.branch_id;
     let queryFilterStatus = ``;
-    if (emId.length > 1) {
+    console.log('ini em id', emId);
+    console.log('ini em id length', emId.length);
+    const emIdArray = typeof emId === 'string' ? emId.split(',') : emId;
+    if (emIdArray.length > 1) {
       const em_Idfinal = emId.map((item) => `'${item}'`).join(",");
       queryFilterStatus = `teguran_lisan.em_id IN (${em_Idfinal})`;
       console.log("ini em id lebih dari 1", emId);

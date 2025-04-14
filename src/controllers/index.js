@@ -32,6 +32,7 @@ const auditShow = require('./audit/show');
 const auditDetail = require('./audit/detail');
 const auditApproval = require('./audit/approval');
 const auditFilter = require('./audit/filter');
+const auditLog = require('./audit/log');
 
 
 module.exports ={
@@ -58,5 +59,6 @@ module.exports ={
 	auditShow,
 	auditApproval,
 	auditDetail,
-	auditFilter
+	auditFilter,
+	auditLog
 };

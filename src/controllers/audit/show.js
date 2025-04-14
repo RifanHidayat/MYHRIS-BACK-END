@@ -94,6 +94,7 @@ module.exports = {
     emp_labor.uraian AS keterangan,
     emp_labor.audit_tipe_surat AS konsekuensi,
     emp_labor.audit_surat_name AS penerima_konsekuensi,
+    emp_labor.alasan_audit AS pelanggaran,
     CASE  
        WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
        WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
@@ -137,6 +138,7 @@ module.exports = {
     emp_leave.reason AS keterangan,
     emp_leave.audit_tipe_surat AS konsekuensi,
     emp_leave.audit_surat_name AS penerima_konsekuensi,
+    emp_leave.alasan_audit AS pelanggaran,
 
       CASE  
        WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
@@ -211,7 +213,7 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error("Error:", e.message);
+      console.error("Error:", e);
       return res.status(400).send({
         status: false,
         message:  e.message,

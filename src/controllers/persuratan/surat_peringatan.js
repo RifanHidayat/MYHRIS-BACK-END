@@ -193,6 +193,19 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
     var database = req.query.database;
     var emId = req.body.em_id;
     var branchId = req.headers.branch_id;
+    let queryFilterStatus = ``;
+    console.log('ini em id', emId);
+    console.log('ini em id length', emId.length);
+    const emIdArray = typeof emId === 'string' ? emId.split(',') : emId;
+    if (emIdArray.length > 1) {
+      const em_Idfinal = emId.map((item) => `'${item}'`).join(",");
+      queryFilterStatus = `employee_letter.em_id IN (${em_Idfinal})`;
+      console.log("ini em id lebih dari 1", emId);
+      console.log(queryFilterStatus);
+    } else {
+      queryFilterStatus = `employee_letter.em_id LIKE '%${emId}%'`;
+      console.log(`teguran_lisan.em_id LIKE '%${emId}%'`);
+    }
     try {
       const connection = await model.createConnection(database);
       connection.connect((err) => {
@@ -206,7 +219,9 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
             connection.end();
             return;
           }
-          var querySuratPeringatan = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter JOIN employee ON employee_letter.em_id=employee.em_id LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE employee_letter.em_id LIKE '%${emId}%' AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
+          var querySuratPeringatan = `SELECT letter.name as sp,employee.full_name as nama,employee.job_title as posisi, employee_letter.* FROM employee_letter 
+          JOIN employee ON employee_letter.em_id=employee.em_id 
+          LEFT JOIN letter ON letter.id=employee_letter.letter_id WHERE ${queryFilterStatus} AND employee_letter.status='Approve' AND exp_date >= CURDATE() ORDER BY id DESC`;
           console.log(querySuratPeringatan);
           connection.query(querySuratPeringatan, (err, employee) => {
             if (err) {

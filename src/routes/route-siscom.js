@@ -30,6 +30,7 @@ const {
     auditDetail,
     auditApproval,
     auditFilter,
+    auditLog
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -352,7 +353,8 @@ router.post("/teguran_lisan/approval",teguranLisan.approvalTeguranLisan);
 router.post("/audit",auditShow.show);
 router.get("/audit/:id",auditDetail.detail);
 router.post("/audit/:id/approval",auditApproval.approval);
-router.post('/audit/filter/employee',auditFilter.filtterEmployee)
+router.post('/audit/filter/employee',auditFilter.filtterEmployee);
+router.post('/audit/log', auditLog.log);
 
 
 module.exports = router;

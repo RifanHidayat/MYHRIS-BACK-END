@@ -58,6 +58,7 @@ module.exports = {
     var namaTable = "";
     var fixquery = ``;
     var fixQueryEmployee = ``;
+    var queryLog = ``;
     console.log(req.body);
     console.log(req.params);
     if (
@@ -70,17 +71,21 @@ module.exports = {
       namaTable = "emp_labor";
       fixQueryEmployee = `SELECT a.em_id, a.audit_surat_id, a.audit_tipe_surat, b.full_name FROM ${endPeriodeDynamic}.emp_labor a INNER JOIN ${databaseMaster}.employee b ON a.em_id = b.em_id WHERE a.id='${id}'`;
       if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_status='Approve',audit_date='${dateNow}',status='Approve2', approve2_status='Approve', audit_tipe_surat='${konsekuensi}' WHERE id='${id}' `;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_status='Approve',audit_date='${dateNow}',status='Approve2', approve2_status='Approve', audit_tipe_surat='${konsekuensi}', alasan_audit ='', audit_surat_name='' WHERE id='${id}' `;
+        queryLog = `INSERT INTO ${endPeriodeDynamic}.audit_logs (em_id, id_trx, status, full_name) VALUES ('${emId}', '${id}', 'Approve','${fullName}')`;
       } else {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}',audit_name='${fullName}' ,status='Rejected', approve2_status='Rejected', audit_tipe_surat='${konsekuensi}' WHERE id='${id}' `;
+        queryLog = `INSERT INTO ${endPeriodeDynamic}.audit_logs (em_id, id_trx, status, full_name) VALUES ('${emId}', '${id}', 'Rejected','${fullName}')`;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_labor SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}',audit_name='${fullName}' ,status='Rejected', approve2_status='Rejected', audit_tipe_surat='${konsekuensi}', alasan_audit ='${alasanReject}' WHERE id='${id}' `;
       }
     } else {
       namaTable = "emp_leave";
       fixQueryEmployee = `SELECT a.em_id, a.audit_surat_id, a.audit_tipe_surat, b.full_name FROM ${endPeriodeDynamic}.emp_leave a INNER JOIN ${databaseMaster}.employee b ON a.em_id = b.em_id WHERE a.id='${id}'`;
       if (status == "") {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_status='Approve',audit_date='${dateNow}',leave_status='Approve', apply2_status='Approve', audit_tipe_surat='${konsekuensi} 'WHERE  id='${id}'`;
+        queryLog = `INSERT INTO ${endPeriodeDynamic}.audit_logs (em_id, id_trx, status, full_name) VALUES ('${emId}', '${id}', 'Approve','${fullName}')`;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_status='Approve',audit_date='${dateNow}',leave_status='Approve', apply2_status='Approve', audit_tipe_surat='${konsekuensi}', alasan_audit ='', audit_surat_name='' WHERE  id='${id}'`;
       } else {
-        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,audit_name='${fullName}'  ,leave_status='Rejected', apply2_status='Rejected', audit_tipe_surat='${konsekuensi}' WHERE  id='${id}'`;
+        queryLog = `INSERT INTO ${endPeriodeDynamic}.audit_logs (em_id, id_trx, status, full_name) VALUES ('${emId}', '${id}', 'Rejected','${fullName}')`;
+        fixquery = `UPDATE ${endPeriodeDynamic}.emp_leave SET audit_id='${emId}',audit_status='Rejected',audit_date='${dateNow}' ,audit_name='${fullName}'  ,leave_status='Rejected', apply2_status='Rejected', audit_tipe_surat='${konsekuensi}', alasan_audit ='${alasanReject}' WHERE  id='${id}'`;
       }
     }
 
@@ -91,6 +96,7 @@ module.exports = {
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
+      await conn.query(queryLog);
       const [results] = await conn.query(fixquery);
       const [getData] = await conn.query(fixQueryEmployee);
       console.log(getData);
@@ -192,7 +198,7 @@ module.exports = {
               "Teguran Lisan",
               "Teguran Lisan",
               emIdUser,
-              insertTeguran.insertId,
+              null,
               nomorLb,
               fullNameUser,
               endPeriodeDynamic,
@@ -288,7 +294,7 @@ module.exports = {
               "Surat Peringatan",
               "Surat Peringatan",
               emIdUser,
-              insertSuratPeringatan.insertId,
+              null,
               nomorLb,
               fullNameUser,
               endPeriodeDynamic,
