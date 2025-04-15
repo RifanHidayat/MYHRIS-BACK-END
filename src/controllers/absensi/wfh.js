@@ -138,8 +138,54 @@ module.exports = {
                         });
                         return;
                       }
+                      const delegationIds = employee[0]
+                      .em_report_to
+                      ? Array.isArray(
+                          employee[0].em_report_to
+                        )
+                        ? employee[0].em_report_to
+                        : [employee[0].em_report_to]
+                      : [];
 
-                  utility.insertNotifikasi(employee[0].em_report_to,'Approval WFH','WFH',employee[0].em_id,transaksi[0].id,transaksi[0].nomor_ajuan,employee[0].full_name,namaDatabaseDynamic,databaseMaster);
+                    const emIds = employee[0]
+                      .em_report2_to
+                      ? Array.isArray(
+                          employee[0].em_report2_to
+                        )
+                        ? employee[0].em_report2_to
+                        : [employee[0].em_report2_to]
+                      : [];
+
+                    const combinedIds = [
+                      ...new Set([
+                        ...delegationIds.flatMap(
+                          (id) =>
+                            id
+                              .split(",")
+                              .map((i) =>
+                                i.trim().toUpperCase()
+                              )
+                        ),
+                        ...emIds.flatMap((id) =>
+                          id
+                            .split(",")
+                            .map((i) =>
+                              i.trim().toUpperCase()
+                            )
+                        ),
+                      ]),
+                    ];
+                  utility.insertNotifikasi(
+                    combinedIds,
+                    'Approval WFH',
+                    'WFH',
+                    employee[0].em_id,
+                    transaksi[0].id,
+                    transaksi[0].nomor_ajuan,
+                    employee[0].full_name,
+                    namaDatabaseDynamic,
+                    databaseMaster
+                  );
        
 
             //  proses memasukan data 

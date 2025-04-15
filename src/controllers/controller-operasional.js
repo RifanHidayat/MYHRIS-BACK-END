@@ -3003,7 +3003,43 @@ module.exports = {
                                                   "Teguran Lisan",
                                                   "Teguran Lisan",
                                                   emId,
-                                                  employee[0]["id"],
+                                                  null,
+                                                  nomorLb,
+                                                  employee[0]["full_name"],
+                                                  namaDatabaseDynamic,
+                                                  databaseMaster,
+                                                  `Teguran Lisan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+                                                );
+                                              }
+                                            );
+                                            connection.query(
+                                              `SELECT * FROM sysdata WHERE kode=027`,
+                                              (err, notifTl) => {
+                                                if (err) {
+                                                  console.error(
+                                                    "Error executing SELECT statement:",
+                                                    err
+                                                  );
+                                                  connection.rollback(() => {
+                                                    connection.end();
+                                                    return res
+                                                      .status(400)
+                                                      .send({
+                                                        status: true,
+                                                        message:
+                                                          "gaga ambil data",
+                                                        data: [],
+                                                      });
+                                                  });
+                                                  return;
+                                                }
+
+                                                utility.insertNotifikasiGlobal(
+                                                  notifTl[0]["name"],
+                                                  "Teguran Lisan",
+                                                  "Teguran Lisan",
+                                                  emId,
+                                                  teguranLisan.insertId,
                                                   nomorLb,
                                                   employee[0]["full_name"],
                                                   namaDatabaseDynamic,
@@ -3242,7 +3278,49 @@ module.exports = {
                                                             "Surat Peringatan",
                                                             "Surat Peringatan",
                                                             emId,
-                                                            employee[0]["id"],
+                                                            null,
+                                                            nomorLb,
+                                                            employee[0][
+                                                              "full_name"
+                                                            ],
+                                                            namaDatabaseDynamic,
+                                                            databaseMaster,
+                                                            `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+                                                          );
+                                                        }
+                                                      );
+                                                      connection.query(
+                                                        `SELECT * FROM sysdata WHERE kode=027`,
+                                                        (err, notifTl) => {
+                                                          if (err) {
+                                                            console.error(
+                                                              "Error executing SELECT statement:",
+                                                              err
+                                                            );
+                                                            connection.rollback(
+                                                              () => {
+                                                                connection.end();
+                                                                return res
+                                                                  .status(400)
+                                                                  .send({
+                                                                    status: true,
+                                                                    message:
+                                                                      "gaga ambil data",
+                                                                    data: [],
+                                                                  });
+                                                              }
+                                                            );
+                                                            return;
+                                                          }
+
+                                                          console.log(notifTl);
+
+                                                          utility.insertNotifikasiGlobal(
+                                                            notifTl[0]["name"],
+                                                            "Surat Peringatan",
+                                                            "Surat Peringatan",
+                                                            emId,
+                                                            teguranLisan.insertId,
                                                             nomorLb,
                                                             employee[0][
                                                               "full_name"
@@ -10764,7 +10842,7 @@ module.exports = {
             );
           }
           const [notifTl] = await conn.query(
-            `SELECT * FROM sysdata WHERE kode=045`
+            `SELECT * FROM sysdata WHERE kode='045'`
           );
 
           utility.insertNotifikasiGlobal(
@@ -10772,7 +10850,23 @@ module.exports = {
             "Teguran Lisan",
             "Teguran Lisan",
             emId,
-            "",
+            null,
+            nomorLb,
+            employee[0]["full_name"],
+            namaDatabaseDynamic,
+            `${database}_hrm`,
+            `Teguran Lisan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+          );
+          const [notifApprove] = await conn.query(
+            `SELECT * FROM sysdata WHERE kode='027'`
+          );
+
+          utility.insertNotifikasiGlobal(
+            notifApprove[0]["name"],
+            "Teguran Lisan",
+            "Teguran Lisan",
+            emId,
+            teguranLisanInsert.insertId,
             nomorLb,
             employee[0]["full_name"],
             namaDatabaseDynamic,
@@ -10855,25 +10949,44 @@ module.exports = {
               `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUE('${teguranLisanInsert.insertId}','${data}')`
             );
 
-            const [notifTl] = await conn.query(
-              `SELECT * FROM sysdata WHERE kode=026`
-            );
-
-            console.log(notifTl);
-
-            utility.insertNotifikasiGlobal(
-              notifTl[0]["name"],
-              "Surat Peringatan",
-              "Surat Peringatan",
-              emId,
-              "",
-              nomorLb,
-              employee[0]["full_name"],
-              namaDatabaseDynamic,
-              `${database}_hrm`,
-              `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
-            );
+            
           }
+          const [notifTl] = await conn.query(
+            `SELECT * FROM sysdata WHERE kode='026'`
+          );
+
+          console.log(notifTl);
+
+          utility.insertNotifikasiGlobal(
+            notifTl[0]["name"],
+            "Surat Peringatan",
+            "Surat Peringatan",
+            emId,
+            null,
+            nomorLb,
+            employee[0]["full_name"],
+            namaDatabaseDynamic,
+            `${database}_hrm`,
+            `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+          );
+          const [notifApprove] = await conn.query(
+            `SELECT * FROM sysdata WHERE kode='027'`
+          );
+
+
+          utility.insertNotifikasiGlobal(
+            notifApprove[0]["name"],
+            "Surat Peringatan",
+            "Surat Peringatan",
+            emId,
+            teguranLisanInsert.insertId,
+            nomorLb,
+            employee[0]["full_name"],
+            namaDatabaseDynamic,
+            `${database}_hrm`,
+            `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
+          );
+        
         }
 
 

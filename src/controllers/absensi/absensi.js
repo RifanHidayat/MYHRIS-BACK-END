@@ -1154,132 +1154,194 @@ LIMIT 1`;
     console.log("kirim absen offline");
 
     try {
-        const database = req.query.database;
-        const em_id = req.body.em_id;
-        const attenDate = req.body.atten_date;
-        const signingTime = req.body.signin_time || "00:00:00";
-        const signoutTime = req.body.signout_time || "00:00:00";
-        const placeIn = req.body.place_in;
-        const placeOut = req.body.place_out;
-        const signinLonglat = req.body.signin_longlat;
-        const signOutLonglat = req.body.signout_longlat;
-        const signinPict = req.body.signin_pict;
-        const signoutPict = req.body.signout_pict;
-        const signinNote = req.body.signin_note;
-        const signoutOutNote = req.body.signout_note;
-        const signinAddr = req.body.signin_addr;
-        const signoutAddr = req.body.signout_addr;
+      const database = req.query.database;
+      const em_id = req.body.em_id;
+      const attenDate = req.body.atten_date;
+      const signingTime = req.body.signin_time || "00:00:00";
+      const signoutTime = req.body.signout_time || "00:00:00";
+      const placeIn = req.body.place_in;
+      const placeOut = req.body.place_out;
+      const signinLonglat = req.body.signin_longlat;
+      const signOutLonglat = req.body.signout_longlat;
+      const signinPict = req.body.signin_pict;
+      const signoutPict = req.body.signout_pict;
+      const signinNote = req.body.signin_note;
+      const signoutOutNote = req.body.signout_note;
+      const signinAddr = req.body.signin_addr;
+      const signoutAddr = req.body.signout_addr;
 
-        // Format tanggal
-        const [tahun, bulan] = attenDate.split("-");
-        const tahunConver = tahun.substring(2, 4);
-        const status = "Pending";
-        let nomorAjuan = "";
+      // Format tanggal
+      const [tahun, bulan] = attenDate.split("-");
+      const tahunConver = tahun.substring(2, 4);
+      const status = "Pending";
+      let nomorAjuan = "";
 
-        // Format timestamp
-        const timestampInSeconds = Math.floor(new Date(`${attenDate} ${signingTime || signoutTime}`).getTime() / 1000);
+      // Format timestamp
+      const timestampInSeconds = Math.floor(
+        new Date(`${attenDate} ${signingTime || signoutTime}`).getTime() / 1000
+      );
 
-        // Generate nama file gambar
-        const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "");
-        const stringRandom = randomstring.generate(5);
-        const nameFileMasuk = signinPict ? `absenmasuk_${stringRandom}_${timestamp}.png` : "";
-        const nameFileKeluar = signoutPict ? `absenkeluar_${stringRandom}_${timestamp}.png` : "";
+      // Generate nama file gambar
+      const timestamp = new Date().toISOString().replace(/[-T:.Z]/g, "");
+      const stringRandom = randomstring.generate(5);
+      const nameFileMasuk = signinPict
+        ? `absenmasuk_${stringRandom}_${timestamp}.png`
+        : "";
+      const nameFileKeluar = signoutPict
+        ? `absenkeluar_${stringRandom}_${timestamp}.png`
+        : "";
 
-        // Upload gambar jika ada
-        async function uploadImage(imageBase64, filename) {
-            if (!imageBase64) return;
-            const bitmap = Buffer.from(imageBase64, "base64");
-            const remoteFilePath = `${remoteDirectory}/${database}/foto_absen/${filename}`;
-
-            try {
-                await sftp.connect(configSftp);
-                await sftp.put(bitmap, remoteFilePath);
-                console.log("Berhasil upload image:", filename);
-            } catch (err) {
-                console.error("Gagal upload image:", err);
-                throw new Error("Gagal registrasi wajah");
-            } finally {
-                await sftp.end();
-            }
-        }
-
-        await Promise.all([
-            uploadImage(signinPict, nameFileMasuk),
-            uploadImage(signoutPict, nameFileKeluar)
-        ]);
-
-        // Nama database
-        const namaDatabaseDynamic = `${database}_hrm${tahunConver}${bulan}`;
-        const databaseMaster = `${database}_hrm`;
-        const connection = await model.createConnection1(databaseMaster);
-        let conn = await connection.getConnection();
+      // Upload gambar jika ada
+      async function uploadImage(imageBase64, filename) {
+        if (!imageBase64) return;
+        const bitmap = Buffer.from(imageBase64, "base64");
+        const remoteFilePath = `${remoteDirectory}/${database}/foto_absen/${filename}`;
 
         try {
-          console.log(req.body);
-            await conn.beginTransaction();
+          await sftp.connect(configSftp);
+          await sftp.put(bitmap, remoteFilePath);
+          console.log("Berhasil upload image:", filename);
+        } catch (err) {
+          console.error("Gagal upload image:", err);
+          throw new Error("Gagal registrasi wajah");
+        } finally {
+          await sftp.end();
+        }
+      }
 
-            // Cek apakah data absensi sudah ada
-            const [existingData] = await conn.query(
-                `SELECT * FROM ${namaDatabaseDynamic}.emp_labor 
+      await Promise.all([
+        uploadImage(signinPict, nameFileMasuk),
+        uploadImage(signoutPict, nameFileKeluar),
+      ]);
+
+      // Nama database
+      const namaDatabaseDynamic = `${database}_hrm${tahunConver}${bulan}`;
+      const databaseMaster = `${database}_hrm`;
+      const connection = await model.createConnection1(databaseMaster);
+      let conn = await connection.getConnection();
+
+      try {
+        console.log(req.body);
+        await conn.beginTransaction();
+
+        // Cek apakah data absensi sudah ada
+        const [existingData] = await conn.query(
+          `SELECT * FROM ${namaDatabaseDynamic}.emp_labor 
                 WHERE em_id = ? AND idx = ? AND (status = 'Approve' OR status = 'Pending')`,
-                [em_id, timestampInSeconds]
-            );
+          [em_id, timestampInSeconds]
+        );
 
-            if (existingData.length > 0) {
-                await conn.rollback();
-                return res.status(400).json({ status: false, message: "Data sudah tersedia" });
-            }
+        if (existingData.length > 0) {
+          await conn.rollback();
+          return res
+            .status(400)
+            .json({ status: false, message: "Data sudah tersedia" });
+        }
 
-            // Generate nomor ajuan
-            const [latestData] = await conn.query(
-                `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor 
+        // Generate nomor ajuan
+        const [latestData] = await conn.query(
+          `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor 
                 WHERE ajuan = '5' ORDER BY id DESC LIMIT 1`
-            );
+        );
 
-            const nextNumber = latestData.length > 0
-                ? parseInt(latestData[0].nomor_ajuan.slice(-4)) + 1
-                : 1;
-            nomorAjuan = `RO20${tahunConver}${bulan}${String(nextNumber).padStart(4, "0")}`;
+        const nextNumber =
+          latestData.length > 0
+            ? parseInt(latestData[0].nomor_ajuan.slice(-4)) + 1
+            : 1;
+        nomorAjuan = `RO20${tahunConver}${bulan}${String(nextNumber).padStart(
+          4,
+          "0"
+        )}`;
 
-            const insert = await conn.query(
-                `INSERT INTO ${namaDatabaseDynamic}.emp_labor 
+        const insert = await conn.query(
+          `INSERT INTO ${namaDatabaseDynamic}.emp_labor 
                 (nomor_ajuan, em_id, atten_date, dari_jam, sampai_jam, tgl_ajuan, status, status_transaksi, 
                 signin_note, signout_note, ajuan, em_delegation, signin_pict, signout_pict, place_in, place_out, 
                 approve_status, signin_longlat, signout_longlat, signin_addr, signout_addr, uraian, idx) 
                 VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, '5', '', ?, ?, ?, ?, 'Pending', ?, ?, ?, ?, ?, ?)`,
-                [nomorAjuan, em_id, attenDate, signingTime, signoutTime, status, '1', signinNote, signoutOutNote,
-                    nameFileMasuk, nameFileKeluar, placeIn, placeOut, signinLonglat, signOutLonglat, signinAddr, signoutAddr,
-                    signinNote, timestampInSeconds]
-            );
+          [
+            nomorAjuan,
+            em_id,
+            attenDate,
+            signingTime,
+            signoutTime,
+            status,
+            "1",
+            signinNote,
+            signoutOutNote,
+            nameFileMasuk,
+            nameFileKeluar,
+            placeIn,
+            placeOut,
+            signinLonglat,
+            signOutLonglat,
+            signinAddr,
+            signoutAddr,
+            signinNote,
+            timestampInSeconds,
+          ]
+        );
 
-            // Kirim notifikasi ke atasan
-            const [employee] = await conn.query(
-                `SELECT em_report_to, em_id, full_name FROM ${databaseMaster}.employee WHERE em_id = ?`,
-                [em_id]
-            );
+        // Kirim notifikasi ke atasan
+        const [employee] = await conn.query(
+          `SELECT em_report_to, em_id, full_name FROM ${databaseMaster}.employee WHERE em_id = ?`,
+          [em_id]
+        );
 
-            if (employee.length > 0) {
-                utility.insertNotifikasi(
-                    employee[0].em_report_to, "Approval Absensi", "Absensi",
-                    employee[0].em_id, nomorAjuan, insert[0].idx,
-                    employee[0].full_name, namaDatabaseDynamic, databaseMaster
-                );
-            }
+        if (employee.length > 0) {
+          const delegationIds = employee[0].em_report_to
+            ? Array.isArray(employee[0].em_report_to)
+              ? employee[0].em_report_to
+              : [employee[0].em_report_to]
+            : [];
 
-            await conn.commit();
-            return res.status(200).json({ status: true, message: "Success insert data" });
+          const emIds = employee[0].em_report2_to
+            ? Array.isArray(employee[0].em_report2_to)
+              ? employee[0].em_report2_to
+              : [employee[0].em_report2_to]
+            : [];
 
-        } catch (error) {
-            await conn.rollback();
-            console.error("Error:", error);
-            return res.status(400).json({ status: false, message: "Gagal menyimpan data" });
-        } finally {
-            conn.release();
+          const combinedIds = [
+            ...new Set([
+              ...delegationIds.flatMap((id) =>
+                id.split(",").map((i) => i.trim().toUpperCase())
+              ),
+              ...emIds.flatMap((id) =>
+                id.split(",").map((i) => i.trim().toUpperCase())
+              ),
+            ]),
+          ];
+          utility.insertNotifikasi(
+            combinedIds,
+            "Approval Absensi",
+            "Absensi",
+            employee[0].em_id,
+            insert[0].idx,
+            nomorAjuan,
+            employee[0].full_name,
+            namaDatabaseDynamic,
+            databaseMaster
+          );
         }
 
+        await conn.commit();
+        return res
+          .status(200)
+          .json({ status: true, message: "Success insert data" });
+      } catch (error) {
+        await conn.rollback();
+        console.error("Error:", error);
+        return res
+          .status(400)
+          .json({ status: false, message: "Gagal menyimpan data" });
+      } finally {
+        conn.release();
+      }
     } catch (error) {
-        console.error("Error utama:", error);
-        return res.status(400).json({ status: false, message: "Terjadi kesalahan server" });
+      console.error("Error utama:", error);
+      return res
+        .status(400)
+        .json({ status: false, message: "Terjadi kesalahan server" });
     }
-}
+  },
 };
