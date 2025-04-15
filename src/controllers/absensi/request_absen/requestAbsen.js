@@ -427,9 +427,45 @@ module.exports = {
                                                 });
                                                 return;
                                               }
+                                              const delegationIds = employee[0]
+                                                .em_report_to
+                                                ? Array.isArray(
+                                                    employee[0].em_report_to
+                                                  )
+                                                  ? employee[0].em_report_to
+                                                  : [employee[0].em_report_to]
+                                                : [];
 
+                                              const emIds = employee[0]
+                                                .em_report2_to
+                                                ? Array.isArray(
+                                                    employee[0].em_report2_to
+                                                  )
+                                                  ? employee[0].em_report2_to
+                                                  : [employee[0].em_report2_to]
+                                                : [];
+
+                                              const combinedIds = [
+                                                ...new Set([
+                                                  ...delegationIds.flatMap(
+                                                    (id) =>
+                                                      id
+                                                        .split(",")
+                                                        .map((i) =>
+                                                          i.trim().toUpperCase()
+                                                        )
+                                                  ),
+                                                  ...emIds.flatMap((id) =>
+                                                    id
+                                                      .split(",")
+                                                      .map((i) =>
+                                                        i.trim().toUpperCase()
+                                                      )
+                                                  ),
+                                                ]),
+                                              ];
                                               utility.insertNotifikasi(
-                                                employee[0].em_report_to,
+                                                combinedIds,
                                                 "Approval Absensi",
                                                 "Absensi",
                                                 employee[0].em_id,

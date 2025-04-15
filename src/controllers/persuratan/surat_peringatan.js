@@ -503,12 +503,27 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
         const [employeeTl] = await conn.query(
           `SELECT * FROM employee WHERE em_id='${dataSp[0].em_id}'`
         );
+        const [notifApprove] = await conn.query(
+          `SELECT * FROM sysdata WHERE kode=027`
+        );
         utility.insertNotifikasiGlobal(
           notifTl[0]["name"],
           "Teguran Lisan",
           "Teguran Lisan",
           emId,
-          employeeTl[0]["id"],
+          null,
+          nomorLb,
+          employeeTl[0]["full_name"],
+          databasedinamik,
+          databseMaster,
+          `Teguran Lisan Telah di terbitkan Kepada ${employeeTl[0]["full_name"]}, dengan nomor ${nomorLb}`
+        );
+        utility.insertNotifikasiGlobal(
+          notifApprove[0]["name"],
+          "Teguran Lisan",
+          "Teguran Lisan",
+          emId,
+          result.insertId,
           nomorLb,
           employeeTl[0]["full_name"],
           databasedinamik,
@@ -526,7 +541,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
           "sp",
           employee[0].em_id,
           dataSp[0].id,
-          "",
+          null,
           dataSp[0].em_id,
           databasedinamik,
           databseMaster,
