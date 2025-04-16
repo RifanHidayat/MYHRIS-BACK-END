@@ -203,7 +203,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
       console.log("ini em id lebih dari 1", emId);
       console.log(queryFilterStatus);
     } else {
-      queryFilterStatus = `teguran_lisan.em_id LIKE '%${emId}%'`;
+      queryFilterStatus = `teguran_lisan.em_id = '${emId}'`;
       console.log(`teguran_lisan.em_id LIKE '%${emId}%'`);
     }
     try {
