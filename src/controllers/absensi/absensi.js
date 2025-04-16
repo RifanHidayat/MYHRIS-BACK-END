@@ -1253,7 +1253,7 @@ LIMIT 1`;
           "0"
         )}`;
 
-        const insert = await conn.query(
+        const [insert] = await conn.query(
           `INSERT INTO ${namaDatabaseDynamic}.emp_labor 
                 (nomor_ajuan, em_id, atten_date, dari_jam, sampai_jam, tgl_ajuan, status, status_transaksi, 
                 signin_note, signout_note, ajuan, em_delegation, signin_pict, signout_pict, place_in, place_out, 
@@ -1316,7 +1316,7 @@ LIMIT 1`;
             "Approval Absensi",
             "Absensi",
             employee[0].em_id,
-            insert[0].idx,
+            insert.insertId,
             nomorAjuan,
             employee[0].full_name,
             namaDatabaseDynamic,

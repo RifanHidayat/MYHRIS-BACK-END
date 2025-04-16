@@ -645,7 +645,7 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query = `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`;
+    var query = `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan IN ('3', '5') AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query = `SELECT emp_labor.id as idd,  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 

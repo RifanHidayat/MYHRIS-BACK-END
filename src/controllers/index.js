@@ -33,6 +33,8 @@ const auditDetail = require('./audit/detail');
 const auditApproval = require('./audit/approval');
 const auditFilter = require('./audit/filter');
 const auditLog = require('./audit/log');
+//apresiasi
+const showAppresiasi = require('./apresiasi/showAppresiasi');
 
 
 module.exports ={
@@ -60,5 +62,6 @@ module.exports ={
 	auditApproval,
 	auditDetail,
 	auditFilter,
-	auditLog
+	auditLog,
+	showAppresiasi
 };

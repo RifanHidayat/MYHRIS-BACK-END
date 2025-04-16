@@ -30,7 +30,8 @@ const {
     auditDetail,
     auditApproval,
     auditFilter,
-    auditLog
+    auditLog,
+    showAppresiasi
 } = require("../controllers");
 const { isAuth } = require("../controllers/login");
 
@@ -355,6 +356,9 @@ router.get("/audit/:id",auditDetail.detail);
 router.post("/audit/:id/approval",auditApproval.approval);
 router.post('/audit/filter/employee',auditFilter.filtterEmployee);
 router.post('/audit/log', auditLog.log);
+
+//apresiasi
+router.get('/apresiasi', showAppresiasi.log);
 
 
 module.exports = router;
