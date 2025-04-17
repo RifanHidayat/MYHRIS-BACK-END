@@ -14,7 +14,7 @@ module.exports = {
 
     const databaseMaster = `${database}_hrm`;
 
-    var fixquery = `SELECT a.*, b.full_name FROM apresiasi AS a JOIN employee AS b ON b.em_id = a.em_id`;
+    var fixquery = `SELECT a.*, b.full_name, b.em_image, b.em_mobile FROM apresiasi AS a JOIN employee AS b ON b.em_id = a.em_id`;
 
     const connection = await models.createConnection1(`${database}_hrm`);
     console.log(fixquery);
