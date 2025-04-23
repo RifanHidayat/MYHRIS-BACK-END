@@ -1,9 +1,9 @@
 const models = require("../../utils/models");
 module.exports = {
-    async log(req, res) {
+    async userApresiasi(req, res) {
     console.log("get employ attt");
     var database = req.query.database;
-    var em_id = req.body.em_id;
+    var emId = req.headers.em_id;
     var idTrx = req.body.id_trx;
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
@@ -14,7 +14,10 @@ module.exports = {
 
     const databaseMaster = `${database}_hrm`;
 
-    var fixquery = `SELECT a.*, b.full_name, b.em_image, b.em_mobile FROM apresiasi AS a JOIN employee AS b ON b.em_id = a.em_id`;
+    var fixquery = `SELECT a.*, b.full_name, dep.name AS divisi 
+    FROM apresiasi AS a JOIN employee AS b ON b.em_id = a.em_id 
+    JOIN department AS dep ON dep.id = b.dep_id
+    WHERE a.em_id = '${emId}'`;
 
     const connection = await models.createConnection1(`${database}_hrm`);
     console.log(fixquery);

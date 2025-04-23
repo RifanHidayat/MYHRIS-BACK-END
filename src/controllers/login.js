@@ -315,12 +315,22 @@ module.exports = {
         query
       );
       await conn.commit();
+      if(result.length == 0){
+        return res.status(400).send({
+          status: false,
+          message: "User Ess tidak tersedia",
+          data: []
+        });
+      }else{
+        return res.status(200).send({
+          status: true,
+          message: "berhasil update",
+          data: result
+        });
+      }
+      
       console.log("Transaction completed successfully!");
-      return res.status(200).send({
-        status: true,
-        message: "berhasil update",
-        data: result
-      });
+      
     } catch (e) {
       if (conn) {
         await conn.rollback();

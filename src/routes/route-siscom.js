@@ -31,8 +31,10 @@ const {
     auditApproval,
     auditFilter,
     auditLog,
-    showAppresiasi
+    showAppresiasi,
+    showUserApresiasi
 } = require("../controllers");
+const { userApresiasi } = require("../controllers/apresiasi/apresiasiUser");
 const { isAuth } = require("../controllers/login");
 
 const auth = require('../middleware/auth');
@@ -359,6 +361,7 @@ router.post('/audit/log', auditLog.log);
 
 //apresiasi
 router.get('/apresiasi', showAppresiasi.log);
+router.get('/apresiasi/user', showUserApresiasi.userApresiasi);
 
 
 module.exports = router;
