@@ -35,6 +35,7 @@ const auditFilter = require('./audit/filter');
 const auditLog = require('./audit/log');
 //apresiasi
 const showAppresiasi = require('./apresiasi/showAppresiasi');
+const showUserApresiasi = require('./apresiasi/apresiasiUser');
 
 
 module.exports ={
@@ -63,5 +64,6 @@ module.exports ={
 	auditDetail,
 	auditFilter,
 	auditLog,
-	showAppresiasi
+	showAppresiasi,
+	showUserApresiasi
 };
