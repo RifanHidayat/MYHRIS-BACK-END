@@ -631,7 +631,7 @@ var nomorAjuan=''
     
     
     
-    console.log(req.body)
+    console.log('masuk ke delete')
       try{
           const connection=await model.createConnection(database);
           connection.connect((err) => {
@@ -735,7 +735,7 @@ var nomorAjuan=''
 
     var query=`SELECT nomor_ajuan,tgl_ajuan,remark,status FROM ${table} WHERE  status_transaksi='1' AND id='${id}'`
     var queryDetail=`SELECT ${tableAset}.name as nama_assets,${tableDetail}.tgl_ajuan,${tableDetail}.remark,${tableDetail}.qty, 
-    ${tableAset}.purchase_qty as stok,${tableDetail}.tgl_pengembalian_ekstimasi as tanggal_pengembalian FROM ${tableDetail} LEFT JOIN ${tableAset} ON ${tableAset}.id=${tableDetail}.assets_id WHERE trx_id='${id}'`
+    ${tableAset}.purchase_qty as stok,${tableDetail}.tgl_pengembalian_ekstimasi as tanggal_pengembalian,${tableDetail}.assets_id FROM ${tableDetail} LEFT JOIN ${tableAset} ON ${tableAset}.id=${tableDetail}.assets_id WHERE trx_id='${id}'`
 
 
     console.log(queryDetail)
@@ -853,17 +853,40 @@ var nomorAjuan=''
     console.log("cek no hp");
     var database=req.query.database;
     var emId=req.headers.em_id;
-    console.log(req.headers)
+    var idAssetDipinjam = req.body.assetId;
+    console.log(req.body);
 
-      var query=`SELECT * FROM ( SELECT assets.id,  name,model,
-        ( purchase_qty - 
-        
-        ((SELECT IFNULL( SUM(IFNULL(qty,0) - IFNULL(qty_pengembalian,0) ),0) FROM assets_transaction_detail JOIN assets_transaction ON assets_transaction_detail.nomor_ajuan=assets_transaction.nomor_ajuan WHERE assets_transaction.typeid='1' AND assets_transaction.status IN ('Pending','Approve') AND assets_transaction.status_transaksi='1' AND assets_transaction_detail.assets_id=assets.id))
-        + 
-        
-        (SELECT IFNULL(SUM(IFNULL(qty,0)),0) FROM assets_transaction_detail JOIN assets_transaction ON assets_transaction_detail.trx_id=assets_transaction.id WHERE assets_transaction.typeid='2' 
-        AND assets_transaction.status IN ('Pending','Approve') AND assets_transaction_detail.assets_id=assets.id) 
-         )  AS qty FROM assets WHERE  STATUS='1'  ) AS TBL WHERE qty>0  `
+      var query=`SELECT * FROM (
+    SELECT assets.id, name, model,
+        (
+            purchase_qty -
+
+            (
+                SELECT IFNULL(SUM(IFNULL(qty,0) - IFNULL(qty_pengembalian,0)), 0)
+                FROM assets_transaction_detail
+                JOIN assets_transaction
+                    ON assets_transaction_detail.nomor_ajuan = assets_transaction.nomor_ajuan
+                WHERE assets_transaction.typeid = '1'
+                    AND assets_transaction.status IN ('Pending', 'Approve')
+                    AND assets_transaction.status_transaksi = '1'
+                    AND assets_transaction_detail.assets_id = assets.id
+            )
+            +
+            (
+                SELECT IFNULL(SUM(IFNULL(qty,0)), 0)
+                FROM assets_transaction_detail
+                JOIN assets_transaction
+                    ON assets_transaction_detail.trx_id = assets_transaction.id
+                WHERE assets_transaction.typeid = '2'
+                    AND assets_transaction.status IN ('Pending', 'Approve')
+                    AND assets_transaction_detail.assets_id = assets.id
+            )
+        ) AS qty
+    FROM assets
+    WHERE STATUS = '1'
+) AS TBL
+WHERE qty > 0 OR id ='${idAssetDipinjam}'
+`
 
 console.log(query)
  //  var query=`SELECT name,model,purchase_qty as qty,id FROM  ${tableAset} WHERE  status='1'`
