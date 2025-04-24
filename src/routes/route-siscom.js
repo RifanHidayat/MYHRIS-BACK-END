@@ -243,7 +243,7 @@ router.post('/updateTaskDaily',dailyTask.updateDailyTask);
 
 router.get('/surat-perjanjian',operasional.surtKontrak);
 router.get('/surat-perjanjian/:id',operasional.suratKontrakPdf);
-router.get('/pinjaman/assets',pinjamanAsset.assets);
+router.post('/pinjaman/assets',pinjamanAsset.assets);
 router.get('/pinjaman/',pinjamanAsset.show);
 router.post('/pinjaman/',pinjamanAsset.store);
 // router.post('/pinjaman/:id',pinjamanAsset.update);
