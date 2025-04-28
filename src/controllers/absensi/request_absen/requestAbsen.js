@@ -53,7 +53,7 @@ module.exports = {
     }
   },
 
-  UpdateEmployeeAttendance(req, res) {
+  async UpdateEmployeeAttendance(req, res) {
     console.log("-----Employee attemdamce  ----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -333,6 +333,7 @@ module.exports = {
                                   var absenKeluarRest =
                                     req.body.address_keluar_Rest;
                                   var absenKeluar = req.body.address_keluar;
+                                  var idAbsen = req.body.id_absen;
                                   queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (
                                 nomor_ajuan,em_id,atten_date,
                                 dari_jam,sampai_jam,tgl_ajuan,
@@ -344,7 +345,7 @@ module.exports = {
                                 place_break_in,place_break_out,breakin_time,
                                 breakout_time,breakin_note,breakout_note,
                                 breakin_longlat, breakout_longlat,
-                                signin_addr,signout_addr,breakin_addr,breakout_addr)
+                                signin_addr,signout_addr,breakin_addr,breakout_addr,id_absen)
                                 VALUES (
                                 '${nomorAjuan}','${em_id}','${date}',
                                 '${checkin}','${checkout}',CURDATE(),
@@ -370,7 +371,7 @@ module.exports = {
                                     lokasiKeluarRestResult?.[0]
                                       ?.place_longlat ?? ""
                                   }',
-                                '${absenMasuk}','${absenKeluar}', '${absenMasukRest}','${absenKeluarRest}')`;
+                                '${absenMasuk}','${absenKeluar}', '${absenMasukRest}','${absenKeluarRest}','${idAbsen}')`;
 
                                   connection.query(
                                     queryInsert,

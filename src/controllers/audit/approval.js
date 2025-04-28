@@ -21,17 +21,6 @@ module.exports = {
     var listKonsekuensi = req.body.list_konsekuensi;
     var alasanReject = req.body.alasan;
 
-    // const tahun = `${gettahun}`;
-    // const convertYear = tahun.substring(2, 4);
-    // // const convertBulan = getbulan;
-    // var convertBulan;
-    // if (getbulan.length == 1) {
-    //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
-    // } else {
-    //   convertBulan = getbulan;
-    // }
-
-    // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startPeriode =
       req.query.start_periode == undefined

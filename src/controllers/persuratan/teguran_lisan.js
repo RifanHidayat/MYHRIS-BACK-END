@@ -496,7 +496,7 @@ AND exp_date >= CURDATE() ORDER BY id DESC`;
                               "Info Teguran Lisan",
                               "tl",
                               employee[0].em_id,
-                              dataSp[0].id,
+                              null,
                               dataSp[0].nomor_ajuan,
                               employee[0].full_name,
                               databasedinamik,

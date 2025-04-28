@@ -1,6 +1,6 @@
 const models = require("../../utils/models");
 module.exports = {
-    async log(req, res) {
+  async log(req, res) {
     console.log("get employ attt");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -10,7 +10,6 @@ module.exports = {
     const tahun = `${gettahun}`;
     const convertYear = tahun.substring(2, 4);
     // const convertBulan = getbulan;
-
 
     const databaseMaster = `${database}_hrm`;
 
