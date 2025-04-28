@@ -3,10 +3,6 @@ const utility = require("../../utils/utility");
 
 const ipServer = process.env.API_URL;
 module.exports = {
-
-
-
-
   async show(req, res) {
     console.log("body", req.body);
     var database = req.query.database;
@@ -14,14 +10,14 @@ module.exports = {
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
     var date = req.body.date;
-    var limit=req.body.limit;
-    var offset=req.body.offset;
-    var allData=req.body.all_data;
+    var limit = req.body.limit;
+    var offset = req.body.offset;
+    var allData = req.body.all_data;
 
-    var  status=req.body.status;
-    var statusAudit=req.body.status_audit;
-    var tipeForm=req.body.tipe_form
-    var branchId=req.body.branch_id;
+    var status = req.body.status;
+    var statusAudit = req.body.status_audit;
+    var tipeForm = req.body.tipe_form;
+    var branchId = req.body.branch_id;
     // var emId=req.query.em_id;
 
     const tahun = `${gettahun}`;
@@ -34,8 +30,6 @@ module.exports = {
       convertBulan = getbulan;
     }
 
-    // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
     var startPeriode =
       req.query.start_periode == undefined
         ? "2024-02-03"
@@ -46,22 +40,20 @@ module.exports = {
     var array2 = endPeriode.split("-");
 
     const startPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    const endPeriodeDynamic = `${database}_hrm${convertYear}${
-      convertBulan
-    }`;
+    const endPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     let date1 = new Date(startPeriode);
     let date2 = new Date(endPeriode);
 
     let queryFilterStatus = ``;
     console.log("status audit", statusAudit);
-    if (statusAudit === 'Draft'){
+    if (statusAudit === "Draft") {
       queryFilterStatus = `AND status_audit =''`;
-    }else {
+    } else {
       queryFilterStatus = `AND status_audit LIKE '%${statusAudit}%'`;
     }
     let queryAllData = ``;
-    if (allData == false){
+    if (allData == false) {
       queryAllData = `LIMIT ${limit} OFFSET ${offset}`;
     } else {
       queryAllData = ``;
@@ -184,15 +176,14 @@ module.exports = {
          `;
     }
 
-    var fixquery=`SELECT * FROM  (${query}) AS TBL 
+    var fixquery = `SELECT * FROM  (${query}) AS TBL 
     WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
     AND status LIKE '%${status}%' 
     ${queryFilterStatus} 
     AND tipe_pengajuan LIKE '%${tipeForm}%'
-    ${queryAllData}`
+    ${queryAllData}`;
 
-
-    console.log(`data ${fixquery}`)
+    console.log(`data ${fixquery}`);
 
     // var query= `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`
 
@@ -216,7 +207,7 @@ module.exports = {
       console.error("Error:", e);
       return res.status(400).send({
         status: false,
-        message:  e.message,
+        message: e.message,
         data: [],
       });
     } finally {

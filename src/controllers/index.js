@@ -65,5 +65,5 @@ module.exports ={
 	auditFilter,
 	auditLog,
 	showAppresiasi,
-	showUserApresiasi
+	showUserApresiasi,
 };

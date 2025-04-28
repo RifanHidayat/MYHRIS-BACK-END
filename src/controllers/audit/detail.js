@@ -3,10 +3,6 @@ const utility = require("../../utils/utility");
 
 const ipServer = process.env.API_URL;
 module.exports = {
-
-
-
-
   async detail(req, res) {
     console.log("get employ attt");
     var database = req.query.database;
@@ -14,21 +10,9 @@ module.exports = {
     const getbulan = req.body.bulan;
     const gettahun = req.body.tahun;
 
-    var tipeForm=req.query.tipe_form;
+    var tipeForm = req.query.tipe_form;
     console.log(tipeForm);
 
-    // const tahun = `${gettahun}`;
-    // const convertYear = tahun.substring(2, 4);
-    // // const convertBulan = getbulan;
-    // var convertBulan;
-    // if (getbulan.length == 1) {
-    //   convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
-    // } else {
-    //   convertBulan = getbulan;
-    // }
-
-    // const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    
     var startPeriode =
       req.query.start_periode == undefined
         ? "2024-02-03"
@@ -50,17 +34,23 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var namaTable='';
+    var namaTable = "";
 
-  if (tipeForm=='Lembur' || tipeForm=='Pengajuan Absen' || tipeForm=='Tugas Luar' || tipeForm=='WFH'|| tipeForm =='Absen Offline'){
-    namaTable='emp_labor';
-  }else{
-    namaTable='emp_leave';
-  }
+    if (
+      tipeForm == "Lembur" ||
+      tipeForm == "Pengajuan Absen" ||
+      tipeForm == "Tugas Luar" ||
+      tipeForm == "WFH" ||
+      tipeForm == "Absen Offline"
+    ) {
+      namaTable = "emp_labor";
+    } else {
+      namaTable = "emp_leave";
+    }
 
-    var fixquery=
-    // `SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
-    `SELECT 
+    var fixquery =
+      // `SELECT * FROM ${endPeriodeDynamic}.${namaTable} WHERE id='${req.params.id}'`
+      `SELECT 
   JSON_OBJECT(
     'approve1', e1.full_name,
     'approve2', e2.full_name,
@@ -76,8 +66,7 @@ FROM
   sisrajj_hrm2504.emp_labor a
 LEFT JOIN employee e1 ON a.approve_id = e1.em_id
 LEFT JOIN employee e2 ON a.approve2_id = e2.em_id
-LEFT JOIN employee e3 ON a.em_id = e3.em_id WHERE id='${req.params.id}`
-
+LEFT JOIN employee e3 ON a.em_id = e3.em_id WHERE id='${req.params.id}`;
 
     const connection = await models.createConnection1(`${database}_hrm`);
     console.log(fixquery);
@@ -91,7 +80,7 @@ LEFT JOIN employee e3 ON a.em_id = e3.em_id WHERE id='${req.params.id}`
       return res.status(200).send({
         status: true,
         message: "Data berhasil diambil",
-        data: results.length>0?results[0]:[],
+        data: results.length > 0 ? results[0] : [],
       });
     } catch (e) {
       if (conn) {

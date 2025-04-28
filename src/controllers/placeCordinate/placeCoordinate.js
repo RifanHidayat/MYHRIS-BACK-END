@@ -78,7 +78,7 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error('errrroe', e);
+      console.error("errrroe", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",

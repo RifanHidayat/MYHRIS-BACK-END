@@ -20,10 +20,7 @@ module.exports = {
     const databaseMaster = `${database}_hrm`;
     const namaDatabaseDynamic = `${databaseMaster}${convertYear}${convertBulan}`;
 
-
-    var fixquery=
-    `SELECT * FROM ${namaDatabaseDynamic}.audit_logs WHERE id_trx='${idTrx}'`;
-
+    var fixquery = `SELECT * FROM ${namaDatabaseDynamic}.audit_logs WHERE id_trx='${idTrx}'`;
 
     const connection = await models.createConnection1(`${database}_hrm`);
     console.log(fixquery);

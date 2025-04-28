@@ -28,11 +28,11 @@ module.exports = {
     try {
       if (token == undefined) {
         console.log("tidak ada prosees apapun");
-  
+
         return next();
       } else {
         console.log("ceksession");
-        
+
         conn = await connecting.getConnection();
         await conn.beginTransaction();
         var query = `    SELECT
@@ -61,7 +61,7 @@ module.exports = {
         const [results] = await conn.query(query);
 
         await conn.commit();
-  
+
         if (results.length == 0) {
           return res.status(401).json({
             status: false,
@@ -69,7 +69,7 @@ module.exports = {
               "Seseorang masuk menggunakan akun anda menyebabkan akun anda keluar secara otomatis",
           });
         }
-  
+
         if (results[0].status == "INACTIVE") {
           console.log("token tidak valied");
           return res.status(401).json({
@@ -81,16 +81,15 @@ module.exports = {
       }
     } catch (e) {
       if (conn) {
-      await conn.rollback();
+        await conn.rollback();
       }
-      console.error('Eroor', e);
+      console.error("Eroor", e);
       return res
         .status(500)
         .json({ status: false, message: "Internal Server Error" });
     } finally {
       if (conn) await conn.release();
     }
-    
   },
   isAuthorized: (req, res, next) => {
     if (req.user.role == "admin") {

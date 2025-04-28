@@ -205,19 +205,7 @@ module.exports = {
                 if (error) {
                   console.error("Error sending email:", error);
                 } else {
-                  //             connection.query(`UPDATE employee SET kode_verifikasi_email='${req.body.kode}' WHERE ='${req.query.email}'`, (err, results) => {
-                  //                 if (err) {
-                  //                   console.error('Error executing SELECT statement:', err);
-                  //                   connection.rollback(() => {
-                  //                     connection.end();
-                  //                     return res.status(400).send({
-                  //                       status: true,
-                  //                       message: 'gagal update data',
-                  //                     });
-                  //                   });
-                  //                   return;
-                  //                 }
-                  // });
+
                 }
               });
               connection.commit((err) => {

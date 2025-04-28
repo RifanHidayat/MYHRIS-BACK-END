@@ -91,37 +91,6 @@ module.exports = {
     } finally {
       if (conn) await conn.release();
     }
-    // let name_url = req.originalUrl;
-    // var getTableName = name_url.substring(name_url.lastIndexOf("/") + 1);
-
-    // var query_global = `SELECT * FROM ${getTableName}`;
-    // var query_departemen = `SELECT * FROM department`;
-    // var query_place = `SELECT * FROM places_coordinate WHERE isActive='1'`;
-
-    // var url;
-    // if (getTableName == "all_department") {
-    //   url = query_departemen;
-    // } else if (getTableName == "places_coordinate") {
-    //   url = query_place;
-    // } else {
-    //   url = query_global;
-    // }
-
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);
-    //   connection.query(
-    //     url,
-    //     function (error, results) {
-    //       connection.release();
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil ambil data!",
-    //         data: results,
-    //       });
-    //     }
-    //   );
-
-    // })hrm;
   },
   async overtime(req, res) {
     var database = req.query.database;
@@ -219,134 +188,7 @@ module.exports = {
     } finally {
       if (conn) await conn.release();
     }
-
-    // var dep_id = req.body.dep_id;
-
-    // var query1 = `SELECT * FROM ${database}_hrm.employee WHERE status='ACTIVE'`;
-    // var query2 = `SELECT * FROM ${database}_hrm.employee WHERE dep_id='${dep_id}' AND status='ACTIVE'`;
-
-    // var url;
-    // if (dep_id == "0" || dep_id == 0) {
-    //   url = query1;
-    // } else {
-    //   url = query2;
-    // }
-
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);
-    //   connection.query(
-    //     url,
-    //     function (error, results) {
-    //       connection.release();
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil ambil data!",
-    //         data: results,
-    //       });
-    //     }
-    //   );
-
-    // });
   },
-
-  // async surtKontrak(req, res) {
-  //   console.log('-----sisa kontrak---------')
-  //   var database = req.query.database;
-
-  //   const connection = await model.createConnection(database);
-  //   var reminder = req.body.reminder;
-  //   var emId=req.headers.em_id;
-
-  //   console.log()
-  //   var query1 = `
-  //   SELECT nomor,tgl_ajuan as tgl,jenis_perjanjian FROM perjanjian_kerja WHERE em_id='${emId}'
-
-  //   `
-  //   ;
-
-  //   //-----begin check koneksi----
-  //   connection.connect((err) => {
-  //     if (err) {
-  //       console.error('Error connecting to the database:', err);
-  //       return;
-  //     }
-  //     connection.beginTransaction((err) => {
-  //       if (err) {
-  //         console.error('Error beginning transaction:', err);
-  //         connection.end();
-  //         return;
-  //       }
-  //       //-------end check koneksi-----
-
-  //       connection.query(query1, (err, results) => {
-  //         if (err) {
-  //           console.error('Error executing SELECT statement:', err);
-  //           connection.rollback(() => {
-  //             connection.end();
-  //             return res.status(400).send({
-  //               status: false,
-  //               message: 'Terjadi kesahalan',
-  //               data: []
-
-  //             });
-  //           });
-  //           return;
-  //         }
-
-  //         connection.query("SELECT * FROM sysdata WHERE kode='015'", (err, sysdata) => {
-  //           if (err) {
-  //             console.error('Error executing SELECT statement:', err);
-  //             connection.rollback(() => {
-  //               connection.end();
-  //               return res.status(400).send({
-  //                 status: false,
-  //                 message: 'Terjadi kesahalan',
-  //                 data: []
-
-  //               });
-  //             });
-  //             return;
-  //           }
-
-  //         if (results.length == 0) {
-  //           return res.status(400).send({
-  //             status: false,
-  //             message: "Terjadi kesalahan",
-  //             data: []
-
-  //           });
-  //         }
-  //         connection.commit((err) => {
-  //           if (err) {
-  //             console.error('Error committing transaction:', err);
-  //             connection.rollback(() => {
-  //               connection.end();
-  //               return res.status(400).send({
-  //                 status: false,
-  //                 message: "Terjadi kesalahan",
-  //                 data: []
-
-  //               });
-  //             });
-  //             return;
-  //           }
-  //           connection.end();
-  //           console.log('Transaction completed successfully!');
-  //           return res.status(200).send({
-  //             status: true,
-  //             message: "Successfuly get data",
-  //             data: results
-
-  //           });
-
-  //         });
-  //       });
-
-  //     });
-  //   });
-
-  // });
-  // },
 
   async surtKontrak(req, res) {
     console.log("-----sisa kontrak---------");
@@ -3776,34 +3618,6 @@ module.exports = {
   },
 
   async edit_face(req, res) {
-    //     console.log("sftp")
-    //     const SftpClient = require('ssh2-sftp-client');
-    // const config = {
-    //   host: 'kantor.siscom.id',
-    //   port: 3322, // Default SFTP port is 22
-    //   username: 'siscom',
-    //   password: 'siscom!@#$%'
-    // };
-
-    //     const localFilePath = 'public/file_cuti/IMG-20220914-WA0004.jpg';
-    //     const remoteFilePath = 'public_html/7H202305001/dpi/foto_profile/regis_SIS20221039.png';
-    //     const sftp = new SftpClient();
-
-    //    sftp.connect(config)
-    //   .then(() => {
-    //     // SFTP connection successful
-    //     return sftp.put(localFilePath, remoteFilePath);
-    //   })
-    //   .then(() => {
-    //     console.log('File uploaded successfully!');
-    //     sftp.end(); // Disconnect after the upload is complete
-    //   })
-    //   .catch(err => {
-    //     console.error('Error:', err);
-    //     sftp.end(); // Disconnect if an error occurs
-    //   });
-    //   sftp.end();
-
     console.log("-----edit face registration----------");
     var database = req.query.database;
     var dbmaster = `${database}_hrm`;
@@ -3873,99 +3687,7 @@ module.exports = {
         });
       });
     sftp.end();
-    // return  res.send({
-    //   status: true,
-    //   message: "Berhasil update data!",
-
-    // });
-
-    // var options = {
-    //   url: _apiUrl + "detect",
-    //   method: 'POST',
-    //   headers: {
-    //     'subscriptionkey': _subscriptionKey,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   json: {
-    //     encoded_image: base64String1
-    //   },
-    //   rejectUnauthorized: false,
-    // };
-    // request(options, function (error, response) {
-    //   console.log(response.statusCode);
-    //   if (error) {
-    //     console.log(error)
-    //   }
-    //   else {
-
-    //     if (response.statusCode == 200) {
-
-    //       var faces = response.body.faces;
-    //       if (faces.length == 1) {
-    //         fs.writeFileSync("public/face_recog/" + nameFile, file.data);
-    //         poolDynamic.getConnection(function (err, connection) {
-    //           if (err) console.log(err);;
-    //           connection.query(
-    //             `UPDATE employee SET file_face='${nameFile}' WHERE em_id='${req.body.em_id}'`,
-    //             function (error, results) {
-    //               res.send({
-    //                 status: true,
-    //                 message: "Berhasil update data!",
-
-    //               });
-    //             }
-    //           );
-    //           connection.release();
-    //         });
-
-    //       } else {
-    //         res.send({
-    //           status: false,
-    //           message: "Gagal registrasi wajah",
-    //         });
-
-    //       }
-
-    //     }
-    //     else {
-    //       console.log("gaga registrasi")
-    //       res.send({
-    //         status: false,
-    //         message: "Gagal registrasi wajah",
-    //       });
-    //     }
-    //   }
-    // });
   },
-  // async edit_face(req,res){
-
-  //   const { face1 } = req.files;
-  //   const { face2 } = req.files;
-  //   var formdata = new FormData();
-  //   formdata.append("face1", face1, "file");
-  //   formdata.append("face2", face2, "file");
-
-  //   var requestOptions = {
-  //     method: 'POST',
-  //     headers: myHeaders,
-  //     body: formdata,
-  //     redirect: 'follow'
-  //   };
-  //   var myHeaders = new Headers();
-
-  //   myHeaders.append("token", API_TOKEN);
-
-  //   fetch("https://api.luxand.cloud/photo/landmarks", requestOptions)
-  //     .then(response =>{
-  //       response.json()
-  //       console.log(response.json());
-  //     })
-  //     .then(result => {
-  //       console.log("berhasil")
-  //       callback(result)
-  //     })
-  //     .catch(error => console.log('error', error));
-  // },
 
   async get_face_mx(req, res) {
     console.log("-----get face registration----------");
@@ -4021,63 +3743,6 @@ module.exports = {
       }
     });
   },
-
-  // async edit_face(req, res) {
-
-  //   const { file } = req.files;
-  //   var fs = require("fs");
-  //   var nameFile = "regis_" + req.body.em_id + ".png";
-  //   fs.writeFileSync("public/face_recog/" + nameFile, file.data);
-
-  //   // const file = Buffer.from(req.body.image, 'base64');
-
-  //   const em_id = req.body.em_id;
-  //   const result = await faceApiService.registration(file.data);
-
-  //   pool.getConnection(function (err, connection) {
-  //     if (err) console.log(err);
-  //     var message = result["message"];
-  //     var data_image = result["data_image"];
-  //     if (message == "tidakvalid") {
-  //       res.send({
-  //         status: false,
-  //         message: "Gagal registrasi wajah",
-  //       });
-  //     } else {
-  //       connection.query(
-  //         `UPDATE employee SET file_face='${nameFile}' WHERE em_id='${em_id}'`,
-  //         function (error, results) {
-  //           res.send({
-  //             status: true,
-  //             message: "Berhasil update data!",
-  //             data: results,
-  //           });
-  //         }
-  //       );
-  //     }
-  //     connection.release();
-  //   });
-  // },
-
-  // async get_face(req, res) {
-  //   const { file } = req.files;
-  //   const em_id = req.body.em_id;
-  //   const fs = require('fs');
-  //   var nameFile = "regis_" + em_id + ".png";
-  //   const file_local = fs.readFileSync("public/face_recog/" + nameFile);
-  //   const result = await faceApiService.detection(file.data, em_id, file_local);
-  //   // const result = await faceApiService.detection(file, em_id);
-  //   if (result == em_id)
-  //     res.send({
-  //       status: true,
-  //       message: "wajah terverifikasi",
-  //     });
-  //   else
-  //     res.send({
-  //       status: false,
-  //       message: "wajah tidak terverifikasi",
-  //     });
-  // },
 
   async editData(req, res) {
     console.log("-----edit data izin ----------");
@@ -5157,146 +4822,12 @@ module.exports = {
       }
     }
 
-    // results.forEach((el) => {
-    // //value 1
-    // if (el['value01']=="0" ||el['value01']=="" || el['value01']==null || el['value01']>0 ){
-
-    // }else{
-    //  var output01= decryptData(el['value01'], el['keycode01'],database)
-    //   el['value01']=output01
-
-    // }
-    //  //value 2
-    //  if (el['value02']=="0" ||el['value02']=="" || el['value02']==null || el['value02']>0   ){
-
-    //  }else{
-    //   var output02= decryptData(el['value02'], el['keycode02'],database)
-    //    el['value02']=output02
-
-    //  }
-
-    //   //value 3
-    // if (el['value03']=="0" ||el['value03']=="" || el['value03']==null  || el['value03']>0 ){
-
-    // }else{
-    //  var output03= decryptData(el['value03'], el['keycode03'],database)
-    //   el['value03']=output03
-
-    // }
-
-    //  //value 4
-    //  if (el['value04']=="0" ||el['value04']=="" || el['value04']==null || el['value04']>0  ){
-
-    //  }else{
-    //   var output04= decryptData(el['value04'], el['keycode04'],database)
-    //    el['value04']=output04
-
-    //  }
-    //   //value 0
-    // if (el['value05']=="0" ||el['value05']=="" || el['value05']==null || el['value05']>0  ){
-
-    // }else{
-    //  var output05= decryptData(el['value05'], el['keycode05'],database)
-    //   el['value05']=output05
-
-    // }
-    //  //value 0
-    //  if (el['value06']=="0" ||el['value06']=="" || el['value06']==null || el['value06']>0  ){
-
-    //  }else{
-    //   var output06= decryptData(el['value06'], el['keycode06'],database)
-    //    el['value06']=output06
-
-    //  }
-
-    //   //value 0
-    //   if (el['value07']=="0" ||el['value07']=="" || el['value07']==null  || el['value07']>0 ){
-
-    //   }else{
-
-    //    var output07= decryptData(el['value07'], el['keycode07'],database)
-    //     el['value07']=output07
-
-    //   }
-
-    //      //value 0
-    //      if (el['value08']==null ){
-
-    //      }else{
-    //       var output08= decryptData(el['value08'], el['keycode08'],database)
-    //        el['value08']=output08
-
-    //      }
-
-    //         //value 0
-    //   if (el['value09']=="0" ||el['value09']=="" || el['value09']==null  || el['value09']>0 ){
-
-    //   }else{
-    //    var output09= decryptData(el['value09'], el['keycode09'],database)
-    //     el['value09']=output09
-
-    //   }
-
-    //      //value 0
-    //      if (el['value10']=="0" ||el['value10']=="" || el['value10']==null  || el['value10']>0 ){
-
-    //      }else{
-    //       var output10= decryptData(el['value10'], el['keycode10'],database)
-    //        el['value10']=output10
-
-    //      }
-
-    //       //value 0
-    //       if (el['value11']=="0" ||el['value11']=="" || el['value11']==null  || el['value11']>0 ){
-
-    //       }else{
-    //        var output11= decryptData(el['value11'], el['keycode11'],database)
-    //         el['value11']=output11
-
-    //       }
-    //        //value 0
-    //      if (el['value12']=="0" ||el['value12']=="" || el['value12']==null || el['value12']>0  ){
-
-    //      }else{
-    //       var output12= decryptData(el['value12'], el['keycode12'],database)
-    //        el['value12']=output12
-
-    //      }
-
-    //      if (el.type=="C"){
-    //       list_pemotongan.push(el);
-
-    //      }else{
-    //       list_pendapatan.push(el);
-    //      }
-
-    // });
-
     res.send({
       status: true,
       message: "Berhasil ambil data!",
       data_pendapatan: list_pendapatan,
       data_pemotongan: list_pemotongan,
     });
-
-    //   console.log('-----Slip gaji----------')
-    //  poolDynamic.getConnection(function (err, connection)  {
-    //     if (err) console.log(err);;
-    //     connection.query(
-    //       `SELECT * FROM ${database}_hrm.emp_salary${tahun} WHERE em_id='${em_id}' AND payroll='Y' ORDER BY initial`,
-    //       function (error, results) {
-    //         if (error) {
-    //           res.send({
-    //             status: false,
-    //             message: "Periode tidak di temukan"
-    //           });
-    //         } else {
-
-    //         }
-    //       }
-    //     );
-    //     connection.release();
-    //   });
 
     async function decryptData(nilai, keycode, dbname) {
       try {
@@ -5329,52 +4860,6 @@ module.exports = {
         // res.status(500).json({ error: 'An error occurred' });
         return "1 ";
       }
-
-      console.log("nilai ", nilai);
-      console.log("key", keycode);
-      const params = {
-        nilai: `${nilai}`,
-        key2: `${keycode}`,
-        aplikasioperasionalsiscomkey: "siscom@ptshaninformasi%232022@",
-      };
-
-      // Convert the parameters to a query string
-      const paramString = querystring.stringify(params);
-
-      // The URL you want to send the GET request to, with the parameters appended
-      const url = `https://myhris.siscom.id/custom/dpi/api/decrypt?keycode=${keycode}&nilai=${nilai}&aplikasioperasionalsiscomkey=siscom@ptshaninformasi%232022@`;
-
-      // Send the GET request
-      //       const req = await https.request(url, options, (res) => {
-      //         let data = '';
-
-      //         // Accumulate the response data
-      //         res.on('data', (chunk) => {
-      //           data += chunk;
-      //         });
-
-      //         // Process the response data
-      //         res.on('end', () => {
-      //           console.log(data)
-      //           var d=JSON.parse(data)
-      //           console.log(`data ${d.data}`);
-      //           if (d.status==true){
-      // console.log(`data true ${d.data}`);
-      //             return d.data;
-      //           }else{
-      //             return "0"
-      //           }
-      //           // Do something with the response data
-      //         });
-      //       });
-
-      //       req.on('error', (error) => {
-      //         console.error(`Error: ${error.message}`);
-      //         return "1";
-      //       });
-
-      //       req.end();
-      // return "1"
     }
   },
 
@@ -10757,7 +10242,7 @@ module.exports = {
               emp_labor.nomor_ajuan,emp_labor.dari_jam,emp_labor.sampai_jam,emp_labor.signin_note,emp_labor.signout_note,emp_labor.signin_addr,emp_labor.signout_addr,emp_labor.signin_longlat,emp_labor.signout_longlat,emp_labor.place_out,emp_labor.place_in,emp_labor.signout_pict,
               emp_labor.breakin_time,emp_labor.breakout_time,emp_labor.breakin_longlat,emp_labor.breakout_longlat,
               emp_labor.breakin_note,emp_labor.breakin_note,
-              emp_labor.place_break_in,emp_labor.place_break_out,emp_labor.breakin_addr,emp_labor.breakout_addr,
+              emp_labor.place_break_in,emp_labor.place_break_out,emp_labor.breakin_addr,emp_labor.breakout_addr,emp_labor.id_absen,
               employee.* FROM ${namaDatabaseDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id WHERE emp_labor.id='${id}'`;
         const [dataAbsensi] = await conn.query(queryAbsensi);
         const [sysdata] = await conn.query(
@@ -10948,8 +10433,6 @@ module.exports = {
             await conn.query(
               `INSERT INTO employee_letter_reason (employee_letter_id,name) VALUE('${teguranLisanInsert.insertId}','${data}')`
             );
-
-            
           }
           const [notifTl] = await conn.query(
             `SELECT * FROM sysdata WHERE kode='026'`
@@ -10973,7 +10456,6 @@ module.exports = {
             `SELECT * FROM sysdata WHERE kode='027'`
           );
 
-
           utility.insertNotifikasiGlobal(
             notifApprove[0]["name"],
             "Surat Peringatan",
@@ -10986,9 +10468,7 @@ module.exports = {
             `${database}_hrm`,
             `Surat Peringatan Telah di terbitkan Kepada ${employee[0]["full_name"]}, dengan nomor ${nomorLb}`
           );
-        
         }
-
 
         if (status == "Rejected" || status == "Reject") {
           var namaTransaksi = "Absensi";
@@ -11064,11 +10544,6 @@ module.exports = {
             approveId2 != undefined) &&
           (status != "Rejected" || status != "Reject")
         ) {
-          console.log("query cek ", queryCek);
-          const [results] = await conn.query(queryCek);
-
-          records = results;
-
           var queryInsert = `
                         INSERT INTO 
                         ${namaDatabaseDynamic}.attendance(em_id,
@@ -11120,22 +10595,15 @@ module.exports = {
                             '${dataAbsensi[0].breakout_longlat ?? ""}',
                             1,1,"","","","","") `;
 
-          if (results.length == 0) {
+          if (dataAbsensi[0].id_absen == 0 || dataAbsensi[0].id_absen == null) {
             console.log("kamu kesini yah ", results);
             // `INSERT INTO attendance SET ?;`, [insertData],
             await conn.query(queryInsert);
           } else {
-            var lastItem = results.pop();
-            var id_record = lastItem.id;
-            var queryNew = `UPDATE ${namaDatabaseDynamic}.attendance SET ? WHERE id='${id_record}'`;
-            console.log(lastItem);
+            var queryNew = `UPDATE ${namaDatabaseDynamic}.attendance SET ? WHERE id='${dataAbsensi[0].id_absen}'`;
             console.log("ini data absensi ", dataAbsensi);
-
-            if (
-              lastItem.signout_longlat == "" ||
-              lastItem.signout_time == "00:00:00"
-            ) {
-              // var queryUpdate = `UPDATE ${namaDatabaseDynamic}.attendance SET signout_time='${dataAbsensi[0].sampai_jam}', place_out='${dataAbsensi[0].place_out}', signout_longlat='${dataAbsensi[0].signout_longlat}', signout_pict='${dataAbsensi[0].signout_pict}', signout_note='${dataAbsensi[0].signout_note}', signout_addr='${dataAbsensi[0].signout_addr}' WHERE id='${id_record}' `;
+            // var queryUpdate = `UPDATE ${namaDatabaseDynamic}.attendance SET signout_time='${dataAbsensi[0].sampai_jam}', place_out='${dataAbsensi[0].place_out}', signout_longlat='${dataAbsensi[0].signout_longlat}', signout_pict='${dataAbsensi[0].signout_pict}', signout_note='${dataAbsensi[0].signout_note}', signout_addr='${dataAbsensi[0].signout_addr}' WHERE id='${id_record}' `;
+            if (dataAbsensi[0].sampai_jam != "00:00:00") {
               var data = {
                 signout_time: `${dataAbsensi[0].sampai_jam}`,
                 place_out: `${dataAbsensi[0].place_out}`,
@@ -11144,50 +10612,45 @@ module.exports = {
                 signout_note: `${dataAbsensi.signout_note}`,
                 signout_addr: `${dataAbsensi[0].signout_addr}`,
               };
-
+  
               console.log("dta absensi new", queryNew);
               console.log(data);
               await conn.query(queryNew, [data]);
-
-              if (dataAbsensi[0].dari_jam != "00:00:00") {
-                var data = {
-                  signin_time: `${dataAbsensi[0].dari_jam}`,
-                  place_in: `${dataAbsensi[0].place_in}`,
-                  signin_longlat: `${dataAbsensi.signin_longlat}`,
-                  signin_pict: `${dataAbsensi[0].signin_pict}`,
-                  signin_note: `${dataAbsensi.signin_note}`,
-                  signin_addr: `${dataAbsensi[0].signin_addr}`,
-                };
-                await conn.query(queryNew, [data]);
-              }
-              if (dataAbsensi[0].breakin_time != "00:00:00") {
-                var data = {
-                  breakin_time: `${dataAbsensi[0].breakin_time ?? "00:00:00"}`,
-                  place_break_in: `${dataAbsensi[0].place_break_in}`,
-                  breakin_longlat: `${dataAbsensi[0].breakin_longlat}`,
-                  breakin_pict: `${dataAbsensi[0].breakin_pict}`,
-                  breakin_note: `${dataAbsensi[0].breakin_note}`,
-                  breakin_addr: `${dataAbsensi[0].breakin_addr}`,
-                };
-                console.log(data);
-                await conn.query(queryNew, [data]);
-              }
-              if (dataAbsensi[0].breakin_time != "00:00:00") {
-                var data = {
-                  breakout_time: `${
-                    dataAbsensi[0].breakout_time ?? "00:00:00"
-                  } `,
-                  place_break_out: `${dataAbsensi[0].place_break_out}`,
-                  breakout_longlat: `${dataAbsensi[0].breakout_longlat}`,
-                  breakout_pict: `${dataAbsensi[0].breakout_pict}`,
-                  breakout_note: `${dataAbsensi[0].breakout_note}`,
-                  breakout_addr: `${dataAbsensi[0].breakout_addr}`,
-                };
-                console.log(data);
-                await conn.query(queryNew, [data]);
-              }
-            } else {
-              await conn.query(queryInsert);
+            }
+            if (dataAbsensi[0].dari_jam != "00:00:00") {
+              var data = {
+                signin_time: `${dataAbsensi[0].dari_jam}`,
+                place_in: `${dataAbsensi[0].place_in}`,
+                signin_longlat: `${dataAbsensi.signin_longlat}`,
+                signin_pict: `${dataAbsensi[0].signin_pict}`,
+                signin_note: `${dataAbsensi.signin_note}`,
+                signin_addr: `${dataAbsensi[0].signin_addr}`,
+              };
+              await conn.query(queryNew, [data]);
+            }
+            if (dataAbsensi[0].breakin_time != "00:00:00") {
+              var data = {
+                breakin_time: `${dataAbsensi[0].breakin_time ?? "00:00:00"}`,
+                place_break_in: `${dataAbsensi[0].place_break_in}`,
+                breakin_longlat: `${dataAbsensi[0].breakin_longlat}`,
+                breakin_pict: `${dataAbsensi[0].breakin_pict}`,
+                breakin_note: `${dataAbsensi[0].breakin_note}`,
+                breakin_addr: `${dataAbsensi[0].breakin_addr}`,
+              };
+              console.log(data);
+              await conn.query(queryNew, [data]);
+            }
+            if (dataAbsensi[0].breakin_time != "00:00:00") {
+              var data = {
+                breakout_time: `${dataAbsensi[0].breakout_time ?? "00:00:00"} `,
+                place_break_out: `${dataAbsensi[0].place_break_out}`,
+                breakout_longlat: `${dataAbsensi[0].breakout_longlat}`,
+                breakout_pict: `${dataAbsensi[0].breakout_pict}`,
+                breakout_note: `${dataAbsensi[0].breakout_note}`,
+                breakout_addr: `${dataAbsensi[0].breakout_addr}`,
+              };
+              console.log(data);
+              await conn.query(queryNew, [data]);
             }
           }
           await conn.commit();
@@ -13502,55 +12965,6 @@ a.typeid,
      ))
   `;
 
-    //   var query2 = `
-    //   SELECT DISTINCT emp.full_name AS full_name,
-    //   cb.name AS branch_name,att.atten_date,att.signin_time,emp.job_title,emp.em_id,att.place_in,
-    //   (
-    //     (
-    //       (
-    //         TIMEDIFF (
-    //           att.signin_time,
-    //           (
-    //             IFNULL (
-    //               (SELECT
-    //                 b.time_in
-    //               FROM
-    //               dpi_hrm2307.emp_shift a,
-    //                 dpi_hrm.work_schedule b
-    //               WHERE a.work_id = b.id
-    //                 AND a.em_id = att.em_id
-    //                 AND a.atten_date = att.atten_date),
-    //               (SELECT
-    //                 c.time_in
-    //               FROM
-    //                 dpi_hrm.work_schedule c
-    //               WHERE c.id = '2')
-    //             )
-    //           )
-    //         )
-    //       )
-    //     )
-    //   ) AS selisih
-    // FROM
-    //   dpi_hrm2307.attendance AS att,
-    //  dpi_hrm.employee emp,
-    // dpi_hrm.branch cb
-    // WHERE emp.em_id = att.em_id
-    //   AND cb.code = emp.branch_id
-    //   AND att.atten_date='2023-07-06'
-
-    //   AND att.place_in IN
-    //   (SELECT DISTINCT
-    //     a.place
-    //   FROM
-    //   ${database}_hrm.places_coordinate a,
-    //   ${database}_hrm.late_rate b
-    //   WHERE (
-    //       LEFT (b.places, 2) = a.id
-    //       OR RIGHT (b.places, 2) = a.id
-    //     ))
-    //  `;
-
     var url;
     if (status == "0") {
       url = query1;
@@ -15614,91 +15028,6 @@ GROUP BY TBL.full_name`;
       });
     } finally {
       if (conn) await conn.release();
-    }
-    try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          //
-
-          connection.query(
-            `
-             SELECT name FROM sysdata WHERE kode='013'`,
-            (err, sysdata) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-              connection.query(
-                `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE typeId='${typeId}' AND em_id='${em_id}' AND start_date>CURDATE() AND  end_date<CURDATE() AND leave_status='${
-                  sysdata[0].name == "1" || sysdata[0].name == 1
-                    ? "Approve"
-                    : "Approve2"
-                }' ORDER BY ID DESC`,
-                (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-
-                  connection.commit((err) => {
-                    if (err) {
-                      console.error("Error committing transaction:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "Kombinasi email & password Anda Salah",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-                    connection.end();
-                    console.log("Transaction completed successfully!");
-                    return res.status(200).send({
-                      status: true,
-                      message: "Succesfuly ",
-                      data: results,
-                    });
-                  });
-                }
-              );
-            }
-          );
-        });
-      });
-    } catch ($e) {
-      return res.status(400).send({
-        status: true,
-        message: "Gagal ambil data",
-        data: [],
-      });
     }
   },
 
