@@ -366,6 +366,7 @@ module.exports = {
     var query1 = `SELECT em_id,full_name, job_title, em_birthday, em_mobile, em_image FROM employee WHERE DATE_FORMAT(em_birthday, '%m')=DATE_FORMAT('${dateNow}', '%m') AND employee.status='ACTIVE' AND branch_id='${branchId}' ORDER BY DATE_FORMAT(em_birthday, "%d") ASC`;
     try {
       conn = await connection.getConnection();
+      console.log('query ulang tahun',query1);
       await conn.beginTransaction();
       const [results] = await conn.query(query1);
       await conn.commit();
@@ -640,7 +641,7 @@ module.exports = {
     }
   },
   async whereOnce(req, res) {
-    console.log("-----where once----------");
+    console.log("-----where once asli----------");
     let name_url = req.originalUrl;
 
     var convert1 = name_url
@@ -653,7 +654,8 @@ module.exports = {
     console.log(convert2);
     var value = req.body.val;
     var cari = req.body.cari;
-    var database = req.query.database;
+    var database = req.query.database == '' || req.query.database == undefined ? process.env.API_KEY : req.query.database;
+    console.log('database',database);
     var query = "";
     console.log(req.query);
     const today = new Date();
@@ -14928,7 +14930,7 @@ GROUP BY TBL.full_name`;
      `;
     }
 
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -14936,7 +14938,7 @@ GROUP BY TBL.full_name`;
       const [results] = await conn.query(
         `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
       );
-
+      console.log( `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`);
       await conn.commit();
       return res.status(200).send({
         status: true,

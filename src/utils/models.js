@@ -48,8 +48,8 @@ module.exports = {
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.API_URL, //myhris.siscom.id (ip)
-      user: "pro",
-      password: "Siscom3519",
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
       timezone: "+00:00",
       database: `${database}_hrm`,
       connectionLimit: 20,
@@ -71,8 +71,8 @@ module.exports = {
             database == "sis_admin"
               ? process.env.MY_DATABASE
               : process.env.API_URL,
-          user: "pro",
-          password: "Siscom3519",
+          user: `${process.env.DB_USER}`,
+          password: `${process.env.DB_PASSWORD}`,
           timezone: "+00:00",
           database: database,
           connectionLimit: 500,
@@ -96,8 +96,8 @@ module.exports = {
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.API_URL, //myhris.siscom.id (ip)
-      user: "pro",
-      password: "Siscom3519",
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
       timezone: "+00:00",
       database: `${database}_hrm`,
       connectionLimit: 20,
@@ -114,8 +114,8 @@ module.exports = {
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.MY_DATABASE,
-      user: "pro",
-      password: "Siscom3519",
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
       timezone: "+00:00",
       database: "sis_admin",
       connectionLimit: 10000000,

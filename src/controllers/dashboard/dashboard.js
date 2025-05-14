@@ -1,4 +1,4 @@
-const config = require("../configs/database");
+const config = require("../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require("sha1");
@@ -8,7 +8,7 @@ const nodemailer = require("nodemailer");
 
 var request = require("request");
 
-const model = require("../utils/models");
+const model = require("../../utils/models");
 require("dotenv").config();
 
 var ipServer = process.env.API_URL;
@@ -112,25 +112,26 @@ module.exports = {
       const [records] = await connection.query(query);
 
       if (records.length === 0) {
-        return res.status(404).send({
+        await connection.commit();
+        return res.status(400).send({
           status: false,
           message: "Data tidak ditemukan",
           data: [],
         });
+      } else {
+        const { time_in, time_out } = records[0];
+
+        console.log("Transaction work schedule completed successfully!");
+        
+        return res.status(200).send({
+          status: true,
+          message: "Data berhasil diambil",
+          data: {
+            time_in,
+            time_out,
+          },
+        });
       }
-
-      const { time_in, time_out } = records[0];
-
-      console.log("Transaction work schedule completed successfully!");
-      await connection.commit();
-      return res.status(200).send({
-        status: true,
-        message: "Data berhasil diambil",
-        data: {
-          time_in,
-          time_out,
-        },
-      });
     } catch (e) {
       console.error("error get workschedule", e);
       if (connection) {
@@ -205,7 +206,6 @@ module.exports = {
                 if (error) {
                   console.error("Error sending email:", error);
                 } else {
-
                 }
               });
               connection.commit((err) => {
@@ -301,7 +301,8 @@ module.exports = {
           );
         });
       });
-    } catch ($e) {
+    } catch (e) {
+      console.error("Error occurred:", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
@@ -496,7 +497,7 @@ module.exports = {
         message: "Terjadi kesalahan saat mengambil data",
         data: [],
       });
-    }finally {
+    } finally {
       if (conn) await conn.release();
     }
   },

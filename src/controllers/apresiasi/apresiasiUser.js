@@ -12,10 +12,11 @@ module.exports = {
 
     const databaseMaster = `${database}_hrm`;
 
-    var fixquery = `SELECT a.*, b.full_name, dep.name AS divisi 
-    FROM apresiasi AS a JOIN employee AS b ON b.em_id = a.em_id 
-    JOIN department AS dep ON dep.id = b.dep_id
-    WHERE a.em_id = '${emId}'`;
+    var fixquery = `SELECT a.*, b.*, c.full_name, dep.name AS divisi FROM apresiasi AS a 
+INNER JOIN apresiasi_detail AS b ON a.id = b.apresiasi_id 
+INNER JOIN employee AS c ON c.em_id = b.em_id
+INNER JOIN department AS dep ON dep.id = c.dep_id
+WHERE b.em_id = '${emId}' AND a.tgl_mulai <= CURDATE() AND a.tgl_akhir >= CURDATE()`;
 
     const connection = await models.createConnection1(`${database}_hrm`);
     console.log(fixquery);
