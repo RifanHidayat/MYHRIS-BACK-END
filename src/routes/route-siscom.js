@@ -38,6 +38,7 @@ const {
   showAppresiasi,
   showUserApresiasi,
 } = require("../controllers");
+const shift = require("../controllers/shift/shift");
 
 const auth = require("../middleware/auth");
 router.post("/hapus_foto_user", login.deleteFoto);
@@ -421,5 +422,11 @@ router.post("/audit/log", auditLog.log);
 //apresiasi
 router.get("/apresiasi", showAppresiasi.log);
 router.get("/apresiasi/user", showUserApresiasi.userApresiasi);
+
+//shift
+router.get('/shift/work_schedule', shift.workSchedule); 
+router.post('/shift', shift.store);
+router.get('/shift', shift.show);
+router.post('/shift/search_work_schedule', shift.searchWorkSchedule);
 
 module.exports = router;

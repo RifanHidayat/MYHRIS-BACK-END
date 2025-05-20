@@ -36,6 +36,7 @@ const auditLog = require('./audit/log');
 //apresiasi
 const showAppresiasi = require('./apresiasi/showAppresiasi');
 const showUserApresiasi = require('./apresiasi/apresiasiUser');
+const shift = require('./shift/shift');
 
 
 module.exports ={
