@@ -366,7 +366,7 @@ module.exports = {
     var query1 = `SELECT em_id,full_name, job_title, em_birthday, em_mobile, em_image FROM employee WHERE DATE_FORMAT(em_birthday, '%m')=DATE_FORMAT('${dateNow}', '%m') AND employee.status='ACTIVE' AND branch_id='${branchId}' ORDER BY DATE_FORMAT(em_birthday, "%d") ASC`;
     try {
       conn = await connection.getConnection();
-      console.log('query ulang tahun',query1);
+      console.log("query ulang tahun", query1);
       await conn.beginTransaction();
       const [results] = await conn.query(query1);
       await conn.commit();
@@ -654,8 +654,11 @@ module.exports = {
     console.log(convert2);
     var value = req.body.val;
     var cari = req.body.cari;
-    var database = req.query.database == '' || req.query.database == undefined ? process.env.API_KEY : req.query.database;
-    console.log('database',database);
+    var database =
+      req.query.database == "" || req.query.database == undefined
+        ? process.env.API_KEY
+        : req.query.database;
+    console.log("database", database);
     var query = "";
     console.log(req.query);
     const today = new Date();
@@ -9122,7 +9125,7 @@ module.exports = {
         data10: results[9],
         data11: results[10],
         data12: results[11],
-        data13: results[12]
+        data13: results[12],
       });
     } catch (e) {
       if (conn) {
@@ -10622,7 +10625,7 @@ module.exports = {
                 signout_note: `${dataAbsensi.signout_note}`,
                 signout_addr: `${dataAbsensi[0].signout_addr}`,
               };
-  
+
               console.log("dta absensi new", queryNew);
               console.log(data);
               await conn.query(queryNew, [data]);
@@ -11607,44 +11610,31 @@ a.breakin_time,
        ${database}_hrm.employee e2 ON a.approve_id = e2.em_id
         WHERE a.em_id=b.em_id  AND a.status LIKE '%${stauts}%' AND a.status!='Cancel' AND sysdata.name LIKE '%${em_id}%' ORDER BY a.id DESC`;
 
-    
-    var query13 = `SELECT 
-     a.id as idd,
+    var query13 = `SELECT
+     a.id AS idd,
      CASE
      WHEN ( a.approve_status  IS NULL OR a.approve_status='Pending')  AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
      WHEN  (a.approve_status IS NULL   OR a.approve_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-
      ELSE "Approve"
      END AS approve_status,
      CASE
      WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by!='') THEN "Pending"
      WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
-     
-
      ELSE "Approve"
      END AS approve2_status,
-     a.dari_jam,
-     a.sampai_jam,
-     a.approve_by,
-     a.approve2_by,
-     a.em_delegation,
-     a.atten_date,
-     a.uraian,
-     a.nomor_ajuan,
-     a.em_id,
-     a.approve_id,
-     a.status,
-     a.tgl_ajuan,
-	a.ajuan,
-a.approve_id,
-a.approve_date,
-a.id, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a 
-     JOIN ${database}_hrm.employee b
-     WHERE a.em_id=b.em_id 
-     ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='1'  AND a.status_transaksi=1
+     a.dari_tgl, a.sampai_tgl,a.approve_by,a.approve2_by,a.em_delegation,a.atten_date,a.uraian,a.nomor_ajuan,a.em_id,a.approve_id,
+     a.status,a.tgl_ajuan,a.ajuan,a.approve_id,a.approve_date,a.id, a.work_id_old, a.work_id_new, 
+     aw.name AS name_old, aw.time_in AS time_in_old, aw.time_out AS time_out_old,
+     bw.name AS name_new, bw.time_in AS time_in_new, bw.time_out AS time_out_new,
+     b.em_report_to AS em_report_to,  b.em_report2_to AS em_report2_to, b.full_name,
+     c.full_name AS replace_name
+     FROM ${namaDatabaseDynamic}.emp_labor a
+     JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
+     LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
+     LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
+     WHERE  a.status!='Cancel' ${conditionStatusLabor} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
      AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
-     ${orderby1}
-     `;
+    ${orderby1}`;
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query1 =
         query1 +
@@ -11997,11 +11987,11 @@ a.typeid,
       queryApproval = query11;
     } else if (url_data == "teguran_lisan") {
       queryApproval = query12;
-    } else if (url_data == 'shift'){
+    } else if (url_data == "shift") {
       queryApproval = query13;
     }
 
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -12030,7 +12020,6 @@ a.typeid,
   },
 
   async listApprovalPayroll(req, res) {
-    console.log("-----spesifik approval----------");
     console.log(req.body);
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -12079,7 +12068,6 @@ a.typeid,
   },
 
   slipGaji(req, res) {
-    console.log("-----spesifik approval----------");
     console.log(req.body);
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -14996,7 +14984,9 @@ GROUP BY TBL.full_name`;
       const [results] = await conn.query(
         `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
       );
-      console.log( `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`);
+      console.log(
+        `${query_masuk_kerja};${query_izin};${query_sakit};${query_cuti};${query_lembur};${query_masuk_wfh};${query_absen_tepat_waktu};${query_jumlah_kerja}`
+      );
       await conn.commit();
       return res.status(200).send({
         status: true,

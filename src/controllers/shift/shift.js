@@ -1,5 +1,6 @@
 const model = require("../../utils/models");
 const utility = require("../../utils/utility");
+const { approval } = require("../loan");
 
 module.exports = {
   async workSchedule(req, res) {
@@ -71,10 +72,11 @@ module.exports = {
 
       var query = `SELECT ws.id, ws.name, ws.time_in, ws.time_out FROM work_schedule ws 
       JOIN ${namaDatabaseDynamic}.emp_shift es ON ws.id = es.work_id WHERE es.em_id = '${em_id}' AND es.atten_date = '${attenDate}'`;
+
+      console.log(query);
       const [records] = await connection.query(query);
       await connection.commit();
       if (records.length === 0) {
-        
         return res.status(400).send({
           status: false,
           message: "Data tidak ditemukan",
@@ -107,6 +109,13 @@ module.exports = {
     var database = req.query.database;
     var array = req.body.tgl_ajuan.split("-");
     var bodyValue = req.body;
+    console.log(bodyValue);
+    if (bodyValue.work_id_old == "") {
+      bodyValue.work_id_old = 0;
+    }
+    if (bodyValue.work_id_new == "") {
+      bodyValue.work_id_new = 0;
+    }
     const tahun = `${array[0]}`;
     const convertYear = tahun.substring(2, 4);
     var convertBulan;
@@ -123,9 +132,7 @@ module.exports = {
         await model.createConnection1(`${database}_hrm`)
       ).getConnection();
       await conn.beginTransaction();
-
       var query = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
-      console.log(query);
       let nomorLb = `RS20${convertYear}${convertBulan}`;
       const [cekNoAjuan] = await conn.query(
         `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%RS%' ORDER BY id DESC LIMIT 1`
@@ -142,8 +149,12 @@ module.exports = {
       }
       bodyValue.nomor_ajuan = nomorLb;
       const [records] = await conn.query(query, [bodyValue]);
-      const [user] = await conn.query(`SELECT * FROM employee where em_id = '${bodyValue.em_id}'`);
-      const [transaksi] = await conn.query(`SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE id = '${records.insertId}'`);
+      const [user] = await conn.query(
+        `SELECT * FROM employee where em_id = '${bodyValue.em_id}'`
+      );
+      const [transaksi] = await conn.query(
+        `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE id = '${records.insertId}'`
+      );
       const delegationIds = user[0].em_report_to
         ? Array.isArray(user[0].em_report_to)
           ? user[0].em_report_to
@@ -198,9 +209,7 @@ module.exports = {
     }
   },
   async show(req, res) {
-    console.log(
-      "---- show data dengan start periode and periode----------"
-    );
+    console.log("---- show data dengan start periode and periode----------");
     var database = req.query.database;
     let name_url = req.originalUrl;
     var convert1 = name_url
@@ -243,21 +252,27 @@ module.exports = {
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
-      var  url = ` 
-            SELECT * FROM ${startPeriodeDynamic}.emp_labor 
-            WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}') AND typeId = '99'   ORDER BY id DESC`;
+      var url = ` 
+            
+ SELECT el.id, el.nomor_ajuan, el.tgl_ajuan, el.dari_tgl, el.sampai_tgl,
+ el.status, el.uraian, el.work_id_old, el.work_id_new,
+ el.alasan1,el.alasan2,el.approve_by,el.approve2_by,
+ a.name AS name_old, a.time_in AS time_in_old, a.time_out AS time_out_old,
+ b.name AS name_new, b.time_in AS time_in_new, b.time_out AS time_out_new
+ FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
+ LEFT JOIN work_schedule AS b ON el.work_id_new = b.id
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
 
-          if (
-            montStart < monthEnd ||
-            date1.getFullYear() < date2.getFullYear()
-          ) {
-            url = `
+            `;
+
+      if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+        url = `
               SELECT * FROM ${startPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND status_transaksi=1  AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  AND typeId = '99' 
               UNION ALL
               SELECT * FROM ${endPeriodeDynamic}.emp_labor  WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'  ) AND typeId = '99' 
               ORDER BY idd
               `;
-          }
+      }
       console.log(url);
       const [results] = await conn.query(url);
       await conn.commit();
@@ -278,6 +293,152 @@ module.exports = {
       });
     } finally {
       if (conn) await conn.release();
+    }
+  },
+
+  async approval(req, res) {
+    var database = req.query.database;
+    var array = req.body.tanggal.split("-");
+    var id = req.body.id;
+    const emId = req.body.em_id;
+    const status = req.body.status;
+    const alasan = req.body.alasan;
+    const tahun = `${array[0]}`;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (array[1].length == 1) {
+      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
+    } else {
+      convertBulan = array[1];
+    }
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    let conn;
+    try {
+      console.log("---------------approve shift---------------");
+      conn = await (
+        await model.createConnection1(`${database}_hrm`)
+      ).getConnection();
+      await conn.beginTransaction();
+      const now = new Date();
+      const formattedDate = now.toISOString().split("T")[0];
+      const queryEmpApprove = `SELECT full_name, em_id FROM employee WHERE em_id = '${emId}'`;
+      const queryApprovTipe = `SELECT name FROM sysdata WHERE kode = '013'`;
+      const queryApprove = `UPDATE ${namaDatabaseDynamic}.emp_labor  SET ? WHERE id = '${id}'`;
+      const queryCekData = `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE  id = '${id}'`;
+      const [empApprove] = await conn.query(queryEmpApprove);
+      const [approveType] = await conn.query(queryApprovTipe);
+      const [cekData] = await conn.query(queryCekData);
+      let data;
+      console.log(req.body);
+      if (approveType[0].name == 1) {
+        data = {
+          status: status,
+          approve_status: status,
+          approve_id: emId,
+          approve_by: empApprove[0].name,
+          approve_date: formattedDate,
+          alasan1: alasan
+        };
+      }
+
+      if (approveType[0].name == 2) {
+        if (cekData[0].status == "Approve") {
+          if (status == "Rejected") {
+            data = {
+              status: status,
+              approve2_status: status,
+              approve2_id: emId,
+              approve2_by: empApprove[0].full_name,
+              approve2_date: formattedDate,
+              alasan2: alasan
+            };
+          } else {
+            data = {
+              status: "Approve2",
+              approve2_status: status,
+              approve2_id: emId,
+              approve2_by: empApprove[0].full_name,
+              approve2_date: formattedDate,
+              alasan2: alasan
+            };
+          }
+        } else {
+          data = {
+            status: status,
+            approve_status: status,
+            approve_id: emId,
+            approve_by: empApprove[0].full_name,
+            approve_date: formattedDate,
+            alasan1 : alasan
+          };
+        }
+      }
+
+      console.log(data);
+      await conn.query(queryApprove, [data]);
+
+      if (approveType[0].name == 1) {
+        
+      }
+
+      if (approveType[0].name == 2) {
+        if (cekData[0].status == "Approve") {
+          if (status == "Rejected") {
+            
+          } else {
+            let dari_tgl = utility.dateConvert(cekData[0].dari_tgl);
+            let sampai_tgl = utility.dateConvert(cekData[0].sampai_tgl);
+            let work_id_new = cekData[0].work_id_new == 0 ? null : cekData[0].work_id_new
+            let work_id_old = cekData[0].work_id_old == 0 ? null : cekData[0].work_id_old
+            console.log(work_id_new);
+            console.log(work_id_old);
+            const queryCurentSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${dari_tgl}' `
+            const queryReplaceSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${sampai_tgl}' `
+            const queryDelegasiSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            WHERE em_id = '${cekData[0].em_delegation}' AND atten_date = '${sampai_tgl}' `
+            if (cekData[0].em_delegation == '') {
+              var cur = {
+                work_id: work_id_new
+              }
+              await conn.query(queryCurentSchedule, [cur])
+              var rep = {
+                work_id: work_id_old
+              }
+              await conn.query(queryReplaceSchedule, [rep])
+            } else{
+              var cur = {
+                work_id: work_id_new
+              }
+              await conn.query(queryCurentSchedule, [cur])
+              var rep = {
+                work_id: work_id_old
+              }
+              await conn.query(queryDelegasiSchedule, [rep])
+            }
+          }
+        } else {
+          
+        }
+      }
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Succesfuly swap shift",
+      });
+    } catch (e) {
+      console.error("error get create shift", e);
+      if (conn) {
+        await conn.rollback();
+      }
+      return res.status(400).send({
+        status: true,
+        message: e,
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release;
     }
   },
 };
