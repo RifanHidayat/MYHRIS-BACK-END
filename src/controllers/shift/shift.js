@@ -1,3 +1,4 @@
+const { body } = require("express-validator");
 const model = require("../../utils/models");
 const utility = require("../../utils/utility");
 const { approval } = require("../loan");
@@ -208,6 +209,83 @@ module.exports = {
       if (conn) await conn.release;
     }
   },
+
+  async edit(req, res) {
+    var database = req.query.database;
+    var array = req.body.tgl_ajuan.split("-");
+    var id = req.body.id;
+    var bodyValue = req.body;
+    var transaksi = bodyValue.status_transaksi;
+    console.log(bodyValue);
+    if (bodyValue.work_id_old == "") {
+      bodyValue.work_id_old = 0;
+    }
+    if (bodyValue.work_id_new == "") {
+      bodyValue.work_id_new = 0;
+    }
+    const tahun = `${array[0]}`;
+    const convertYear = tahun.substring(2, 4);
+    var convertBulan;
+    if (array[1].length == 1) {
+      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
+    } else {
+      convertBulan = array[1];
+    }
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+    let conn;
+    try {
+      console.log("---------------create shift---------------");
+      conn = await (
+        await model.createConnection1(`${database}_hrm`)
+      ).getConnection();
+      await conn.beginTransaction();
+      const query = `UPDATE ${namaDatabaseDynamic}.emp_labor SET ? WHERE id = '${id}'`;
+      if (transaksi == 0) {
+        const body = {
+          status_transaksi: 0,
+        };
+        await conn.query(query, [body]);
+        await conn.commit();
+        return res.status(200).send({
+          status: true,
+          message: "Succesfully Delete Shift",
+        });
+      } else {
+        const body = {
+          em_id: bodyValue.em_id,
+          em_delegation: bodyValue.em_delegation,
+          typeid: bodyValue.typeid,
+          atten_date: bodyValue.atten_date,
+          dari_tgl: bodyValue.dari_tgl,
+          sampai_tgl: bodyValue.sampai_tgl,
+          status: bodyValue.status,
+          work_id_old: bodyValue.work_id_old,
+          work_id_new: bodyValue.work_id_new,
+          uraian: bodyValue.uraian,
+          approve_status: bodyValue.approve_status,
+        };
+        await conn.query(query, [body]);
+        await conn.commit();
+        return res.status(200).send({
+          status: true,
+          message: "Succesfuly Edit shift",
+        });
+      }
+    } catch (e) {
+      console.error("error get edit shift", e);
+      if (conn) {
+        await conn.rollback();
+      }
+      return res.status(400).send({
+        status: true,
+        message: e,
+        data: [],
+      });
+    } finally {
+      if (conn) await conn.release;
+    }
+  },
+
   async show(req, res) {
     console.log("---- show data dengan start periode and periode----------");
     var database = req.query.database;
@@ -258,19 +336,35 @@ module.exports = {
  el.status, el.uraian, el.work_id_old, el.work_id_new,
  el.alasan1,el.alasan2,el.approve_by,el.approve2_by,
  a.name AS name_old, a.time_in AS time_in_old, a.time_out AS time_out_old,
- b.name AS name_new, b.time_in AS time_in_new, b.time_out AS time_out_new
+ b.name AS name_new, b.time_in AS time_in_new, b.time_out AS time_out_new,
+ e.full_name AS name_delegasi
  FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
- LEFT JOIN work_schedule AS b ON el.work_id_new = b.id
+ LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
  WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
 
             `;
 
       if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
         url = `
-              SELECT * FROM ${startPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND status_transaksi=1  AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}')  AND typeId = '99' 
-              UNION ALL
-              SELECT * FROM ${endPeriodeDynamic}.emp_labor  WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'  ) AND typeId = '99' 
-              ORDER BY idd
+              SELECT el.id, el.nomor_ajuan, el.tgl_ajuan, el.dari_tgl, el.sampai_tgl,
+ el.status, el.uraian, el.work_id_old, el.work_id_new,
+ el.alasan1,el.alasan2,el.approve_by,el.approve2_by,
+ a.name AS name_old, a.time_in AS time_in_old, a.time_out AS time_out_old,
+ b.name AS name_new, b.time_in AS time_in_new, b.time_out AS time_out_new,
+ e.full_name AS name_delegasi
+ FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
+ LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'
+UNION ALL
+              SELECT el.id, el.nomor_ajuan, el.tgl_ajuan, el.dari_tgl, el.sampai_tgl,
+ el.status, el.uraian, el.work_id_old, el.work_id_new,
+ el.alasan1,el.alasan2,el.approve_by,el.approve2_by,
+ a.name AS name_old, a.time_in AS time_in_old, a.time_out AS time_out_old,
+ b.name AS name_new, b.time_in AS time_in_new, b.time_out AS time_out_new,
+ e.full_name AS name_delegasi
+ FROM ${endPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
+ LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
               `;
       }
       console.log(url);
@@ -337,7 +431,7 @@ module.exports = {
           approve_id: emId,
           approve_by: empApprove[0].name,
           approve_date: formattedDate,
-          alasan1: alasan
+          alasan1: alasan,
         };
       }
 
@@ -350,7 +444,7 @@ module.exports = {
               approve2_id: emId,
               approve2_by: empApprove[0].full_name,
               approve2_date: formattedDate,
-              alasan2: alasan
+              alasan2: alasan,
             };
           } else {
             data = {
@@ -359,7 +453,7 @@ module.exports = {
               approve2_id: emId,
               approve2_by: empApprove[0].full_name,
               approve2_date: formattedDate,
-              alasan2: alasan
+              alasan2: alasan,
             };
           }
         } else {
@@ -369,7 +463,7 @@ module.exports = {
             approve_id: emId,
             approve_by: empApprove[0].full_name,
             approve_date: formattedDate,
-            alasan1 : alasan
+            alasan1: alasan,
           };
         }
       }
@@ -378,48 +472,47 @@ module.exports = {
       await conn.query(queryApprove, [data]);
 
       if (approveType[0].name == 1) {
-        
       }
 
       if (approveType[0].name == 2) {
         if (cekData[0].status == "Approve") {
           if (status == "Rejected") {
-            
           } else {
             let dari_tgl = utility.dateConvert(cekData[0].dari_tgl);
             let sampai_tgl = utility.dateConvert(cekData[0].sampai_tgl);
-            let work_id_new = cekData[0].work_id_new == 0 ? null : cekData[0].work_id_new
-            let work_id_old = cekData[0].work_id_old == 0 ? null : cekData[0].work_id_old
+            let work_id_new =
+              cekData[0].work_id_new == 0 ? null : cekData[0].work_id_new;
+            let work_id_old =
+              cekData[0].work_id_old == 0 ? null : cekData[0].work_id_old;
             console.log(work_id_new);
             console.log(work_id_old);
             const queryCurentSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
-            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${dari_tgl}' `
+            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${dari_tgl}' `;
             const queryReplaceSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
-            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${sampai_tgl}' `
+            WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${sampai_tgl}' `;
             const queryDelegasiSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
-            WHERE em_id = '${cekData[0].em_delegation}' AND atten_date = '${sampai_tgl}' `
-            if (cekData[0].em_delegation == '') {
+            WHERE em_id = '${cekData[0].em_delegation}' AND atten_date = '${sampai_tgl}' `;
+            if (cekData[0].em_delegation == "") {
               var cur = {
-                work_id: work_id_new
-              }
-              await conn.query(queryCurentSchedule, [cur])
+                work_id: work_id_new,
+              };
+              await conn.query(queryCurentSchedule, [cur]);
               var rep = {
-                work_id: work_id_old
-              }
-              await conn.query(queryReplaceSchedule, [rep])
-            } else{
+                work_id: work_id_old,
+              };
+              await conn.query(queryReplaceSchedule, [rep]);
+            } else {
               var cur = {
-                work_id: work_id_new
-              }
-              await conn.query(queryCurentSchedule, [cur])
+                work_id: work_id_new,
+              };
+              await conn.query(queryCurentSchedule, [cur]);
               var rep = {
-                work_id: work_id_old
-              }
-              await conn.query(queryDelegasiSchedule, [rep])
+                work_id: work_id_old,
+              };
+              await conn.query(queryDelegasiSchedule, [rep]);
             }
           }
         } else {
-          
         }
       }
       await conn.commit();
