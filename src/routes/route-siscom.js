@@ -426,6 +426,7 @@ router.get("/apresiasi/user", showUserApresiasi.userApresiasi);
 //shift
 router.get('/shift/work_schedule', shift.workSchedule); 
 router.post('/shift', shift.store);
+router.post('/shift/edit', shift.edit);
 router.get('/shift', shift.show);
 router.post('/shift/search_work_schedule', shift.searchWorkSchedule);
 router.post('/shift/approval', shift.approval);
