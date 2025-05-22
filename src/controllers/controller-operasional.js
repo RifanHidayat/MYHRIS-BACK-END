@@ -940,9 +940,9 @@ module.exports = {
             date1.getFullYear() < date2.getFullYear()
           ) {
             url = `
-              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1  AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'  AND branch_id='${branchId}')   
+              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1  AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' AND typeId != '99' AND branch_id='${branchId}')   
               UNION ALL
-              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'  AND branch_id='${branchId}') 
+              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' AND typeId != '99' AND branch_id='${branchId}') 
               ORDER BY idd
               `;
           }
@@ -9085,6 +9085,23 @@ module.exports = {
     WHERE a.em_id=b.em_id AND b.em_report_to LIKE '%${em_id}%' AND a.status IN ('Pending', 'Approve') AND a.ajuan='4' AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'
     
     `;
+
+    var query13 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
+  
+  WHERE a.em_id=b.em_id 
+  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
+
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  AND a.status_transaksi=1  AND a.tgl_ajuan>='${startPeriode}'
+  UNION ALL
+  SELECT a.em_id, b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
+  
+  WHERE a.em_id=b.em_id 
+  AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
+
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'
+    `
       var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
     }
 
@@ -11207,7 +11224,7 @@ a.typeid,
       if (url_data == "Klaim" || url_data == "klaim") {
         conditionStatusLabor = ` ${conditionStatusLabor} AND a.created_on>='${startPeriode}' AND  a.created_on <='${endPeriode}'`;
       } else {
-        conditionStatusLabor = ` ${conditionStatusLabor} AND a.atten_date>='${startPeriode}' AND  a.tgl_atten_date <='${endPeriode}'`;
+        conditionStatusLabor = ` ${conditionStatusLabor} AND a.atten_date>='${startPeriode}' AND  a.atten_date <='${endPeriode}'`;
       }
 
       namaDatabaseDynamic = startPeriodeDynamic;
@@ -11957,6 +11974,34 @@ a.typeid,
       b.full_name,a.status as status,a.status as leave_status FROM ${endPeriodeDynamic}.emp_labor a 
       JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.ajuan='4' AND a.status_transaksi=1 ${orderby2}
       `;
+
+      query13 = `${query13} 
+      UNION ALL
+      SELECT
+     a.id AS idd,
+     CASE
+     WHEN ( a.approve_status  IS NULL OR a.approve_status='Pending')  AND (a.approve_by IS NULL OR a.approve_by='') THEN "Pending"
+     WHEN  (a.approve_status IS NULL   OR a.approve_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+     ELSE "Approve"
+     END AS approve_status,
+     CASE
+     WHEN (a.approve2_status IS NULL OR a.approve2_status='Pending') AND (a.approve_by!='') THEN "Pending"
+     WHEN (a.approve2_status IS NULL OR a.approve2_status='Rejected') AND (a.approve_by!='') AND a.status='Rejected'THEN "Rejected"
+     ELSE "Approve"
+     END AS approve2_status,
+     a.dari_tgl, a.sampai_tgl,a.approve_by,a.approve2_by,a.em_delegation,a.atten_date,a.uraian,a.nomor_ajuan,a.em_id,a.approve_id,
+     a.status,a.tgl_ajuan,a.ajuan,a.approve_id,a.approve_date,a.id, a.work_id_old, a.work_id_new, 
+     aw.name AS name_old, aw.time_in AS time_in_old, aw.time_out AS time_out_old,
+     bw.name AS name_new, bw.time_in AS time_in_new, bw.time_out AS time_out_new,
+     b.em_report_to AS em_report_to,  b.em_report2_to AS em_report2_to, b.full_name,
+     c.full_name AS replace_name
+     FROM ${endPeriodeDynamic}.emp_labor a
+     JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
+     LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
+     LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
+     WHERE  a.status!='Cancel' ${conditionStatusLabor} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
+     AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
+    ${orderby1}`;
 
       var query10 = `SELECT emp_loan.approve_by, emp_loan.id, employee.full_name, emp_loan.status as  approve_status,emp_loan.approve_id,emp_loan.approve_date,emp_loan.tgl_ajuan as tanggal_ajuan ,
       emp_loan.periode_mulai_cicil as periode,
