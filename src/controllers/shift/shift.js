@@ -514,6 +514,11 @@ UNION ALL
               };
               await conn.query(queryReplaceSchedule, [rep]);
             } else {
+              const queryNotif = ` SELECT a.full_name AS name_pengajuan, b.full_name AS name_swap 
+              FROM employee AS a JOIN employee AS b WHERE a.em_id = '${cekData[0].em_id}' AND b.em_id = '${cekData[0].em_delegation}' `;
+              const [notifName] = await conn.query(queryNotif);
+              const queryWorkSchedule = `SELECT * FROM work_schedule WHERE id = '${work_id_old}'`;
+              const [scheduleNotif] = await conn.query(queryWorkSchedule);
               var cur = {
                 work_id: work_id_new,
                 off_date: off_date_new
@@ -524,6 +529,19 @@ UNION ALL
                 off_date: off_date_old
               };
               await conn.query(queryDelegasiSchedule, [rep]);
+
+              utility.insertNotifikasiGlobal(
+                cekData[0].em_delegation,
+                'Pengajuan tukar shift',
+                'shift',
+                cekData[0].em_id,
+                '',
+                cekData[0].nomor_ajuan,
+                '',
+                namaDatabaseDynamic,
+                `${database}_hrm`,
+                `${notifName[0].name_pengajuan} Dengan ${notifName[0].name_swap} ${sampai_tgl} (${scheduleNotif[0].time_in} - ${scheduleNotif[0].time_out})`
+              )
             }
           }
         } else {

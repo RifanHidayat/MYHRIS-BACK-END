@@ -515,82 +515,6 @@ module.exports = {
     }
   },
 
-  //   async empoyeeDelegasi(req, res) {
-  //   console.log('-----where once----------')
-  //   let name_url = req.originalUrl;
-  //   var convert1 = name_url.substring(name_url.lastIndexOf("/") + 1);
-  //   var convert2 = convert1.substring(convert1.lastIndexOf("-") + 1).replace("?database="+req.query.database,"");
-  //   var value = req.body.val;
-  //   var cari = req.body.cari;
-  //   var database=req.query.database;
-
-  //   const connection=await model.createConnection(database);
-  //   connection.connect((err) => {
-  //     if (err) {
-  //       console.error('Error connecting to the database:', err);
-  //       return;
-  //     }
-  //     connection.beginTransaction((err) => {
-  //       if (err) {
-  //         console.error('Error beginning transaction:', err);
-  //         connection.end();
-  //         return;
-  //       }
-  //  //-------end check koneksi-----
-  //           connection.query( `SELECT designation.level,employee.* FROM employee JOIN designation ON designation.id=employee.des_id  WHERE dep_group_id='${req.body.dep_group_id}' AND (designation.level<(SELECT designation.level FROM employee JOIN designation ON designation.id=employee.des_id  WHERE employee.em_id='${req.body.em_id}'))
-  //           `, (err, results) => {
-  //             if (err) {
-  //               console.error('Error executing SELECT statement:', err);
-  //               connection.rollback(() => {
-  //                 connection.end();
-  //                 return res.status(400).send({
-  //                   status: false,
-  //                   message: 'Terjadi kesahalan',
-  //                   data:[]
-
-  //                 });
-  //               });
-  //               return;
-  //             }
-  //             records = results;
-  //             if (records.length==0){
-  //               return res.status(400).send({
-  //                 status: false,
-  //                           message: "Terjadi kesalahan",
-  //                 data:[]
-
-  //               });
-  //             }
-  //             connection.commit((err) => {
-  //               if (err) {
-  //                 console.error('Error committing transaction:', err);
-  //                 connection.rollback(() => {
-  //                   connection.end();
-  //                   return res.status(400).send({
-  //                     status: false,
-  //                     message: "Terjadi kesalahan",
-  //                     data:[]
-
-  //                   });
-  //                 });
-  //                 return;
-  //               }
-  //               connection.end();
-  //               console.log('Transaction completed successfully!');
-  //               return res.status(200).send({
-  //                 status: true,
-  //                 message: "Successfuly get data",
-  //                 data:results
-
-  //               });
-
-  //             });
-  //           });
-
-  //       });
-  //     });
-  // },
-
   async empoyeeDelegasi(req, res) {
     console.log("-----where once----------");
     let name_url = req.originalUrl;
@@ -9092,7 +9016,7 @@ module.exports = {
   AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
 
   AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
-  AND a.status_transaksi=1  AND a.tgl_ajuan>='${startPeriode}'
+  AND a.status_transaksi=1  AND a.tgl_ajuan>='${startPeriode}' AND a.typeid = '99'
   UNION ALL
   SELECT a.em_id, b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
   
@@ -9100,7 +9024,7 @@ module.exports = {
   AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
 
   AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
-  AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'
+  AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'  AND a.typeid = '99'
     `
       var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
     }
@@ -11161,6 +11085,7 @@ a.typeid,
         : req.body.status;
     var conditionStatus = "";
     var conditionStatusLabor = "";
+    var conditionStatusShift = "";
 
     console.log(req.body);
 
@@ -11172,8 +11097,11 @@ a.typeid,
 
     if (stauts == "pending" || stauts == "PENDING" || stauts == "Pending") {
       conditionStatusLabor = "AND a.status IN ('Pending','Approve')";
+      conditionStatusShift = "AND a.status IN ('Pending','Approve')";
+
     } else {
       conditionStatusLabor = "AND a.status  IN  ('Approve2','Rejected')";
+      conditionStatusShift = "AND a.status  IN  ('Approve2','Rejected')";
     }
 
     if (url_data == "Klaim" || url_data == "klaim") {
@@ -11225,6 +11153,7 @@ a.typeid,
         conditionStatusLabor = ` ${conditionStatusLabor} AND a.created_on>='${startPeriode}' AND  a.created_on <='${endPeriode}'`;
       } else {
         conditionStatusLabor = ` ${conditionStatusLabor} AND a.atten_date>='${startPeriode}' AND  a.atten_date <='${endPeriode}'`;
+        conditionStatusShift = ` ${conditionStatusShift} AND a.tgl_ajuan>='${startPeriode}' AND  a.tgl_ajuan <='${endPeriode}'`;
       }
 
       namaDatabaseDynamic = startPeriodeDynamic;
@@ -11234,16 +11163,6 @@ a.typeid,
     console.log(date2.getFullYear());
 
     console.log(namaDatabaseDynamic);
-
-    // var query1 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND  (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan IN ('2', '3')`;
-    // var query2 = `SELECT c.n.l, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, c.category, a.* FROM ${namaDatabaseDynamic}.emp_leave a INNER JOIN ${database}_hrm.leave_types c ON a.typeid=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='1'`;
-    // var query3 = `SELECT o.name as nama_pengajuan, b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, a.* FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b LEFT JOIN ${database}_hrm.overtime o ON o.id=a.typeId  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.status IN ('Pending', 'Approve') AND a.ajuan='1' `;
-    // var query4 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, a.* FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.status IN ('Pending', 'Approve') AND a.ajuan='2'`;
-    // var query5 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, a.* FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='4'`;
-
-    // var query6 = `SELECT (IFNULL(a.sisa_claim ,0)) as sisa_claim ,(IFNULL(a.saldo_claim ,0)) as saldo_claim , c.id as id_ajuan,  b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name, c.name as nama_tipe, a.* FROM ${namaDatabaseDynamic}.emp_claim a INNER JOIN ${database}_hrm.cost c ON a.cost_id=c.id JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') AND a.status IN ('Pending', 'Approve')`;
-    // var query7 = `SELECT b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   a.em_id, b.full_name FROM ${namaDatabaseDynamic}.emp_mobile_approval a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (a.approved_id IS NULL OR  a.approved_id ='')  `;
-
     var orderby1 = "ORDER BY idd DESC";
     var orderby2 = "ORDER BY idd DESC";
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
@@ -11649,7 +11568,7 @@ a.breakin_time,
      JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
      LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
      LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
-     WHERE  a.status!='Cancel' ${conditionStatusLabor} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
+     WHERE  a.status!='Cancel' ${conditionStatusShift}   AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeid = '99'
      AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
     ${orderby1}`;
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
@@ -11999,7 +11918,7 @@ a.typeid,
      JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
      LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
      LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
-     WHERE  a.status!='Cancel' ${conditionStatusLabor} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
+     WHERE  a.status!='Cancel' ${conditionStatusShift} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
      AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
     ${orderby1}`;
 
@@ -12281,15 +12200,15 @@ a.typeid,
     // var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
+      query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' 
       UNION ALL
-      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
-      ORDER BY idd DESC
+      SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date<='${endPeriode}'
+      
       `;
 
-      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}'  AND atten_date>='${startPeriode}'
+      query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}'
       UNION ALL
-      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date<='${endPeriode}'
       `;
     }
 
