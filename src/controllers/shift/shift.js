@@ -340,7 +340,7 @@ module.exports = {
  e.full_name AS name_delegasi
  FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
 
             `;
 
@@ -354,7 +354,7 @@ module.exports = {
  e.full_name AS name_delegasi
  FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'
 UNION ALL
               SELECT el.id, el.nomor_ajuan, el.tgl_ajuan, el.dari_tgl, el.sampai_tgl,
  el.status, el.uraian, el.work_id_old, el.work_id_new,
@@ -364,7 +364,7 @@ UNION ALL
  e.full_name AS name_delegasi
  FROM ${endPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.atten_date>='${startPeriode}' AND el.atten_date<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
               `;
       }
       console.log(url);
@@ -480,12 +480,22 @@ UNION ALL
           } else {
             let dari_tgl = utility.dateConvert(cekData[0].dari_tgl);
             let sampai_tgl = utility.dateConvert(cekData[0].sampai_tgl);
+            let off_date_old;
+            let off_date_new;
             let work_id_new =
               cekData[0].work_id_new == 0 ? null : cekData[0].work_id_new;
             let work_id_old =
               cekData[0].work_id_old == 0 ? null : cekData[0].work_id_old;
-            console.log(work_id_new);
-            console.log(work_id_old);
+            if (work_id_old == null) {
+              off_date_old = 0;
+            } else{
+              off_date_old = 1;
+            }
+            if (work_id_new == null) {
+              off_date_new = 0;
+            } else{
+              off_date_new = 1;
+            }
             const queryCurentSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
             WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${dari_tgl}' `;
             const queryReplaceSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
@@ -495,19 +505,23 @@ UNION ALL
             if (cekData[0].em_delegation == "") {
               var cur = {
                 work_id: work_id_new,
+                off_date: off_date_new
               };
               await conn.query(queryCurentSchedule, [cur]);
               var rep = {
                 work_id: work_id_old,
+                off_date: off_date_old
               };
               await conn.query(queryReplaceSchedule, [rep]);
             } else {
               var cur = {
                 work_id: work_id_new,
+                off_date: off_date_new
               };
               await conn.query(queryCurentSchedule, [cur]);
               var rep = {
                 work_id: work_id_old,
+                off_date: off_date_old
               };
               await conn.query(queryDelegasiSchedule, [rep]);
             }
