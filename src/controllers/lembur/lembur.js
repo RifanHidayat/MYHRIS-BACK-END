@@ -975,15 +975,26 @@ module.exports = {
       array2[1]
     }`;
     const namaDatabaseDynamic = startPeriodeDynamic;
+    let date1 = new Date(startPeriode);
+    let date2 = new Date(endPeriode);
 
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    const montStart = date1.getMonth() + 1;
+    const monthEnd = date2.getMonth() + 1;
+
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
-      const query = `SELECT a.* FROM emp_labor_task a JOIN emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'`;
+      let query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'`;
+      if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+        query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'
+    AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')
+      UNION ALL SELECT a.* FROM ${endPeriodeDynamic}.emp_labor_task a JOIN ${endPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')`;
+      }
       console.log(query);
       const [results] = await conn.query(query);
+      console.log(results);
       await conn.commit();
       return res.status(200).send({
         status: true,
