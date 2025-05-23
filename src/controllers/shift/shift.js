@@ -540,7 +540,7 @@ UNION ALL
                 '',
                 namaDatabaseDynamic,
                 `${database}_hrm`,
-                `${notifName[0].name_pengajuan} Dengan ${notifName[0].name_swap} ${sampai_tgl} (${scheduleNotif[0].time_in} - ${scheduleNotif[0].time_out})`
+                `${notifName[0].name_pengajuan} Dengan ${notifName[0].name_swap} ${sampai_tgl} (${scheduleNotif.length == 0 ? '00:00' : scheduleNotif[0].time_in} - ${scheduleNotif.length == 0 ? '00:00' : scheduleNotif[0].time_out})`
               )
             }
           }
