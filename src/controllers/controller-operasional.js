@@ -6615,7 +6615,7 @@ module.exports = {
               `SELECT * FROM ${namaDatabaseDynamic}.attendance WHERE em_id ='${em_id}' AND  atten_date = '${req.body.tanggal_absen}' AND signout_time != '00:00:00'`
             );
             const [cekIzin] = await connection.query(queryCekIzinTerlambat);
-            const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2'`;
+            const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND status = 'Approve2' AND typeid != '99'`;
             const [cekharilibur] = await connection.query(
               `SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`
             );
@@ -7153,7 +7153,7 @@ module.exports = {
 
               var queryCekIzinTerlambat = `SELECT * FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected = '${dateNow}' AND leave_status = 'Approve2' AND time_plan <= '${jamAbsen}' AND em_id='${em_id}' AND typeid = '9'`;
               const [cekIzin] = await connection.query(queryCekIzinTerlambat);
-              const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve'`;
+              const queryCekTugasLuar = `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date = '${req.body.tanggal_absen}' AND em_id = '${em_id}' AND approve2_status = 'Approve' AND typeid != '99'`;
               const [cekTugasLuar] = await connection.query(queryCekTugasLuar);
               const [cekharilibur] = await connection.query(
                 `SELECT * FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id = '${em_id}' AND atten_date = '${req.body.tanggal_absen}' AND off_date = '0'`
@@ -8942,22 +8942,29 @@ module.exports = {
     AND a.leave_status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.status_transaksi=1 AND a.atten_date<='${endPeriode}'
     `;
 
-      var query3 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id JOIN ${database}_hrm.overtime o ON o.id=a.typeid   WHERE a.em_id=b.em_id 
-    AND (
-      (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
-      OR 
-      (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%'))
-  )
-    AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.status_transaksi=1  AND a.tgl_ajuan>='${startPeriode}'
+      var query3 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
+  JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
+  WHERE a.em_id=b.em_id AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
+  AND (
+    (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
+    OR 
+    (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%'))
+)
+
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  AND a.status_transaksi=1   
     UNION ALL
-    SELECT a.em_id, b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  JOIN ${database}_hrm.overtime o ON o.id=a.typeid   WHERE a.em_id=b.em_id 
-    AND (
-      (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
-      OR 
-      (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%'))
-  )
-    AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.status_transaksi=1 AND a.tgl_ajuan<='${startPeriode}'
-    `;
+    SELECT a.em_id, b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee  b ON b.em_id=a.em_id  
+  JOIN ${database}_hrm.overtime o ON o.id=a.typeid 
+  WHERE a.em_id=b.em_id AND (a.status_pengajuan IS NULL OR a.status_pengajuan = 'post')
+  AND (
+    (o.dinilai = 'N' AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%'))
+    OR 
+    (o.dinilai = 'Y' AND (a.em_delegation LIKE '%${em_id}%' OR a.em_ids LIKE '%${em_id}%'))
+)
+
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
+  AND a.status_transaksi=1   `;
 
       var query4 = `SELECT a.em_id, b.full_name FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b JOIN  ${database}_hrm.branch ON b.branch_id=branch.id  WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')  AND a.status IN ('Pending', 'Approve') AND a.ajuan='2'   AND a.status_transaksi=1 AND a.tgl_ajuan>='${startPeriode}'
     UNION ALL
