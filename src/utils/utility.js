@@ -514,8 +514,8 @@ module.exports = {
         if (e.length > 0) {
           const query = `
             INSERT INTO ${databasePeriode}.notifikasi 
-            (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan, idx) 
-            VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 2, 0, ?, ?)
+            (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan) 
+            VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 2, 0, ?)
           `;
           
             const insertValues = [
@@ -524,7 +524,6 @@ module.exports = {
               description,
               url,
               emIdPengajuan,
-              idx,
             ];
           insertQueries.push(conn.query(query, insertValues));
   
