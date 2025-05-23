@@ -2,7 +2,7 @@ const models = require("../../utils/models");
 
 module.exports = {
   async PalceCoordinate(req, res) {
-    console.log("---------place cooredinate------");
+    console.log("---------place cooredinate  wkwkwk------");
     var database = req.query.database;
     var attenDate = req.query_date;
 
@@ -42,7 +42,7 @@ module.exports = {
       const querySys = `SELECT name FROM sysdata WHERE kode='013'`;
       const [sysdata] = await conn.query(querySys);
       const queryTugasLuar = `
-                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
+                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}' AND typeid != '99' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }'
                  UNION ALL
@@ -66,6 +66,7 @@ module.exports = {
         });
       } else {
         const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
+        console.log(queryPlaceCoordinate);
         const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
         await conn.commit();
         return res.status(200).send({
