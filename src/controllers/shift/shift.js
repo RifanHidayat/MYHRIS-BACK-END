@@ -134,9 +134,9 @@ module.exports = {
       ).getConnection();
       await conn.beginTransaction();
       var query = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
-      let nomorLb = `RS20${convertYear}${convertBulan}`;
+      let nomorLb = `SF20${convertYear}${convertBulan}`;
       const [cekNoAjuan] = await conn.query(
-        `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%RS%' ORDER BY id DESC LIMIT 1`
+        `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%SF%' ORDER BY id DESC LIMIT 1`
       );
       if (cekNoAjuan.length > 0) {
         var text = cekNoAjuan[0]["nomor_ajuan"];
@@ -340,7 +340,7 @@ module.exports = {
  e.full_name AS name_delegasi
  FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.ajuan = '4'   ORDER BY id DESC
 
             `;
 
@@ -354,7 +354,7 @@ module.exports = {
  e.full_name AS name_delegasi
  FROM ${startPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.ajuan = '4'
 UNION ALL
               SELECT el.id, el.nomor_ajuan, el.tgl_ajuan, el.dari_tgl, el.sampai_tgl,
  el.status, el.uraian, el.work_id_old, el.work_id_new,
@@ -364,7 +364,7 @@ UNION ALL
  e.full_name AS name_delegasi
  FROM ${endPeriodeDynamic}.emp_labor AS el LEFT JOIN work_schedule AS a ON el.work_id_old = a.id
  LEFT JOIN work_schedule AS b ON el.work_id_new = b.id LEFT JOIN employee e ON el.em_delegation=e.em_id
- WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.typeId = '99'   ORDER BY id DESC
+ WHERE el.em_id='${em_id}' AND el.status_transaksi=1 AND (el.tgl_ajuan>='${startPeriode}' AND el.tgl_ajuan<='${endPeriode}') AND el.ajuan = '4'  ORDER BY id DESC
               `;
       }
       console.log(url);
