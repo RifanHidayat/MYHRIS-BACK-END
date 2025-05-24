@@ -336,7 +336,8 @@ module.exports = {
       }
       return res.status(400).send({
         status: false,
-        message: "Gagal ambil data",
+        message: "Gagal bikin pengajuan lembur",
+        pesan: e
       });
     } finally {
       if (conn) await conn.release();

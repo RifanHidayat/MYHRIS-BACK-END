@@ -8924,7 +8924,7 @@ module.exports = {
   WHERE a.em_id=b.em_id 
   AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
 
-  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  AND a.typeid = '99'
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='4'  
   AND a.status_transaksi=1    `;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
@@ -9030,8 +9030,8 @@ module.exports = {
   WHERE a.em_id=b.em_id 
   AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
 
-  AND a.status IN ('Pending', 'Approve') AND a.ajuan='1'  
-  AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'  AND a.typeid = '99'
+  AND a.status IN ('Pending', 'Approve') AND a.ajuan='4'  
+  AND a.status_transaksi=1 AND a.tgl_ajuan<='${endPeriode}'  
     `;
       var query10 = `SELECT * FROM ${database}_hrm.emp_loan LEFT JOIN ${database}_hrm.sysdata ON  sysdata.kode='019' WHERE sysdata.name LIKE '%${em_id}%' AND emp_loan.status='Pending'   AND emp_loan.em_id!='${em_id}' `;
     }
@@ -11574,7 +11574,7 @@ a.breakin_time,
      JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
      LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
      LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
-     WHERE  a.status!='Cancel' ${conditionStatusShift}   AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeid = '99'
+     WHERE  a.status!='Cancel' ${conditionStatusShift}   AND a.ajuan='4'  AND a.status_transaksi=1 
      AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
     ${orderby1}`;
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
@@ -11952,7 +11952,7 @@ a.breakin_time,
      JOIN employee b ON a.em_id=b.em_id LEFT JOIN employee c ON a.em_delegation=c.em_id
      LEFT JOIN work_schedule AS aw ON aw.id = a.work_id_old
      LEFT JOIN work_schedule AS bw ON bw.id = a.work_id_new
-     WHERE  a.status!='Cancel' ${conditionStatusShift} AND a.ajuan='1'  AND a.status_transaksi=1 AND a.typeId = '99'
+     WHERE  a.status!='Cancel' ${conditionStatusShift} AND a.ajuan='4'  AND a.status_transaksi=1 
      AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%')
     ${orderby1}`;
 
@@ -12229,25 +12229,25 @@ a.breakin_time,
     const monthEnd = date2.getMonth() + 1;
 
     // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
-    var query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
-    var query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
+    var query1 = `SELECT atten_date FROM ${namaDatabaseDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
+    var query2 = `SELECT * FROM ${namaDatabaseDynamic}.otifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
     // var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query1 = `SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' 
+      query1 = `SELECT atten_date FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' 
       UNION ALL
-      SELECT atten_date FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date<='${endPeriode}'
+      SELECT atten_date FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'
       
       `;
 
-      query2 = `SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}'
+      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'
       UNION ALL
-      SELECT * FROM notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date<='${endPeriode}'
+      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'
       `;
     }
 
     console.log(query1);
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
@@ -12344,9 +12344,9 @@ a.breakin_time,
     var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date>='${startPeriode}' 
+      query1 = `SELECT atten_date,notifikasi.id as idd FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL AND atten_date>='${startPeriode}' 
       UNION ALL
-      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      SELECT atten_date ,notifikasi.id as idd FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL  AND atten_date<='${endPeriode}'
       ORDER BY idd DESC
       `;
 
@@ -13222,6 +13222,9 @@ a.breakin_time,
     var query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
     var query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
+    var query1_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}   GROUP BY b.full_name`;
+    var query2_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+
     var query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
     var query2_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} GROUP BY b.full_name`;
 
@@ -13254,16 +13257,23 @@ a.breakin_time,
      SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_leave a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}' GROUP BY b.full_name
      `;
 
-      query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'  GROUP BY b.full_name
+      query1_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name
     UNION ALL 
 
-    SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE  a.ajuan='1' AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}' GROUP BY b.full_name
-    
+    SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name
     `;
-      query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id  b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'  GROUP BY b.full_name
-     UNION ALL
-     SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'  GROUP BY b.full_name
+      query2_lembur = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name
+      UNION ALL
+     SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
+
+     var query1_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgal_ajuan='${endPeriode}' GROUP BY b.full_name
+     UNION ALL 
+     SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} AND  a.tgl_ajuan>='${startPeriode}' AND a.tgal_ajuan='${endPeriode}'  GROUP BY b.full_name
      `;
+    var query2_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'GROUP BY b.full_name 
+    UNION ALL 
+    SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'GROUP BY b.full_name`;
+
 
       query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE  a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'  GROUP BY b.full_name
      UNION ALL
@@ -13310,6 +13320,8 @@ a.breakin_time,
         url = query1_dinasluar;
       } else if (type == "klaim") {
         url = query1_klaim;
+      } else if (type == "shift") {
+        url = query1_shift
       }
     } else {
       if (type == "tidak_hadir") {
@@ -13324,6 +13336,8 @@ a.breakin_time,
         url = query2_dinasluar;
       } else if (type == "klaim") {
         url = query2_klaim;
+      }else if (type == "shift") {
+        url = query2_shift;
       }
     }
     console.log("url baru", url);
@@ -13461,6 +13475,7 @@ GROUP BY TBL.full_name`;
     var query_tidak_hadir = `SELECT a.*, b.name, b.category,b.input_time FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan IN ('2', '3') AND a.em_id='${em_id}' AND a.leave_status != 'Cancel' ORDER BY a.id DESC`;
     var query_cuti = `SELECT a.*, b.name, b.category FROM ${namaDatabaseDynamic}.emp_leave a JOIN ${database}_hrm.leave_types b ON a.typeid=b.id WHERE a.ajuan='1' AND a.em_id='${em_id}' AND a.leave_status != 'Cancel' ORDER BY a.id DESC`;
     var query_lembur = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='1' AND a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
+    var query_shift = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
     var query_tugas_luar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_labor a WHERE a.ajuan='2' AND a.em_id='${em_id}'  AND a.status != 'Cancel' ORDER BY a.id DESC`;
     var query_dinasluar = `SELECT a.* FROM ${namaDatabaseDynamic}.emp_leave a WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
     var query_klaim = `SELECT a.*, b.name FROM ${namaDatabaseDynamic}.emp_claim a JOIN ${database}_hrm.cost b ON a.cost_id=b.id WHERE a.em_id='${em_id}' AND a.status != 'Cancel' ORDER BY a.id DESC`;
@@ -13519,6 +13534,22 @@ GROUP BY TBL.full_name`;
       UNION ALL
       SELECT a.id as idd,a.*, b.name FROM ${endPeriodeDynamic}.emp_claim a JOIN ${database}_hrm.cost b ON a.cost_id=b.id WHERE a.em_id='${em_id}' AND a.atten_date>='${startPeriode}' AND a.atten_date<='${endPeriode}'  ${orderbyid}
       `;
+
+      query_shift = `SELECT a.*, wsa.name AS name_old, wsa.time_in AS time_in_old, wsa.time_out AS time_out_old,
+ wsb.name AS name_new, wsb.time_in AS time_in_new, wsb.time_out AS time_out_new,
+ e.full_name AS name_delegasi FROM ${startPeriodeDynamic}.emp_labor a 
+ LEFT JOIN work_schedule AS wsa ON a.work_id_old = wsa.id
+ LEFT JOIN work_schedule AS wsb ON a.work_id_new = wsb.id LEFT JOIN employee e ON a.em_delegation=e.em_id
+ WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' AND a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'
+      UNION ALL
+SELECT a.*, wsa.name AS name_old, wsa.time_in AS time_in_old, wsa.time_out AS time_out_old,
+ wsb.name AS name_new, wsb.time_in AS time_in_new, wsb.time_out AS time_out_new,
+ e.full_name AS name_delegasi FROM ${endPeriodeDynamic}.emp_labor a 
+ LEFT JOIN work_schedule AS wsa ON a.work_id_old = wsa.id
+ LEFT JOIN work_schedule AS wsb ON a.work_id_new = wsb.id LEFT JOIN employee e ON a.em_delegation=e.em_id
+ WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' AND a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'
+`;
+    
     }
 
     var url;
@@ -13534,9 +13565,12 @@ GROUP BY TBL.full_name`;
       url = query_dinasluar;
     } else if (type == "klaim") {
       url = query_klaim;
+    } else if (type == "shift") {
+      url = query_shift;
     }
 
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    console.log(url);
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
