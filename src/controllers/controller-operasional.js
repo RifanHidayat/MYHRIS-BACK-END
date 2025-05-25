@@ -797,6 +797,7 @@ module.exports = {
       "-----hoistory data dengan start periode and periode----------"
     );
     var database = req.query.database;
+    console.log(req.body);
     let name_url = req.originalUrl;
     var convert1 = name_url
       .substring(name_url.lastIndexOf("/") + 1)
@@ -841,6 +842,7 @@ module.exports = {
 
     let date1 = new Date(startPeriode);
     let date2 = new Date(endPeriode);
+    const tugasLuar = req.body.status;
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
@@ -856,7 +858,23 @@ module.exports = {
         convert2 == "emp_claim"
       ) {
         if (convert2 == "emp_labor") {
-          url = ` 
+          if (tugasLuar == 2) {
+            url = ` 
+            SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}') AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL)  ORDER BY id DESC`;
+
+          if (
+            montStart < monthEnd ||
+            date1.getFullYear() < date2.getFullYear()
+          ) {
+            url = `
+              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1  AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}')   
+              UNION ALL
+              SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}') 
+              ORDER BY idd
+              `;
+          }
+          }else{
+            url = ` 
             SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}') AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL)  ORDER BY id DESC`;
 
           if (
@@ -870,6 +888,8 @@ module.exports = {
               ORDER BY idd
               `;
           }
+          }
+          
         } else if (convert2 == "emp_claim") {
           url = `SELECT emp_claim.*,cost.name as name  FROM  ${startPeriodeDynamic}.emp_claim JOIN ${database}_hrm.cost  ON cost.id=emp_claim.cost_id WHERE em_id='${em_id}' AND  status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}') `;
 
@@ -11347,7 +11367,7 @@ o.dinilai,
     a.approve_id,
     a.approve_date,
     a.id,
-      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 
+      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${namaDatabaseDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusShift} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 
       ${orderby1} 
       `;
 
@@ -11764,7 +11784,7 @@ o.dinilai,
 a.approve_id,
 a.approve_date,
 a.id,
-      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND  (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusLabor} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 ${orderby2}
+      b.em_report_to as em_report_to,  b.em_report2_to as em_report2_to,   b.full_name FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b WHERE a.em_id=b.em_id AND  (b.em_report_to LIKE '%${em_id}%' OR b.em_report2_to LIKE '%${em_id}%') ${conditionStatusShift} AND a.status!='Cancel' AND a.ajuan='2'  AND a.status_transaksi=1 ${orderby2}
      `;
 
       query5 = `${query5}
@@ -12237,7 +12257,7 @@ a.breakin_time,
       query1 = `SELECT atten_date FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' 
       UNION ALL
       SELECT atten_date FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'
-      
+      ORDER BY atten_date DESC
       `;
 
       query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL AND atten_date>='${startPeriode}' AND atten_date<='${endPeriode}'
@@ -12247,6 +12267,7 @@ a.breakin_time,
     }
 
     console.log(query1);
+    console.log(query2);
     const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
@@ -12350,14 +12371,14 @@ a.breakin_time,
       ORDER BY idd DESC
       `;
 
-      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}'  AND atten_date>='${startPeriode}'
+      query2 = `SELECT * FROM ${startPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NOT NULL AND atten_date>='${startPeriode}'
       UNION ALL
-      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND atten_date<='${endPeriode}'
+      SELECT * FROM ${endPeriodeDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NOT NULL AND atten_date<='${endPeriode}'
       `;
     }
 
     console.log(query1);
-    console.log();
+    console.log(query2);
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {
