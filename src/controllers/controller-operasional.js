@@ -10455,7 +10455,6 @@ module.exports = {
           var namaTransaksi = "Absensi";
 
           console.log(sysdata[1]);
-          console.log(sysdata[1].name.split(","));
           console.log(approveBy1);
           console.log(approveBy2);
           console.log(approveId1);
@@ -10577,7 +10576,7 @@ module.exports = {
                             1,1,"","","","","") `;
 
           if (dataAbsensi[0].id_absen == 0 || dataAbsensi[0].id_absen == null) {
-            console.log("kamu kesini yah ", results);
+            
             // `INSERT INTO attendance SET ?;`, [insertData],
             await conn.query(queryInsert);
           } else {
