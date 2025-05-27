@@ -260,10 +260,16 @@ module.exports = {
             : [bodyValue.em_ids]
           : [];
 
-          const combinedIds = [...new Set([
-            ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
-            ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
-          ])];
+        const combinedIds = [
+          ...new Set([
+            ...delegationIds.flatMap((id) =>
+              id.split(",").map((i) => i.trim().toUpperCase())
+            ),
+            ...emIds.flatMap((id) =>
+              id.split(",").map((i) => i.trim().toUpperCase())
+            ),
+          ]),
+        ];
 
         utility.insertNotifikasi(
           combinedIds,
@@ -289,12 +295,17 @@ module.exports = {
             : [user[0].em_report2_to]
           : [];
 
-          
-          const combinedIds = [...new Set([
-            ...delegationIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase())),
-            ...emIds.flatMap(id => id.split(',').map(i => i.trim().toUpperCase()))
-          ])];
-        console.log('ini combinasi id', combinedIds);
+        const combinedIds = [
+          ...new Set([
+            ...delegationIds.flatMap((id) =>
+              id.split(",").map((i) => i.trim().toUpperCase())
+            ),
+            ...emIds.flatMap((id) =>
+              id.split(",").map((i) => i.trim().toUpperCase())
+            ),
+          ]),
+        ];
+        console.log("ini combinasi id", combinedIds);
         utility.insertNotifikasi(
           combinedIds,
           "Approval Lembur",
@@ -337,7 +348,7 @@ module.exports = {
       return res.status(400).send({
         status: false,
         message: "Gagal bikin pengajuan lembur",
-        pesan: e
+        pesan: e,
       });
     } finally {
       if (conn) await conn.release();
@@ -916,6 +927,8 @@ module.exports = {
   async detailTask(req, res) {
     console.log("detail task");
 
+    console.log("ini req body", req.body);
+
     var database = req.query.database;
     let name_url = req.originalUrl;
     var convert1 = name_url.substring(name_url.lastIndexOf("/") + 1);
@@ -969,6 +982,11 @@ module.exports = {
     var array1 = startPeriode.split("-");
     var array2 = endPeriode.split("-");
 
+    let nextDay = new Date(endPeriode);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    let endPeriodePlusOne = nextDay.toISOString().split("T")[0];
+
     const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
       array1[1]
     }`;
@@ -990,8 +1008,8 @@ module.exports = {
       let query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'`;
       if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
         query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'
-    AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')
-      UNION ALL SELECT a.* FROM ${endPeriodeDynamic}.emp_labor_task a JOIN ${endPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')`;
+    AND (a.created_on >= '${startPeriode}' AND a.created_on < '${endPeriodePlusOne}')
+      UNION ALL SELECT a.* FROM ${endPeriodeDynamic}.emp_labor_task a JOIN ${endPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' AND (a.created_on >= '${startPeriode}' AND a.created_on < '${endPeriodePlusOne}')`;
       }
       console.log(query);
       const [results] = await conn.query(query);
