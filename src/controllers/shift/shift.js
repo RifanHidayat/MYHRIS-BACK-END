@@ -405,6 +405,15 @@ UNION ALL
     } else {
       convertBulan = array[1];
     }
+    var startPeriode =
+      req.query.start_periode == undefined
+        ? "2024-02-03"
+        : req.query.start_periode;
+    var endPeriode =
+      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    var array1 = startPeriode.split("-");
+    var array2 = endPeriode.split("-");
+
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
     let conn;
     try {
@@ -480,6 +489,16 @@ UNION ALL
           } else {
             let dari_tgl = utility.dateConvert(cekData[0].dari_tgl);
             let sampai_tgl = utility.dateConvert(cekData[0].sampai_tgl);
+            let dariTgl = dari_tgl.split("-");
+            let sampaiTgl = sampai_tgl.split("-");
+            const dariPeriodeDynamic = `${database}_hrm${dariTgl[0].substring(
+              2,
+              4
+            )}${dariTgl[1]}`;
+            const sampaiPeriodeDynamic = `${database}_hrm${sampaiTgl[0].substring(
+              2,
+              4
+            )}${sampaiTgl[1]}`;
             let off_date_old;
             let off_date_new;
             let work_id_new =
@@ -488,29 +507,29 @@ UNION ALL
               cekData[0].work_id_old == 0 ? null : cekData[0].work_id_old;
             if (work_id_old == null) {
               off_date_old = 0;
-            } else{
+            } else {
               off_date_old = 1;
             }
             if (work_id_new == null) {
               off_date_new = 0;
-            } else{
+            } else {
               off_date_new = 1;
             }
-            const queryCurentSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            const queryCurentSchedule = `UPDATE ${dariPeriodeDynamic}.emp_shift SET ?
             WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${dari_tgl}' `;
-            const queryReplaceSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            const queryReplaceSchedule = `UPDATE ${sampaiPeriodeDynamic}.emp_shift SET ?
             WHERE em_id = '${cekData[0].em_id}' AND atten_date = '${sampai_tgl}' `;
-            const queryDelegasiSchedule = `UPDATE ${namaDatabaseDynamic}.emp_shift SET ?
+            const queryDelegasiSchedule = `UPDATE ${sampaiPeriodeDynamic}.emp_shift SET ?
             WHERE em_id = '${cekData[0].em_delegation}' AND atten_date = '${sampai_tgl}' `;
             if (cekData[0].em_delegation == "") {
               var cur = {
                 work_id: work_id_new,
-                off_date: off_date_new
+                off_date: off_date_new,
               };
               await conn.query(queryCurentSchedule, [cur]);
               var rep = {
                 work_id: work_id_old,
-                off_date: off_date_old
+                off_date: off_date_old,
               };
               await conn.query(queryReplaceSchedule, [rep]);
             } else {
@@ -521,27 +540,35 @@ UNION ALL
               const [scheduleNotif] = await conn.query(queryWorkSchedule);
               var cur = {
                 work_id: work_id_new,
-                off_date: off_date_new
+                off_date: off_date_new,
               };
               await conn.query(queryCurentSchedule, [cur]);
               var rep = {
                 work_id: work_id_old,
-                off_date: off_date_old
+                off_date: off_date_old,
               };
               await conn.query(queryDelegasiSchedule, [rep]);
 
               utility.insertNotifikasiGlobal(
                 cekData[0].em_delegation,
-                'Pengajuan tukar shift',
-                'shift',
+                "Pengajuan tukar shift",
+                "shift",
                 cekData[0].em_id,
-                '',
+                "",
                 cekData[0].nomor_ajuan,
-                '',
+                "",
                 namaDatabaseDynamic,
                 `${database}_hrm`,
-                `${notifName[0].name_pengajuan} Dengan ${notifName[0].name_swap} ${sampai_tgl} (${scheduleNotif.length == 0 ? '00:00' : scheduleNotif[0].time_in} - ${scheduleNotif.length == 0 ? '00:00' : scheduleNotif[0].time_out})`
-              )
+                `${notifName[0].name_pengajuan} Dengan ${
+                  notifName[0].name_swap
+                } ${sampai_tgl} (${
+                  scheduleNotif.length == 0 ? "00:00" : scheduleNotif[0].time_in
+                } - ${
+                  scheduleNotif.length == 0
+                    ? "00:00"
+                    : scheduleNotif[0].time_out
+                })`
+              );
             }
           }
         } else {

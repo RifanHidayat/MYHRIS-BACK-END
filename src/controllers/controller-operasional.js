@@ -12249,7 +12249,7 @@ a.breakin_time,
 
     // var query1 = `SELECT atten_date FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL ORDER BY id DESC`;
     var query1 = `SELECT atten_date FROM ${namaDatabaseDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL ORDER BY id DESC`;
-    var query2 = `SELECT * FROM ${namaDatabaseDynamic}.otifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
+    var query2 = `SELECT * FROM ${namaDatabaseDynamic}.notifikasi WHERE em_id='${em_id}' AND idx IS NULL`;
     // var query2 = `SELECT * FROM notifikasi WHERE em_id = '${em_id}' AND em_id_pengajuan != '${em_id}' AND idx IS NOT NULL`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
