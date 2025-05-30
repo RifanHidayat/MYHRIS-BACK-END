@@ -862,34 +862,33 @@ module.exports = {
             url = ` 
             SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}') AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL)  ORDER BY id DESC`;
 
-          if (
-            montStart < monthEnd ||
-            date1.getFullYear() < date2.getFullYear()
-          ) {
-            url = `
+            if (
+              montStart < monthEnd ||
+              date1.getFullYear() < date2.getFullYear()
+            ) {
+              url = `
               SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1  AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}')   
               UNION ALL
               SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}') 
               ORDER BY idd
               `;
-          }
-          }else{
+            }
+          } else {
             url = ` 
             SELECT emp_labor.status as leave_status, emp_labor.*,overtime.name as type,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}') AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL)  ORDER BY id DESC`;
 
-          if (
-            montStart < monthEnd ||
-            date1.getFullYear() < date2.getFullYear()
-          ) {
-            url = `
+            if (
+              montStart < monthEnd ||
+              date1.getFullYear() < date2.getFullYear()
+            ) {
+              url = `
               SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1  AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}')   
               UNION ALL
               SELECT emp_labor.id as idd, emp_labor.status as leave_status, emp_labor.*,overtime.name as type ,overtime.dinilai FROM ${endPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.overtime ON overtime.id=emp_labor.typeId WHERE em_id='${em_id}' AND status_transaksi=1 AND (atten_date>='${startPeriode}' AND atten_date<='${endPeriode}' AND (emp_labor.typeId != '99' OR emp_labor.typeId IS NULL) AND branch_id='${branchId}') 
               ORDER BY idd
               `;
+            }
           }
-          }
-          
         } else if (convert2 == "emp_claim") {
           url = `SELECT emp_claim.*,cost.name as name  FROM  ${startPeriodeDynamic}.emp_claim JOIN ${database}_hrm.cost  ON cost.id=emp_claim.cost_id WHERE em_id='${em_id}' AND  status_transaksi=1 AND (tgl_ajuan>='${startPeriode}' AND tgl_ajuan<='${endPeriode}') `;
 
@@ -4540,275 +4539,281 @@ module.exports = {
 
   async slip_gaji(req, res) {
     var database = req.query.database;
-    const configDynamic = {
-      multipleStatements: true,
-      host: ipServer, //my${database}.siscom.id (ip local)
-      user: "pro",
-      password: "Siscom3519",
-      database: `${database}_hrm`,
-      connectionLimit: 1000,
-      connectTimeout: 60 * 60 * 1000,
-      acquireTimeout: 60 * 60 * 1000,
-      timeout: 60 * 60 * 1000,
-    };
-    const mysql = require("mysql2/promise");
-    const poolDynamic = mysql.createPool(configDynamic);
-
-    const connection = await poolDynamic.getConnection();
+    const connection = await model.createConnection1(`${database}_hrm`);
+    let conn;
     var em_id = req.body.em_id;
     var tahun = req.body.tahun;
+    try {
+      conn = await connection.getConnection();
+      await conn.beginTransaction();
+      const [results] = await conn.query(
+        `SELECT * FROM emp_salary${tahun} WHERE em_id='${em_id}' AND payroll='Y' ORDER BY initial`
+      );
+      var list_pendapatan = [];
+      var list_pemotongan = [];
 
-    const [results] = await connection.query(
-      `SELECT * FROM ${database}_hrm.emp_salary${tahun} WHERE em_id='${em_id}' AND payroll='Y' ORDER BY initial`
-    );
-    var list_pendapatan = [];
-    var list_pemotongan = [];
+      for (const el of results) {
+        try {
+          //value 1
+          if (
+            el["value01"] == "0" ||
+            el["value01"] == "" ||
+            el["value01"] == null ||
+            el["value01"] > 0
+          ) {
+            el["value01"] = "0";
+          } else {
+            var output01 = await decryptData(
+              el["value01"],
+              el["keycode01"],
+              database
+            );
+            el["value01"] = output01;
+          }
+          //value 2
+          if (
+            el["value02"] == "0" ||
+            el["value02"] == "" ||
+            el["value02"] == null ||
+            el["value02"] > 0
+          ) {
+            el["value02"] = "0";
+          } else {
+            var output02 = await decryptData(
+              el["value02"],
+              el["keycode02"],
+              database
+            );
+            el["value02"] = output02;
+          }
 
-    for (const el of results) {
-      try {
-        //value 1
-        if (
-          el["value01"] == "0" ||
-          el["value01"] == "" ||
-          el["value01"] == null ||
-          el["value01"] > 0
-        ) {
-          el["value01"] = "0";
-        } else {
-          var output01 = await decryptData(
-            el["value01"],
-            el["keycode01"],
-            database
-          );
-          el["value01"] = output01;
-        }
-        //value 2
-        if (
-          el["value02"] == "0" ||
-          el["value02"] == "" ||
-          el["value02"] == null ||
-          el["value02"] > 0
-        ) {
-          el["value02"] = "0";
-        } else {
-          var output02 = await decryptData(
-            el["value02"],
-            el["keycode02"],
-            database
-          );
-          el["value02"] = output02;
-        }
+          //value 3
+          if (
+            el["value03"] == "0" ||
+            el["value03"] == "" ||
+            el["value03"] == null ||
+            el["value03"] > 0
+          ) {
+            el["value03"] = "0";
+          } else {
+            var output03 = await decryptData(
+              el["value03"],
+              el["keycode03"],
+              database
+            );
+            el["value03"] = output03;
+          }
 
-        //value 3
-        if (
-          el["value03"] == "0" ||
-          el["value03"] == "" ||
-          el["value03"] == null ||
-          el["value03"] > 0
-        ) {
-          el["value03"] = "0";
-        } else {
-          var output03 = await decryptData(
-            el["value03"],
-            el["keycode03"],
-            database
-          );
-          el["value03"] = output03;
-        }
+          //value 4
+          if (
+            el["value04"] == "0" ||
+            el["value04"] == "" ||
+            el["value04"] == null ||
+            el["value04"] > 0
+          ) {
+            el["value04"] = "0";
+          } else {
+            var output04 = await decryptData(
+              el["value04"],
+              el["keycode04"],
+              database
+            );
+            el["value04"] = output04;
+          }
+          //value 0
+          if (
+            el["value05"] == "0" ||
+            el["value05"] == "" ||
+            el["value05"] == null ||
+            el["value05"] > 0
+          ) {
+            el["value05"] = "0";
+          } else {
+            var output05 = await decryptData(
+              el["value05"],
+              el["keycode05"],
+              database
+            );
+            el["value05"] = output04;
+          }
+          //value 0
+          if (
+            el["value06"] == "0" ||
+            el["value06"] == "" ||
+            el["value06"] == null ||
+            el["value06"] > 0
+          ) {
+            el["value06"] = "0";
+          } else {
+            var output06 = await decryptData(
+              el["value06"],
+              el["keycode06"],
+              database
+            );
+            el["value06"] = output06;
+          }
 
-        //value 4
-        if (
-          el["value04"] == "0" ||
-          el["value04"] == "" ||
-          el["value04"] == null ||
-          el["value04"] > 0
-        ) {
-          el["value04"] = "0";
-        } else {
-          var output04 = await decryptData(
-            el["value04"],
-            el["keycode04"],
-            database
-          );
-          el["value04"] = output04;
-        }
-        //value 0
-        if (
-          el["value05"] == "0" ||
-          el["value05"] == "" ||
-          el["value05"] == null ||
-          el["value05"] > 0
-        ) {
-          el["value05"] = "0";
-        } else {
-          var output05 = await decryptData(
-            el["value05"],
-            el["keycode05"],
-            database
-          );
-          el["value05"] = output04;
-        }
-        //value 0
-        if (
-          el["value06"] == "0" ||
-          el["value06"] == "" ||
-          el["value06"] == null ||
-          el["value06"] > 0
-        ) {
-          el["value06"] = "0";
-        } else {
-          var output06 = await decryptData(
-            el["value06"],
-            el["keycode06"],
-            database
-          );
-          el["value06"] = output06;
-        }
+          //value 0
+          if (
+            el["value07"] == "0" ||
+            el["value07"] == "" ||
+            el["value07"] == null ||
+            el["value07"] > 0
+          ) {
+            el["value07"] = "0";
+          } else {
+            var output07 = await decryptData(
+              el["value07"],
+              el["keycode07"],
+              database
+            );
+            el["value07"] = output07;
+          }
 
-        //value 0
-        if (
-          el["value07"] == "0" ||
-          el["value07"] == "" ||
-          el["value07"] == null ||
-          el["value07"] > 0
-        ) {
-          el["value07"] = "0";
-        } else {
-          var output07 = await decryptData(
-            el["value07"],
-            el["keycode07"],
-            database
-          );
-          el["value07"] = output07;
-        }
+          //value 0
+          if (el["value08"] == null) {
+            el["value08"] = "0";
+          } else {
+            var output08 = await decryptData(
+              el["value08"],
+              el["keycode08"],
+              database
+            );
+            el["value08"] = output08;
+          }
 
-        //value 0
-        if (el["value08"] == null) {
-          el["value08"] = "0";
-        } else {
-          var output08 = await decryptData(
-            el["value08"],
-            el["keycode08"],
-            database
-          );
-          el["value08"] = output08;
-        }
+          //value 0
+          if (
+            el["value09"] == "0" ||
+            el["value09"] == "" ||
+            el["value09"] == null ||
+            el["value09"] > 0
+          ) {
+            el["value09"] = "0";
+          } else {
+            var output09 = await decryptData(
+              el["value09"],
+              el["keycode09"],
+              database
+            );
+            el["value09"] = output09;
+          }
 
-        //value 0
-        if (
-          el["value09"] == "0" ||
-          el["value09"] == "" ||
-          el["value09"] == null ||
-          el["value09"] > 0
-        ) {
-          el["value09"] = "0";
-        } else {
-          var output09 = await decryptData(
-            el["value09"],
-            el["keycode09"],
-            database
-          );
-          el["value09"] = output09;
-        }
+          //value 0
+          if (
+            el["value10"] == "0" ||
+            el["value10"] == "" ||
+            el["value10"] == null ||
+            el["value10"] > 0
+          ) {
+            el["value10"] = "0";
+          } else {
+            var output10 = await decryptData(
+              el["value10"],
+              el["keycode10"],
+              database
+            );
+            el["value10"] = output10;
+          }
 
-        //value 0
-        if (
-          el["value10"] == "0" ||
-          el["value10"] == "" ||
-          el["value10"] == null ||
-          el["value10"] > 0
-        ) {
-          el["value10"] = "0";
-        } else {
-          var output10 = await decryptData(
-            el["value10"],
-            el["keycode10"],
-            database
-          );
-          el["value10"] = output10;
-        }
+          //value 0
+          if (
+            el["value11"] == "0" ||
+            el["value11"] == "" ||
+            el["value11"] == null ||
+            el["value11"] > 0
+          ) {
+            el["value11"] = "0";
+          } else {
+            var output11 = await decryptData(
+              el["value11"],
+              el["keycode11"],
+              database
+            );
+            el["value11"] = output11;
+          }
+          //value 0
+          if (
+            el["value12"] == "0" ||
+            el["value12"] == "" ||
+            el["value12"] == null ||
+            el["value12"] > 0
+          ) {
+            el["value12"] = "0";
+          } else {
+            var output12 = await decryptData(
+              el["value12"],
+              el["keycode12"],
+              database
+            );
+            el["value12"] = output12;
+          }
 
-        //value 0
-        if (
-          el["value11"] == "0" ||
-          el["value11"] == "" ||
-          el["value11"] == null ||
-          el["value11"] > 0
-        ) {
-          el["value11"] = "0";
-        } else {
-          var output11 = await decryptData(
-            el["value11"],
-            el["keycode11"],
-            database
-          );
-          el["value11"] = output11;
+          if (el.type == "C") {
+            list_pemotongan.push(el);
+          } else {
+            list_pendapatan.push(el);
+          }
+        } catch (error) {
+          console.error(`Error processing: ${item}`);
         }
-        //value 0
-        if (
-          el["value12"] == "0" ||
-          el["value12"] == "" ||
-          el["value12"] == null ||
-          el["value12"] > 0
-        ) {
-          el["value12"] = "0";
-        } else {
-          var output12 = await decryptData(
-            el["value12"],
-            el["keycode12"],
-            database
-          );
-          el["value12"] = output12;
-        }
-
-        if (el.type == "C") {
-          list_pemotongan.push(el);
-        } else {
-          list_pendapatan.push(el);
-        }
-      } catch (error) {
-        console.error(`Error processing: ${item}`);
       }
-    }
+      async function decryptData(nilai, keycode, dbname) {
+        try {
+          // Basic Authentication credentials
+          const username = "aplikasioperasionalsiscom";
+          const password = "siscom@ptshaninformasi#2022@";
+          const auth = Buffer.from(`${username}:${password}`).toString(
+            "base64"
+          );
+          const headers = {
+            Authorization: `Basic ${auth}`,
+          };
 
-    res.send({
-      status: true,
-      message: "Berhasil ambil data!",
-      data_pendapatan: list_pendapatan,
-      data_pemotongan: list_pemotongan,
-    });
-
-    async function decryptData(nilai, keycode, dbname) {
-      try {
-        // Basic Authentication credentials
-        const username = "aplikasioperasionalsiscom";
-        const password = "siscom@ptshaninformasi#2022@";
-        const auth = Buffer.from(`${username}:${password}`).toString("base64");
-        const headers = {
-          Authorization: `Basic ${auth}`,
-        };
-
-        // Set up the request options
-        const options = {
-          method: "GET",
-          headers: headers,
-        };
-        const response = await axios.get(
-          `https://myhris.siscom.id/custom/${dbname}/api/decrypt?keycode=${keycode}&nilai=${nilai}&aplikasioperasionalsiscomkey=siscom@ptshaninformasi%232022@`,
-          { headers }
-        ); // Replace with your actual API endpoint
-        // res.json(response.data);
-        console.log(response.data.status);
-        if (response.data.status == true) {
-          return response.data.data;
-        } else {
-          return "0";
+          // Set up the request options
+          const options = {
+            method: "GET",
+            headers: headers,
+          };
+          const response = await axios.get(
+            `https://myhris.siscom.id/custom/${dbname}/api/decrypt?keycode=${keycode}&nilai=${nilai}&aplikasioperasionalsiscomkey=siscom@ptshaninformasi%232022@`,
+            { headers }
+          ); // Replace with your actual API endpoint
+          // res.json(response.data);
+          if (response.data.status == true) {
+            return response.data.data;
+          } else {
+            return "0";
+          }
+        } catch (error) {
+          console.error("Status:", error.response?.status);
+          console.error("Data:", error.response?.data);
+          console.error("Message:", error.message);
+          // res.status(500).json({ error: 'An error occurred' });
+          return "1 ";
         }
-      } catch (error) {
-        console.log(error);
-        // res.status(500).json({ error: 'An error occurred' });
-        return "1 ";
       }
+      await conn.commit();
+      return res.status(200).send({
+        status: true,
+        message: "Berhasil ambil data!",
+        data_pendapatan: list_pendapatan,
+        data_pemotongan: list_pemotongan,
+      });
+    } catch (err) {
+      console.error("Error occurred:", err);
+
+      if (conn) {
+        await conn.rollback();
+      }
+
+      return res.status(400).send({
+        status: false,
+        message: "Gagal memproses data",
+        data: [],
+      });
+    } finally {
+      if (conn) conn.release();
     }
   },
 
@@ -10576,7 +10581,6 @@ module.exports = {
                             1,1,"","","","","") `;
 
           if (dataAbsensi[0].id_absen == 0 || dataAbsensi[0].id_absen == null) {
-            
             // `INSERT INTO attendance SET ?;`, [insertData],
             await conn.query(queryInsert);
           } else {
@@ -13286,14 +13290,13 @@ a.breakin_time,
       UNION ALL
      SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.atten_date)='${req.body.bulan}' AND year(a.atten_date)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='1'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  GROUP BY b.full_name`;
 
-     var query1_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgal_ajuan='${endPeriode}' GROUP BY b.full_name
+      var query1_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgal_ajuan='${endPeriode}' GROUP BY b.full_name
      UNION ALL 
      SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId} AND  a.tgl_ajuan>='${startPeriode}' AND a.tgal_ajuan='${endPeriode}'  GROUP BY b.full_name
      `;
-    var query2_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'GROUP BY b.full_name 
+      var query2_shift = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'GROUP BY b.full_name 
     UNION ALL 
     SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${endPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE ${ajuanStatus} AND month(a.tgl_ajuan)='${req.body.bulan}' AND year(a.tgl_ajuan)='${req.body.tahun}' AND b.dep_id='${status}' AND a.ajuan='4'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report2_to  LIKE '%${emId}%'  ) AND b.branch_id=${branchId}  AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'GROUP BY b.full_name`;
-
 
       query1_tugas_luar = `SELECT a.*, b.full_name, b.job_title, count(*) as jumlah , b.em_image as image FROM ${startPeriodeDynamic}.emp_labor a JOIN ${database}_hrm.employee b ON a.em_id=b.em_id WHERE  a.ajuan='2'  AND (b.em_report_to  LIKE '%${emId}%' OR   b.em_report_to  LIKE '%${emId}%'  ) AND  a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'  GROUP BY b.full_name
      UNION ALL
@@ -13341,7 +13344,7 @@ a.breakin_time,
       } else if (type == "klaim") {
         url = query1_klaim;
       } else if (type == "shift") {
-        url = query1_shift
+        url = query1_shift;
       }
     } else {
       if (type == "tidak_hadir") {
@@ -13356,7 +13359,7 @@ a.breakin_time,
         url = query2_dinasluar;
       } else if (type == "klaim") {
         url = query2_klaim;
-      }else if (type == "shift") {
+      } else if (type == "shift") {
         url = query2_shift;
       }
     }
@@ -13569,7 +13572,6 @@ SELECT a.*, wsa.name AS name_old, wsa.time_in AS time_in_old, wsa.time_out AS ti
  LEFT JOIN work_schedule AS wsb ON a.work_id_new = wsb.id LEFT JOIN employee e ON a.em_delegation=e.em_id
  WHERE a.ajuan='4' AND a.em_id='${em_id}' AND a.status != 'Cancel' AND a.tgl_ajuan>='${startPeriode}' AND a.tgl_ajuan<='${endPeriode}'
 `;
-    
     }
 
     var url;
