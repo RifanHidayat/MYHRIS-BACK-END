@@ -2,6 +2,7 @@ const utility = require("./utility");
 const mysql2 = require("mysql2/promise");
 let pools = {};
 module.exports = {
+
   query: function (query, databaseDynamic, callback) {
     const mysql = require("mysql");
     var poolQuery = mysql.createPool({
@@ -21,6 +22,7 @@ module.exports = {
       }
     });
   },
+
   queryBody: function (query, body, databaseDynamic, callback) {
     const mysql = require("mysql");
     var poolQuery = mysql.createPool({
@@ -48,8 +50,8 @@ module.exports = {
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.API_URL, //myhris.siscom.id (ip)
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      user: "pro",
+      password: "Siscom3519",
       timezone: "+00:00",
       database: `${database}_hrm`,
       connectionLimit: 20,
@@ -62,6 +64,7 @@ module.exports = {
     return connection;
   },
   createConnection1: async function (database) {
+    console.log("Masuk ini yea " ,database)
     if (!pools[database]) {
       try {
         console.log(`Membuat koneksi ke database ${database}`);
@@ -71,8 +74,8 @@ module.exports = {
             database == "sis_admin"
               ? process.env.MY_DATABASE
               : process.env.API_URL,
-          user: `${process.env.DB_USER}`,
-          password: `${process.env.DB_PASSWORD}`,
+          user: "pro",
+          password: "Siscom3519",
           timezone: "+00:00",
           database: database,
           connectionLimit: 500,
@@ -96,8 +99,8 @@ module.exports = {
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.API_URL, //myhris.siscom.id (ip)
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      user: "pro",
+      password: "Siscom3519",
       timezone: "+00:00",
       database: `${database}_hrm`,
       connectionLimit: 20,
@@ -109,13 +112,14 @@ module.exports = {
     });
     return connection;
   },
+
   sisAdmin: async function () {
     const mysql = require("mysql");
     const connection = new mysql.createConnection({
       multipleStatements: true,
       host: process.env.MY_DATABASE,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      user: "pro",
+      password: "Siscom3519",
       timezone: "+00:00",
       database: "sis_admin",
       connectionLimit: 10000000,

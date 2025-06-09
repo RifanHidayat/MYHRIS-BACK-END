@@ -237,7 +237,8 @@ module.exports = {
       const results = await conn.query(queryCek);
       var isCheck = false;
       if (results.length > 0) {
-        isCheck = true;
+        isChe
+        ck = true;
       }
 
       await conn.commit();

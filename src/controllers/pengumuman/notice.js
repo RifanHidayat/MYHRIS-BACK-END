@@ -219,7 +219,6 @@ WHERE n.branch_id LIKE '%${branchId}%' AND n.begin_date <= CURDATE() AND n.end_d
 
     var url = `SELECT employee.* FROM notice_question_polling_employee JOIN employee ON employee.em_id= notice_question_polling_employee.em_id WHERE notice_question_polling_id='${questionId}'`;
 
-    console.log("url accouncemnt", url);
 
     let conn;
     try {
