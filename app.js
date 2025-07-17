@@ -59,14 +59,14 @@ function stopTask() {
 // Menjalankan tugas setiap detik
 cron.schedule("0 */4 * * *", () => {
   //stopTask();
-  fetchData();
+  //fetchData();
   // Tempatkan logika tugas yang ingin dijalankan di sini
 });
-fetchData();
+//fetchData();
 
 // Menjalankan tugas setiap detik
 cron1.schedule("* * * * * *", () => {
-  kirimNotif();
+ // kirimNotif();
 });
 
 async function kirimNotif() {

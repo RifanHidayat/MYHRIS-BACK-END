@@ -1188,10 +1188,10 @@ LIMIT 1`;
       var absenOffline = "";
       if (pola == "2" || pola == 2) {
         wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
+                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND (ajuan='4' OR ajuan='3') AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
       } else {
         wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
+                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND  (ajuan='4' OR ajuan='3') AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
       }
       if (absensiNow.length > 0) {
         if (pola == "2" || pola == 2) {

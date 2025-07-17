@@ -7,8 +7,8 @@ module.exports = {
     console.log("body", req.body);
     var database = req.query.database;
     var emId = req.body.em_id;
-    const getbulan = req.body.bulan;
-    const gettahun = req.body.tahun;
+   // const getbulan = req.body.bulan;
+    
     var date = req.body.date;
     var limit = req.body.limit;
     var offset = req.body.offset;
@@ -19,8 +19,10 @@ module.exports = {
     var tipeForm = req.body.tipe_form;
     var branchId = req.body.branch_id;
     // var emId=req.query.em_id;
+    var date=utility.dateNow2().split('-');
+    const getbulan = date[0];
 
-    const tahun = `${gettahun}`;
+    const tahun = `${date[1]}`;
     const convertYear = tahun.substring(2, 4);
     // const convertBulan = getbulan;
     var convertBulan;

@@ -157,6 +157,12 @@ router.post(
   operasional.kirimTidakMasukKerja
 );
 
+router.get(
+  "/jadwal-kerja",
+  auth.isAuth,
+  operasional.jadwalKerja
+);
+
 router.post("/lembur", auth.isAuth, lembur.store);
 router.post("/lembur_draft", auth.isAuth, lembur.insertDraft);
 router.post("/lembur_draft_update", auth.isAuth, lembur.updateDraft);
@@ -357,6 +363,8 @@ router.post(
 );
 router.post("/edit-emp_labor", operasional.editData);
 router.post("/edit-emp_labor-approval-task", operasional.approvalTransaksiNew);
+
+
 router.post("/edit-emp_labor-approval", operasional.approvalTransaksi);
 router.post("/edit-notifikasi", operasional.editData);
 router.post("/edit_face", operasional.edit_face);
@@ -430,5 +438,15 @@ router.post('/shift/edit', shift.edit);
 router.get('/shift', shift.show);
 router.post('/shift/search_work_schedule', shift.searchWorkSchedule);
 router.post('/shift/approval', shift.approval);
+
+
+//day off
+router.post('/day-off', operasional.dayOffInsert);
+router.patch('/day-off/:id', operasional.dayOffUpdate);
+router.get('/day-off', operasional.dayoffIndex);
+router.delete('/day-off/:id', operasional.deleteDayOff);
+router.post("/day-off-approval", operasional.approvalTransaksiNew);
+
+// /router.post('/decrypt-gaji',operasional.decrptyText );
 
 module.exports = router;

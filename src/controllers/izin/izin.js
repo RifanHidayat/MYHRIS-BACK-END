@@ -50,7 +50,9 @@ module.exports = {
         ajuan: req.body.ajuan,
         apply_status: "Pending",
         lokasi: req.body.lokasi,
+        multiselect:req.body.multiselect==undefined?"0":req.body.multiselect
       };
+      console.log('body ',insertData )
       var dataInsertLog = {
         menu_name: req.body.menu_name,
         activity_name: req.body.activity_name,
@@ -1368,8 +1370,13 @@ WHERE e.em_id = '${req.body.em_id}'
 
     var datesplits = dates.split(",");
 
-    query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
-       status IN (2,3) `;
+    // query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
+    //    status IN (2,3) `;
+
+    // query = `SELECT * FROM leave_types WHERE  
+    //    status IN (2,3) `;
+
+    query = `SELECT * FROM leave_types WHERE (submission_period<='${durasi}' OR backdate=0 ) AND  status IN (2,3) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
