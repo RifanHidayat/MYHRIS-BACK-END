@@ -2,6 +2,7 @@ const utility = require("./utility");
 const mysql2 = require("mysql2/promise");
 let pools = {};
 module.exports = {
+
   query: function (query, databaseDynamic, callback) {
     const mysql = require("mysql");
     var poolQuery = mysql.createPool({
@@ -21,6 +22,7 @@ module.exports = {
       }
     });
   },
+
   queryBody: function (query, body, databaseDynamic, callback) {
     const mysql = require("mysql");
     var poolQuery = mysql.createPool({
@@ -62,6 +64,7 @@ module.exports = {
     return connection;
   },
   createConnection1: async function (database) {
+    console.log("Masuk ini yea " ,database)
     if (!pools[database]) {
       try {
         console.log(`Membuat koneksi ke database ${database}`);
@@ -109,6 +112,7 @@ module.exports = {
     });
     return connection;
   },
+
   sisAdmin: async function () {
     const mysql = require("mysql");
     const connection = new mysql.createConnection({

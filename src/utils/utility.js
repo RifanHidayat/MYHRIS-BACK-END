@@ -471,7 +471,7 @@ module.exports = {
           data: {
             route: url,
             em_id_pengajuan: emIdPengajuan,
-            idx: idx.toString(),
+            idx: `${idx}`,
           },
           notification: {
             title: title,
@@ -512,10 +512,20 @@ module.exports = {
   
       for (const [e] of employeeResults) {
         if (e.length > 0) {
-          const query = `INSERT INTO ${databasePeriode}.notifikasi (em_id,title,deskripsi,url,atten_date,jam,status,view,em_id_pengajuan,idx)
-            VALUES ('${e[0].em_id}','${title}','${description}','${url}',CURDATE(),CURTIME(),2,0,'${emIdPengajuan}','${idx}')`;
-  
-          insertQueries.push(conn.query(query));
+          const query = `
+            INSERT INTO ${databasePeriode}.notifikasi 
+            (em_id, title, deskripsi, url, atten_date, jam, status, view, em_id_pengajuan) 
+            VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), 2, 0, ?)
+          `;
+          
+            const insertValues = [
+              e[0].em_id,
+              title,
+              description,
+              url,
+              emIdPengajuan,
+            ];
+          insertQueries.push(conn.query(query, insertValues));
   
           pushNotifikasiApprovalGlobal(
             e[0].token_notif,

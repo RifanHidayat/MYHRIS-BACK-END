@@ -1,4 +1,4 @@
-const config = require("../configs/database");
+const config = require("../../configs/database");
 const mysql = require("mysql");
 const pool = mysql.createPool(config);
 const sha1 = require("sha1");
@@ -7,8 +7,8 @@ const e = require("express");
 
 var request = require("request");
 
-const model = require("../utils/models");
-const utility = require("../utils/utility");
+const model = require("../../utils/models");
+const utility = require("../../utils/utility");
 
 pool.on("error", (err) => {
   console.error(err);
@@ -36,8 +36,8 @@ module.exports = {
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
-
-    var array = req.body.atten_date.split("-");
+    var dateNow = utility.dateNow4();
+    var array = dateNow.split("-");
 
     const tahun = `${array[0]}`;
     const convertYear = tahun.substring(2, 4);
@@ -60,7 +60,7 @@ module.exports = {
       createdUserID: createdBy,
     };
 
-    var dateNow = utility.dateNow4();
+    
     bodyValue.tgl_ajuan = dateNow;
     const connection = await model.createConnection1(databaseMaster);
     let conn;

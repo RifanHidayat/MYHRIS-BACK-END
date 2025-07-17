@@ -19,8 +19,8 @@ var portEnv = process.env.PORT_API;
 var apiKey = process.env.API_KEY;
 
 var remoteDirectory = "public_html/7H202305001";
-const SftpClient = require("ssh2-sftp-client");
-const configSftp = {
+var SftpClient = require("ssh2-sftp-client");
+var configSftp = {
   host: "imagehris.siscom.id",
   port: 3322, // Default SFTP port is 22
   username: "siscom",
@@ -50,7 +50,7 @@ function cacheSysdata(sysdata) {
   console.log("Data karyawan disimpan di cache selama 24 jam.");
 }
 
-const sftp = new SftpClient();
+var sftp = new SftpClient();
 function stopTask() {
   cron.stop();
   console.log("Tugas dihentikan.");
@@ -59,14 +59,14 @@ function stopTask() {
 // Menjalankan tugas setiap detik
 cron.schedule("0 */4 * * *", () => {
   //stopTask();
-  fetchData();
+  //fetchData();
   // Tempatkan logika tugas yang ingin dijalankan di sini
 });
-fetchData();
+//fetchData();
 
 // Menjalankan tugas setiap detik
 cron1.schedule("* * * * * *", () => {
-  kirimNotif();
+ // kirimNotif();
 });
 
 async function kirimNotif() {
@@ -631,11 +631,11 @@ async function fetchData() {
             console.error("Error executing SELECT statement:", err);
             connection.rollback(() => {
               connection.end();
-              return res.status(400).send({
-                status: true,
-                message: "gagal ambil data",
-                data: [],
-              });
+              // return res.status(400).send({
+              //   status: true,
+              //   message: "gagal ambil data",
+              //   data: [],
+              // });
             });
             return;
           }

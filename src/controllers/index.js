@@ -1,6 +1,6 @@
 const operasional = require('./controller-operasional');
 const login = require('./login');
-const dashboard = require('./dashboard');
+const dashboard = require('./dashboard/dashboard');
 const absensi = require('./absensi/absensi');
 const payroll = require('./payroll');
 const izin = require('./izin/izin');
@@ -12,7 +12,7 @@ const loan = require('./loan');
 const chatting = require('./chatting/chatting');
 const lembur = require('./lembur/lembur');
 const cuti = require('./cuti/cuti');
-const tugasLuar = require('./tugas_luar');
+const tugasLuar = require('./tugasLuar/tugas_luar');
 const pengadaanKerusakan = require('./pengaduan');
 const peraturanPerusahaan = require('./persuratan/peraturan_perusahaan');
 const employee= require('./employee');
@@ -32,6 +32,11 @@ const auditShow = require('./audit/show');
 const auditDetail = require('./audit/detail');
 const auditApproval = require('./audit/approval');
 const auditFilter = require('./audit/filter');
+const auditLog = require('./audit/log');
+//apresiasi
+const showAppresiasi = require('./apresiasi/showAppresiasi');
+const showUserApresiasi = require('./apresiasi/apresiasiUser');
+const shift = require('./shift/shift');
 
 
 module.exports ={
@@ -58,5 +63,8 @@ module.exports ={
 	auditShow,
 	auditApproval,
 	auditDetail,
-	auditFilter
+	auditFilter,
+	auditLog,
+	showAppresiasi,
+	showUserApresiasi,
 };

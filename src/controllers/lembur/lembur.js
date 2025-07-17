@@ -336,7 +336,8 @@ module.exports = {
       }
       return res.status(400).send({
         status: false,
-        message: "Gagal ambil data",
+        message: "Gagal bikin pengajuan lembur",
+        pesan: e
       });
     } finally {
       if (conn) await conn.release();
@@ -912,566 +913,6 @@ module.exports = {
     }
   },
 
-  async update(req, res) {
-    function isDateInRange(date, startDate, endDate) {
-      return date >= startDate && date <= endDate;
-    }
-
-    var database = req.query.database;
-    let name_url = req.originalUrl;
-    var convert1 = name_url.substring(name_url.lastIndexOf("/") + 1);
-    var nameTable = convert1
-      .substring(convert1.lastIndexOf("-") + 1)
-      .replace("?database=" + req.query.database, "");
-
-    var menu_name = req.body.menu_name;
-    var activity_name = req.body.activity_name;
-    var createdBy = req.body.created_by;
-
-    var bodyValue = req.body;
-    delete bodyValue.menu_name;
-    delete bodyValue.activity_name;
-    delete bodyValue.created_by;
-    let now = new Date();
-
-    let year = now.getFullYear();
-    let month = now.getMonth() + 1; // Bulan dimulai dari 0, jadi tambahkan 1
-    let date = now.getDate();
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
-    let seconds = now.getSeconds();
-
-    var dateNow = `${year}-${month
-      .toString()
-      .padStart(2, "0")}-${date} ${hours}:${minutes}:${seconds}`;
-    bodyValue.created_on = dateNow;
-    bodyValue.is_mobile = "1";
-
-    var array = req.body.atten_date.split("-");
-
-    const tahun = `${array[0]}`;
-    const convertYear = tahun.substring(2, 4);
-    var convertBulan;
-    if (array[1].length == 1) {
-      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
-    } else {
-      convertBulan = array[1];
-    }
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    var nomorLb = `LB20${convertYear}${convertBulan}`;
-    var script = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
-    var transaksi = "";
-
-    try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-
-          connection.query(
-            `SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                    WHERE em_id='${req.body.em_id}' 
-                    AND (date_selected LIKE '%${req.body.atten_date}%')  
-                    AND  status_transaksi=1 
-                     AND leave_status IN ('Pending','Approve','Approve2')`,
-            (err, data) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              if (data.length > 0) {
-                for (var i = 0; i < data.length; i++) {
-                  if (data[i].leave_type == "HALFDAY") {
-                    var timeParam1 = new Date(
-                      `${req.body.atten_date}T${req.body.dari_jam}`
-                    );
-                    var timeParam2 = new Date(
-                      `${req.body.atten_date}T${req.body.sampai_jam}`
-                    );
-                    /// jika suda ada data
-                    var time1 = new Date(
-                      `${data[i].atten_date}T${data[i].time_plan}`
-                    );
-                    var time2 = new Date(
-                      `${data[i].atten_date}T${data[i].time_plan_to}`
-                    );
-                    if (time1 > time2) {
-                      time2.setDate(time2.getDate() + 1);
-                    }
-
-                    if (timeParam1 > timeParam2) {
-                      timeParam2.setDate(time2.getDate() + 1);
-                    }
-
-                    transaksi = "Izin";
-
-                    if (isDateInRange(timeParam1, time1, time2)) {
-                      return res.status(400).send({
-                        status: false,
-                        message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                        data: [],
-                      });
-                    }
-                  } else if (
-                    req.body.leave_type == "FULLDAY" ||
-                    req.body.leave_type == "FULL DAY"
-                  ) {
-                    if (data[0].ajuan == "1" || data[0].ajuan == 1) {
-                      return res.status(400).send({
-                        status: false,
-                        message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                        data: [],
-                      });
-                    }
-
-                    if (data[0].ajuan == "2" || data[0].ajuan == 2) {
-                      return res.status(400).send({
-                        status: false,
-                        message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                        data: [],
-                      });
-                    }
-                  }
-                }
-              }
-
-              connection.query(
-                `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${req.body.em_id}' AND atten_date='${req.body.atten_date}' AND status_transaksi=1 AND ( ajuan='1' OR ajuan='2') AND status IN ('Pending','Approve','Approve2')`,
-                (err, data) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-                  if (data.length > 0) {
-                    var timeParam1 = new Date(
-                      `${req.body.atten_date}T${req.body.dari_jam}`
-                    );
-                    var timeParam2 = new Date(
-                      `${req.body.atten_date}T${req.body.sampai_jam}`
-                    );
-
-                    /// jika suda ada data
-                    var time1 = new Date(
-                      `${data[0].atten_date}T${data[0].dari_jam}`
-                    );
-                    var time2 = new Date(
-                      `${data[0].atten_date}T${data[0].sampai_jam}`
-                    );
-
-                    if (time1 > time2) {
-                      time2.setDate(time2.getDate() + 1);
-                    }
-
-                    if (timeParam1 > timeParam2) {
-                      timeParam2.setDate(time2.getDate() + 1);
-                    }
-
-                    if (data[0].ajuan == "2") {
-                      transaksi = "Tugas Luar";
-                    }
-
-                    if (data[0].ajuan == "1") {
-                      transaksi = "Lembur";
-                    }
-
-                    if (isDateInRange(timeParam1, time1, time2)) {
-                      return res.status(400).send({
-                        status: false,
-                        message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                        data: [],
-                      });
-                    } else {
-                      if (isDateInRange(timeParam2, time1, time2)) {
-                        return res.status(400).send({
-                          status: false,
-                          message: `Kamu telah melakaukan pengajuan lembur pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                          data: [],
-                        });
-                      }
-                    }
-                  }
-
-                  connection.query(
-                    `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' ORDER BY id DESC LIMIT 1`,
-                    (err, results) => {
-                      if (err) {
-                        console.error("Error executing SELECT statement:", err);
-                        connection.rollback(() => {
-                          connection.end();
-                          return res.status(400).send({
-                            status: false,
-                            message: "gagal ambil data",
-                            data: [],
-                          });
-                        });
-                        return;
-                      }
-
-                      //   if (results.length>0){
-
-                      //   }else{
-
-                      //     nomorLb=`20${convertYear}${convertBulan}0001`
-                      //   }
-                      if (results.length > 0) {
-                        var text = results[0]["nomor_ajuan"];
-                        var nomor = parseInt(text.substring(8, 13)) + 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorLb = nomorLb + nomorStr;
-                      } else {
-                        var nomor = 1;
-                        var nomorStr = String(nomor).padStart(4, "0");
-                        nomorLb = nomorLb + nomorStr;
-                      }
-                      bodyValue.nomor_ajuan = nomorLb;
-
-                      connection.query(script, [bodyValue], (err, results) => {
-                        if (err) {
-                          console.error(
-                            "Error executing SELECT statement:",
-                            err
-                          );
-                          connection.rollback(() => {
-                            connection.end();
-                            return res.status(400).send({
-                              status: false,
-                              message: "gagal ambil data",
-                              data: [],
-                            });
-                          });
-                          return;
-                        }
-
-                        connection.commit((err) => {
-                          if (err) {
-                            console.error("Error committing transaction:", err);
-                            connection.rollback(() => {
-                              connection.end();
-                              return res.status(400).send({
-                                status: true,
-                                message:
-                                  "Kombinasi email & password Anda Salah",
-                                data: [],
-                              });
-                            });
-                            return;
-                          }
-                          connection.end();
-                          console.log("Transaction completed successfully!");
-                          return res.status(200).send({
-                            status: true,
-                            message: "Kombinasi email & password Anda Salah",
-                          });
-                        });
-                      });
-                    }
-                  );
-                }
-              );
-            }
-          );
-        });
-      });
-    } catch ($e) {
-      return res.status(400).send({
-        status: true,
-        message: "Gagal ambil data",
-        data: [],
-      });
-    }
-  },
-
-  async update(req, res) {
-    function isDateInRange(date, startDate, endDate) {
-      return date >= startDate && date <= endDate;
-    }
-
-    var nameWhere = req.body.val;
-    var cariWhere = req.body.cari;
-    console.log("-----insert data tugas luar----------");
-
-    console.log("data absen ", req.body);
-    var database = req.query.database;
-    let name_url = req.originalUrl;
-    var convert1 = name_url.substring(name_url.lastIndexOf("/") + 1);
-    var nameTable = convert1
-      .substring(convert1.lastIndexOf("-") + 1)
-      .replace("?database=" + req.query.database, "");
-
-    var menu_name = req.body.menu_name;
-    var activity_name = req.body.activity_name;
-    var createdBy = req.body.created_by;
-
-    var bodyValue = req.body;
-    delete bodyValue.menu_name;
-    delete bodyValue.activity_name;
-    delete bodyValue.created_by;
-
-    delete bodyValue.val;
-    delete bodyValue.cari;
-
-    console.log(req.body);
-
-    let now = new Date();
-
-    let year = now.getFullYear();
-    let month = now.getMonth() + 1; // Bulan dimulai dari 0, jadi tambahkan 1
-    let date = now.getDate();
-    let hours = now.getHours();
-    let minutes = now.getMinutes();
-    let seconds = now.getSeconds();
-
-    var dateNow = `${year}-${month
-      .toString()
-      .padStart(2, "0")}-${date} ${hours}:${minutes}:${seconds}`;
-    bodyValue.modified_on = dateNow;
-
-    var array = req.body.atten_date.split("-");
-
-    const tahun = `${array[0]}`;
-    const convertYear = tahun.substring(2, 4);
-    var convertBulan;
-    if (array[1].length == 1) {
-      convertBulan = array[1] <= 9 ? `0${array[1]}` : array[1];
-    } else {
-      convertBulan = array[1];
-    }
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    var script = `UPDATE ${namaDatabaseDynamic}.emp_labor SET ? WHERE ${nameWhere} = '${cariWhere}'`;
-
-    try {
-      const connection = await model.createConnection(database);
-      connection.connect((err) => {
-        if (err) {
-          console.error("Error connecting to the database:", err);
-          return;
-        }
-
-        connection.beginTransaction((err) => {
-          if (err) {
-            console.error("Error beginning transaction:", err);
-            connection.end();
-            return;
-          }
-          connection.query(
-            `SELECT * FROM ${namaDatabaseDynamic}.emp_leave 
-                    WHERE em_id='${req.body.em_id}' 
-                    AND (date_selected LIKE '%${req.body.atten_date}%')  
-                    AND  status_transaksi=1 
-                     AND leave_status IN ('Pending','Approve','Approve2')`,
-            (err, data) => {
-              if (err) {
-                console.error("Error executing SELECT statement:", err);
-                connection.rollback(() => {
-                  connection.end();
-                  return res.status(400).send({
-                    status: false,
-                    message: "gagal ambil data",
-                    data: [],
-                  });
-                });
-                return;
-              }
-
-              if (data.length > 0) {
-                if (data[0].leave_type == "HALFDAY") {
-                  var timeParam1 = new Date(
-                    `${req.body.atten_date}T${req.body.dari_jam}`
-                  );
-                  var timeParam2 = new Date(
-                    `${req.body.atten_date}T${req.body.sampai_jam}`
-                  );
-                  /// jika suda ada data
-                  var time1 = new Date(
-                    `${data[0].atten_date}T${data[0].time_plan}`
-                  );
-                  var time2 = new Date(
-                    `${data[0].atten_date}T${data[0].time_plan_to}`
-                  );
-                  if (time1 > time2) {
-                    time2.setDate(time2.getDate() + 1);
-                  }
-
-                  if (timeParam1 > timeParam2) {
-                    timeParam2.setDate(time2.getDate() + 1);
-                  }
-
-                  transaksi = "Izin";
-
-                  if (isDateInRange(timeParam1, time1, time2)) {
-                    return res.status(400).send({
-                      status: false,
-                      message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                      data: [],
-                    });
-                  }
-                } else if (
-                  req.body.leave_type == "FULLDAY" ||
-                  req.body.leave_type == "FULL DAY"
-                ) {
-                  if (data[0].ajuan == "1" || data[0].ajuan == 1) {
-                    return res.status(400).send({
-                      status: false,
-                      message: `Kamu telah melakaukan pengajuan Cuti  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                      data: [],
-                    });
-                  }
-
-                  if (data[0].ajuan == "2" || data[0].ajuan == 2) {
-                    return res.status(400).send({
-                      status: false,
-                      message: `Kamu telah melakaukan pengajuan Sakit  pada tanggal ${req.body.atten_date}  dengan status ${data[0].leave_status}`,
-                      data: [],
-                    });
-                  }
-                }
-              }
-
-              var queryLembur = `SELECT * FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${req.body.em_id}'
-    AND atten_date='${req.body.atten_date}' AND status_transaksi=1  AND 
-   ( ajuan='1' OR ajuan='2') AND status IN ('Pending','Approve','Approve2') AND id!=${cariWhere}`;
-
-              connection.query(queryLembur, (err, data) => {
-                if (err) {
-                  console.error("Error executing SELECT statement:", err);
-                  connection.rollback(() => {
-                    connection.end();
-                    return res.status(400).send({
-                      status: false,
-                      message: "gagal ambil data",
-                      data: [],
-                    });
-                  });
-                  return;
-                }
-                console.log(queryLembur);
-                if (data.length > 0) {
-                  for (var i = 0; i < data.length; i++) {
-                    var timeParam1 = new Date(
-                      `${req.body.atten_date}T${req.body.dari_jam}`
-                    );
-                    var timeParam2 = new Date(
-                      `${req.body.atten_date}T${req.body.sampai_jam}`
-                    );
-
-                    /// jika suda ada data
-                    var time1 = new Date(
-                      `${data[i].atten_date}T${data[i].dari_jam}`
-                    );
-                    var time2 = new Date(
-                      `${data[i].atten_date}T${data[i].sampai_jam}`
-                    );
-
-                    if (time1 > time2) {
-                      time2.setDate(time2.getDate() + 1);
-                    }
-
-                    if (timeParam1 > timeParam2) {
-                      timeParam2.setDate(time2.getDate() + 1);
-                    }
-
-                    var transaksi = "";
-                    if (data[i].ajuan == "2") {
-                      transaksi = "Tugas Luar";
-                    }
-                    if (data[i].ajuan == "1") {
-                      transaksi = "Lembur";
-                    }
-
-                    if (isDateInRange(timeParam1, time1, time2)) {
-                      return res.status(400).send({
-                        status: false,
-                        message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                        data: [],
-                      });
-                    } else {
-                      if (isDateInRange(timeParam2, time1, time2)) {
-                        return res.status(400).send({
-                          status: false,
-                          message: `Kamu telah melakaukan pengajuan ${transaksi} pada tanggal ${time1} s.d. ${time2} dengan status ${data[0].status}`,
-                          data: [],
-                        });
-                      }
-                    }
-                  }
-                }
-                console.log(queryLembur);
-                connection.query(script, [bodyValue], (err, results) => {
-                  if (err) {
-                    console.error("Error executing SELECT statement:", err);
-                    connection.rollback(() => {
-                      connection.end();
-                      return res.status(400).send({
-                        status: false,
-                        message: "gagal ambil data",
-                        data: [],
-                      });
-                    });
-                    return;
-                  }
-
-                  connection.commit((err) => {
-                    if (err) {
-                      console.error("Error committing transaction:", err);
-                      connection.rollback(() => {
-                        connection.end();
-                        return res.status(400).send({
-                          status: true,
-                          message: "Kombinasi email & password Anda Salah",
-                          data: [],
-                        });
-                      });
-                      return;
-                    }
-                    connection.end();
-                    console.log("Transaction completed successfully!");
-                    return res.status(200).send({
-                      status: true,
-                      message: "Kombinasi email & password Anda Salah",
-                    });
-                  });
-                });
-              });
-            }
-          );
-        });
-      });
-    } catch ($e) {
-      return res.status(400).send({
-        status: true,
-        message: "Gagal ambil data",
-        data: [],
-      });
-    }
-  },
-
   async detailTask(req, res) {
     console.log("detail task");
 
@@ -1518,16 +959,43 @@ module.exports = {
     } else {
       convertBulan = array[1];
     }
-    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
-    const connection = await model.createConnection1(namaDatabaseDynamic);
+    var startPeriode =
+      req.query.start_periode == undefined
+        ? "2024-02-03"
+        : req.query.start_periode;
+    var endPeriode =
+      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+    var array1 = startPeriode.split("-");
+    var array2 = endPeriode.split("-");
+
+    const startPeriodeDynamic = `${database}_hrm${array1[0].substring(2, 4)}${
+      array1[1]
+    }`;
+    const endPeriodeDynamic = `${database}_hrm${array2[0].substring(2, 4)}${
+      array2[1]
+    }`;
+    const namaDatabaseDynamic = startPeriodeDynamic;
+    let date1 = new Date(startPeriode);
+    let date2 = new Date(endPeriode);
+
+    const montStart = date1.getMonth() + 1;
+    const monthEnd = date2.getMonth() + 1;
+
+    const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
-      const query = `SELECT a.* FROM emp_labor_task a JOIN emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' OR a.nomor_ajuan = b.nomor_ajuan`;
+      let query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'`;
+      if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+        query = `SELECT a.* FROM ${startPeriodeDynamic}.emp_labor_task a JOIN ${startPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}'
+    AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')
+      UNION ALL SELECT a.* FROM ${endPeriodeDynamic}.emp_labor_task a JOIN ${endPeriodeDynamic}.emp_labor b ON b.id = '${nomorAjuan}' WHERE a.emp_labor_id = '${nomorAjuan}' AND (a.created_on >= '${startPeriode}' AND a.created_on <= '${endPeriode}')`;
+      }
       console.log(query);
       const [results] = await conn.query(query);
+      console.log(results);
       await conn.commit();
       return res.status(200).send({
         status: true,
@@ -1708,7 +1176,7 @@ WHERE designation.level <= 3 AND department_group.id = ${depGroupId};`);
     var dep_id = req.body.dep_id;
     var branchId = req.headers.branch_id;
 
-    var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE STATUS='ACTIVE' ORDER BY full_name ASC `;
+    var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE STATUS='ACTIVE' AND branch_id=${branchId} ORDER BY full_name ASC `;
     var query2 = `SELECT * FROM ${database}_hrm.employee WHERE dep_id='${dep_id}' AND branch_id=${branchId} AND status='ACTIVE' ORDER BY full_name ASC `;
 
     var url;

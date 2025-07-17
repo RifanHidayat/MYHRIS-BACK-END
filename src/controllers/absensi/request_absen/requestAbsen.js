@@ -53,7 +53,7 @@ module.exports = {
     }
   },
 
-  UpdateEmployeeAttendance(req, res) {
+  async UpdateEmployeeAttendance(req, res) {
     console.log("-----Employee attemdamce  ----------");
     var database = req.query.database;
     var em_id = req.body.em_id;
@@ -333,6 +333,7 @@ module.exports = {
                                   var absenKeluarRest =
                                     req.body.address_keluar_Rest;
                                   var absenKeluar = req.body.address_keluar;
+                                  var idAbsen = req.body.id_absen;
                                   queryInsert = `INSERT INTO ${namaDatabaseDynamic}.emp_labor (
                                 nomor_ajuan,em_id,atten_date,
                                 dari_jam,sampai_jam,tgl_ajuan,
@@ -344,7 +345,7 @@ module.exports = {
                                 place_break_in,place_break_out,breakin_time,
                                 breakout_time,breakin_note,breakout_note,
                                 breakin_longlat, breakout_longlat,
-                                signin_addr,signout_addr,breakin_addr,breakout_addr)
+                                signin_addr,signout_addr,breakin_addr,breakout_addr,id_absen)
                                 VALUES (
                                 '${nomorAjuan}','${em_id}','${date}',
                                 '${checkin}','${checkout}',CURDATE(),
@@ -370,7 +371,7 @@ module.exports = {
                                     lokasiKeluarRestResult?.[0]
                                       ?.place_longlat ?? ""
                                   }',
-                                '${absenMasuk}','${absenKeluar}', '${absenMasukRest}','${absenKeluarRest}')`;
+                                '${absenMasuk}','${absenKeluar}', '${absenMasukRest}','${absenKeluarRest}','${idAbsen}')`;
 
                                   connection.query(
                                     queryInsert,
@@ -427,9 +428,45 @@ module.exports = {
                                                 });
                                                 return;
                                               }
+                                              const delegationIds = employee[0]
+                                                .em_report_to
+                                                ? Array.isArray(
+                                                    employee[0].em_report_to
+                                                  )
+                                                  ? employee[0].em_report_to
+                                                  : [employee[0].em_report_to]
+                                                : [];
 
+                                              const emIds = employee[0]
+                                                .em_report2_to
+                                                ? Array.isArray(
+                                                    employee[0].em_report2_to
+                                                  )
+                                                  ? employee[0].em_report2_to
+                                                  : [employee[0].em_report2_to]
+                                                : [];
+
+                                              const combinedIds = [
+                                                ...new Set([
+                                                  ...delegationIds.flatMap(
+                                                    (id) =>
+                                                      id
+                                                        .split(",")
+                                                        .map((i) =>
+                                                          i.trim().toUpperCase()
+                                                        )
+                                                  ),
+                                                  ...emIds.flatMap((id) =>
+                                                    id
+                                                      .split(",")
+                                                      .map((i) =>
+                                                        i.trim().toUpperCase()
+                                                      )
+                                                  ),
+                                                ]),
+                                              ];
                                               utility.insertNotifikasi(
-                                                employee[0].em_report_to,
+                                                combinedIds,
                                                 "Approval Absensi",
                                                 "Absensi",
                                                 employee[0].em_id,
@@ -609,7 +646,7 @@ module.exports = {
 
     const montStart = date1.getMonth() + 1;
     const monthEnd = date2.getMonth() + 1;
-    var query = `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`;
+    var query = `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan IN ('3', '5') AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`;
 
     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
       query = `SELECT emp_labor.id as idd,  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM ${startPeriodeDynamic}.emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 

@@ -53,50 +53,56 @@ module.exports = {
                     where em_email='${req.body.email}' AND em_password='${password}'`;
       console.log(query);
       const [results] = await conn.query(query);
-      const [dataPerusahaan] = await conn.query(`SELECT * FROM peraturan_perusahaan WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  
+      const [dataPerusahaan] =
+        await conn.query(`SELECT * FROM peraturan_perusahaan WHERE  status_transaksi='1' AND tipe='utama' AND status='1'  
                   AND (   branch_id LIKE '%${results[0].branch_id
                     .toString()
                     .padStart(2, "0")}%'  OR    branch_id LIKE '%${
-                  results[0].branch_id
-                }%' )
+          results[0].branch_id
+        }%' )
                ORDER BY id DESC LIMIT 1`);
-               if (dataPerusahaan.length === 0) {
-                const [results] = await conn.query(`UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`);
-              } else {
-                var queryPeraturanLogin = `SELECT * FROM peraturan_perusahaan_employee WHERE  em_id='${results[0].em_id}' AND peraturan_perusahaan_id='${dataPerusahaan[0].id}' ORDER BY id DESC LIMIT 1`;
-                console.log(queryPeraturanLogin);
-                const [data] = await conn.query(queryPeraturanLogin);
-                if (data.length == 0) {
-                  var dataInsert = {
-                    peraturan_perusahaan_id: dataPerusahaan[0].id,
-                    em_id: results[0].em_id,
-                  };
-                  var queryInsert = `INSERT INTO peraturan_perusahaan_employee  SET ?`;
-                  const [insert] = await conn.query(queryInsert, [dataInsert]);
-                  const [update] = await conn.query(`UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`);
-                  
-                } else {
-                  const [update] = await conn.query(`UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`);
-                }
-              }
+      if (dataPerusahaan.length === 0) {
+        const [results] = await conn.query(
+          `UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`
+        );
+      } else {
+        var queryPeraturanLogin = `SELECT * FROM peraturan_perusahaan_employee WHERE  em_id='${results[0].em_id}' AND peraturan_perusahaan_id='${dataPerusahaan[0].id}' ORDER BY id DESC LIMIT 1`;
+        console.log(queryPeraturanLogin);
+        const [data] = await conn.query(queryPeraturanLogin);
+        if (data.length == 0) {
+          var dataInsert = {
+            peraturan_perusahaan_id: dataPerusahaan[0].id,
+            em_id: results[0].em_id,
+          };
+          var queryInsert = `INSERT INTO peraturan_perusahaan_employee  SET ?`;
+          const [insert] = await conn.query(queryInsert, [dataInsert]);
+          const [update] = await conn.query(
+            `UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`
+          );
+        } else {
+          const [update] = await conn.query(
+            `UPDATE employee SET token_notif='${token_notif}' WHERE em_email='${req.body.email}'`
+          );
+        }
+      }
       await conn.commit();
       console.log("Transaction completed successfully!");
       return res.status(200).send({
         status: true,
         message: "berhasil update",
-        data: results
+        data: results,
       });
     } catch (e) {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
 
@@ -146,30 +152,27 @@ module.exports = {
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
-      var query = `SELECT em_mobile,full_name,em_email FROM employee where em_email='${req.query.email}'`
-            ;
+      var query = `SELECT em_mobile,full_name,em_email FROM employee where em_email='${req.query.email}'`;
       console.log(query);
-      const [result] = await conn.query(
-        query
-      );
+      const [result] = await conn.query(query);
       await conn.commit();
       console.log("Transaction completed successfully!");
       return res.status(200).send({
         status: true,
         message: "berhasil update",
-        data: result
+        data: result,
       });
     } catch (e) {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
@@ -205,93 +208,6 @@ module.exports = {
         sftp.end(); // Disconnect if an error occurs
       });
     sftp.end();
-    // const fs = require('fs');
-    // const ftp = require('ftp');
-
-    // const localImagePath = 'public/face_recog/regis_SIS202210039.png';
-    // const remoteDirectory = 'public_html/6H202305001/foto_profile';
-    // const remoteFileName = '/uploaded_image.jpg';
-    // var foto=req.body.foto;
-
-    // // Create a new FTP client instance
-    // const client = new ftp();
-
-    // // Connect to the FTP server
-    // client.connect({
-    //   host: 'Kantor.siscom.id',
-    // // host: '192.168.100.86',
-    //   user: 'siscom',
-    //   password: 'siscom!@#$%'
-    // });
-
-    // // Handle successful FTP connection
-    // client.on('ready', () => {
-    //   // Read the local image file
-    //   fs.readFile(localImagePath, (err, data) => {
-    //     if (err) throw err;
-
-    //     // Upload the image to the remote directory
-    //     client.put(data, remoteDirectory + remoteFileName, err => {
-    //       if (err) throw err;
-
-    //       console.log('Image uploaded successfully');
-
-    //       // Close the FTP connection
-    //       client.end();
-    //     });
-    //   });
-    // });
-
-    // // Handle FTP connection error
-    // client.on('error', err => {
-    //   console.log('FTP connection error:', err);
-    // });
-
-    // upload gambar
-    // let ts = Date.now();
-    // let date_ob = new Date(ts);
-    // let date = date_ob.getDate();
-    // let month = date_ob.getMonth() + 1;
-    // let year = date_ob.getFullYear();
-    // let hour = date_ob.getHours();
-    // let menit = date_ob.getMinutes();
-    // var randomstring = require("randomstring");
-    // var fs = require("fs");
-    // var image = req.body.base64_foto_profile;
-    // var bitmap = Buffer.from(image, 'base64');
-    // var stringRandom = randomstring.generate(5);
-    // var nameFile = stringRandom + date + month + year + hour + menit + ".png";
-    // fs.writeFileSync("public/foto_profile/" + nameFile, bitmap);
-
-    // var em_id = req.body.em_id;
-    // var menu_name = req.body.menu_name;
-    // var activity_name = req.body.activity_name;
-
-    // var script = `UPDATE employee SET em_image='${nameFile}' WHERE em_id='${em_id}'`;
-
-    // var dataInsertLog = {
-    //   menu_name: menu_name,
-    //   activity_name: activity_name,
-    //   acttivity_script: script,
-    //   createdUserID: em_id
-    // }
-
-    // pool.getConnection(function (err, connection) {
-    //   if (err) console.log(err);
-    //   connection.query(
-    //     script,
-    //     function (error, results) {
-    //       connection.release();
-    //       if (error != null) console.log(error)
-    //       res.send({
-    //         status: true,
-    //         message: "Berhasil di update!",
-    //         nama_file: nameFile,
-    //       });
-    //     }
-    //   );
-
-    // });
   },
 
   async database(req, res) {
@@ -304,40 +220,46 @@ module.exports = {
     console;
 
     let records;
-    const connection = await model.createConnection1('sis_admin');
+    const connection = await model.createConnection1("sis_admin");
     let conn;
     try {
       conn = await connection.getConnection();
       await conn.beginTransaction();
       var query = `SELECT DISTINCT co.dbname,ess.email,CONCAT(c.name,' (',co.dbname,')') as name FROM cust_order co  JOIN company c ON c.id=co.company_id  JOIN ess ON ess.dbname=co.dbname WHERE ess.email='${email}' AND ess.aktif='Y'`;
       console.log(query);
-      const [result] = await conn.query(
-        query
-      );
+      const [result] = await conn.query(query);
       await conn.commit();
-      console.log("Transaction completed successfully!");
-      return res.status(200).send({
-        status: true,
-        message: "berhasil update",
-        data: result
-      });
+      if (result.length == 0) {
+        return res.status(400).send({
+          status: false,
+          message: "User Ess tidak tersedia",
+          data: [],
+        });
+      } else {
+        return res.status(200).send({
+          status: true,
+          message: "berhasil update",
+          data: result,
+        });
+      }
+
     } catch (e) {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
   async updateVersion(req, res) {
     let records;
-    const connection = await model.createConnection1('sis_admin');
+    const connection = await model.createConnection1("sis_admin");
     let conn;
     try {
       conn = await connection.getConnection();
@@ -350,26 +272,26 @@ module.exports = {
       return res.status(200).send({
         status: true,
         message: "berhasil update",
-        data: result
+        data: result,
       });
     } catch (e) {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
 
   async updateVersionLast(req, res) {
     let records;
-    const connection = await model.createConnection1('sis_admin');
+    const connection = await model.createConnection1("sis_admin");
     let conn;
     try {
       conn = await connection.getConnection();
@@ -382,19 +304,19 @@ module.exports = {
       return res.status(200).send({
         status: true,
         message: "berhasil update",
-        data: result[0]
+        data: result[0],
       });
     } catch (e) {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
@@ -423,13 +345,13 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
@@ -459,13 +381,13 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
@@ -477,7 +399,7 @@ module.exports = {
     const emId = req.headers.em_id;
     console.log(`---------Token --------------- ${token}`);
     console.log(`-----em id---------- ${database}`);
-    
+
     const connection = await model.createConnection1(`${database}_hrm`);
     let conn;
     try {
@@ -505,13 +427,13 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error('error', e);
+      console.error("error", e);
       return res.status(400).send({
         status: true,
         message: "Gagal ambil data",
         data: [],
       });
-    }finally{
+    } finally {
       if (conn) await conn.release();
     }
   },
