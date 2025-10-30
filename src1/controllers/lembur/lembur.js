@@ -20,6 +20,8 @@ var ipServer = process.env.API_URL;
 
 module.exports = {
   async store(req, res) {
+
+    console.log('data fina; ',req.body)
     function isDateInRange(date, startDate, endDate) {
       return date >= startDate && date <= endDate;
     }
@@ -34,14 +36,15 @@ module.exports = {
     var activity_name = req.body.activity_name;
     var createdBy = req.body.created_by;
     var bodyValue = req.body;
-    var branchId = req.headers.branch_id;
+    var branchId = req.headers.branch_id==''?"1":req.headers.branch_id;
     var tasks = req.body.tasks;
     delete bodyValue.menu_name;
     delete bodyValue.activity_name;
     delete bodyValue.created_by;
     delete bodyValue.tasks;
+    var isError=false;
 
-    bodyValue.branch_id = req.headers.branch_id;
+    bodyValue.branch_id = branchId;
 
     let now = new Date();
 
@@ -71,6 +74,8 @@ module.exports = {
       convertBulan = array[1];
     }
     const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+
+    console.log
 
     var script = `INSERT INTO ${namaDatabaseDynamic}.emp_labor SET ?`;
 
@@ -115,6 +120,7 @@ module.exports = {
             transaksion = "Izin";
 
             if (isDateInRange(timeParam1, time1, time2)) {
+             
               await conn.commit();
               return res.status(400).send({
                 status: false,
@@ -126,6 +132,7 @@ module.exports = {
             req.body.leave_type == "FULL DAY"
           ) {
             if (data[i].ajuan == "1" || data[i].ajuan == 1) {
+              isError=true;
               await conn.commit();
               return res.status(400).send({
                 status: false,
@@ -134,6 +141,7 @@ module.exports = {
             }
 
             if (data[i].ajuan == "2" || data[i].ajuan == 2) {
+              isError=true;
               await conn.commit();
               return res.status(400).send({
                 status: false,
@@ -165,7 +173,7 @@ module.exports = {
           );
 
           if (time1 > time2) {
-            time2.setDate(time2.getDate() + 1);
+            time2.setDate(time2.getDate() + 1); 
           }
 
           if (timeParam1 > timeParam2) {
@@ -181,6 +189,7 @@ module.exports = {
           }
 
           if (isDateInRange(timeParam1, time1, time2)) {
+            isError=true;
             await conn.commit();
             return res.status(400).send({
               status: false,
@@ -189,6 +198,7 @@ module.exports = {
             });
           } else {
             if (isDateInRange(timeParam2, time1, time2)) {
+              isError=true;
               await conn.commit();
               return res.status(400).send({
                 status: false,
@@ -198,6 +208,15 @@ module.exports = {
             }
           }
         }
+      }
+
+      if (isError==true){
+        return
+
+
+
+        
+
       }
       const [cekNoAjuan] = await conn.query(
         `SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE nomor_ajuan LIKE '%LB%' ORDER BY id DESC LIMIT 1`
@@ -213,7 +232,8 @@ module.exports = {
         nomorLb = nomorLb + nomorStr;
       }
       bodyValue.nomor_ajuan = nomorLb;
-      await conn.query(script, [bodyValue]);
+    
+      await conn.query(script, [bodyValue]);  
       // console.log('ini result ', results[0]);
       const [cekDinilai] = await conn.query(
         `SELECT dinilai FROM overtime where id = '${bodyValue.typeid}'`
@@ -234,7 +254,7 @@ module.exports = {
         `SELECT * FROM  ${databaseMaster}.employee WHERE em_id='${bodyValue.em_id}'`
       );
       bodyValue.branch_id = user[0].branch_id;
-      console.log(tasks);
+      console.log('tasks ',tasks);
       for (var i = 0; i < tasks.length; i++) {
         let task = tasks[i]["task"];
         let level = tasks[i]["level"];
@@ -1176,7 +1196,7 @@ WHERE designation.level <= 3 AND department_group.id = ${depGroupId};`);
     var dep_id = req.body.dep_id;
     var branchId = req.headers.branch_id;
 
-    var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE STATUS='ACTIVE' AND branch_id=${branchId}  ORDER BY full_name ASC `;
+    var query1 = ` SELECT * FROM ${database}_hrm.employee JOIN branch ON employee.branch_id=branch.id WHERE STATUS='ACTIVE' AND branch_id=${branchId} ORDER BY full_name ASC `;
     var query2 = `SELECT * FROM ${database}_hrm.employee WHERE dep_id='${dep_id}' AND branch_id=${branchId} AND status='ACTIVE' ORDER BY full_name ASC `;
 
     var url;

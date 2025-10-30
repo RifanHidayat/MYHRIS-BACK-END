@@ -7,7 +7,7 @@ module.exports = {
     var branchId = req.headers.branch_id;
     var reminder = req.body.reminder;
 
-    console.log();
+  
     var query1 = ` 
         SELECT CURDATE(), TBL.em_id, ADDDATE(TBL.end_date, INTERVAL - 60 DAY),
         DATEDIFF(TBL.end_date, CURDATE()) AS sisa_kontrak, e.full_name, e.em_image, TBL.em_id, TBL.description, 

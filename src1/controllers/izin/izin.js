@@ -50,7 +50,9 @@ module.exports = {
         ajuan: req.body.ajuan,
         apply_status: "Pending",
         lokasi: req.body.lokasi,
+        multiselect:req.body.multiselect==undefined?"0":req.body.multiselect
       };
+      console.log('body ',insertData )
       var dataInsertLog = {
         menu_name: req.body.menu_name,
         activity_name: req.body.activity_name,
@@ -59,8 +61,7 @@ module.exports = {
       };
       var cutLeave = req.body.cut_leave;
       var jumlahCuti = req.body.total_cuti;
-     // var array = req.body.start_date.split("-");
-     var array = utility.dateNow2().split("-");
+      var array = req.body.start_date.split("-");
       var dates = req.body.date_selected.split(",");
       console.log("date ", dates[0]);
 
@@ -186,7 +187,7 @@ WHERE e.em_id = '${req.body.em_id}'
                         ? "Sakit"
                         : results[0].ajuan == 3
                         ? "Izin"
-                        :results[0].ajuan == 5?"Dayoff":  "Dinas Luar"
+                        : "Dinas Luar"
                     } dengan nomor ${
                       results[0].nomor_ajuan
                     }  pada tanggal ${d} status ${results[0].leave_status}`;
@@ -800,7 +801,7 @@ WHERE e.em_id = '${req.body.em_id}'
                             ? "Sakit"
                             : results[0].ajuan == 3
                             ? "Izin"
-                            :results[0].ajuan == 5?"Dayoff":  "Dinas Luar"
+                            : "Dinas Luar"
                         } dengan nomor ${
                           results[0].nomor_ajuan
                         }  pada tanggal ${d} status ${results[0].leave_status}`,
@@ -1293,7 +1294,6 @@ WHERE e.em_id = '${req.body.em_id}'
     var email = req.query.email;
     var periode = req.body.periode;
     var emId = req.query.em_id;
-console.log("tidak hadir")
 
     var dates =
       req.query.dates == undefined ? "2024-08,2024-09" : req.query.dates;
@@ -1370,11 +1370,13 @@ console.log("tidak hadir")
 
     var datesplits = dates.split(",");
 
-    //query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
-      // status IN (2,3) `;
+    // query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
+    //    status IN (2,3) `;
 
-   query = `SELECT * FROM leave_types WHERE  
-       status IN (2,3) `;
+    // query = `SELECT * FROM leave_types WHERE  
+    //    status IN (2,3) `;
+
+    query = `SELECT * FROM leave_types WHERE (submission_period<='${durasi}' OR backdate=0 ) AND  status IN (2,3) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);
     let conn;

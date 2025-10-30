@@ -13297,7 +13297,6 @@ console.log(queryApproval)
       console.log(queryApproval);
       const [results] = await conn.query(queryApproval);
       await conn.commit();
-      // console.log('DATA SPESIFIK APPROVAL = ', results);
       return res.status(200).send({
         status: true,
         message: `Berhasil ambil data approve ${url_data}!`,
@@ -13612,8 +13611,6 @@ console.log(queryApproval)
   async load_notifikasiApproval(req, res) {
 
     console.log("-----load aktifitas notifikasi----------");
-    console.log("INI MERUPAKAN REQUEST DATA = ", req.body);
-
     var database = req.query.database;
     var em_id = req.body.em_id;
 
@@ -13665,8 +13662,7 @@ console.log(queryApproval)
     }
 
     console.log(query1);
-    console.log(query2);
-    console.log(database);
+    console.log();
     const connection = await model.createConnection1(namaDatabaseDynamic);
     let conn;
     try {

@@ -1122,7 +1122,7 @@ module.exports = {
     const convertYear = tahun.substring(2, 4);
     const convertBulan = array[1];
 
-    const namaDatabaseDynamic = `${database}_hrm2510`;
+    const namaDatabaseDynamic = `${database}_hrm${convertYear}${convertBulan}`;
 
     var startDate = req.body.start_date;
     var endDate = req.body.end_date;
@@ -1177,10 +1177,9 @@ LEFT JOIN ${database}_hrm.places_coordinate
   ON attendance.place_in = places_coordinate.place 
 WHERE em_id = '${em_id}' 
   AND CONCAT(atten_date, ' ', signin_time) BETWEEN '${startDate} ${startTime}' AND '${endDate} ${endTime}'
-  
+  AND atttype = '1' 
 ORDER BY id DESC 
 LIMIT 1`;
-console.log(script);
 
       console.log("-----view last absen 1 2----------");
       const absensiNow = await conn.query(script);
@@ -1189,10 +1188,10 @@ console.log(script);
       var absenOffline = "";
       if (pola == "2" || pola == 2) {
         wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
+                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND (ajuan='4' OR ajuan='3') AND status_transaksi='1' AND (status='Pending' OR status='Approve') ORDER BY id DESC LIMIT 1`;
       } else {
         wfh = `SELECT emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT(atten_date, ' ', dari_jam) >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='4' AND status_transaksi='1' AND (status='Pending' OR status='Approve' )  ORDER BY id DESC LIMIT 1`;
+                  AND (CONCAT(atten_date, ' ', dari_jam)<= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND  (ajuan='4' OR ajuan='3') AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
       }
       if (absensiNow.length > 0) {
         if (pola == "2" || pola == 2) {
@@ -1200,7 +1199,7 @@ console.log(script);
                       AND (CONCAT(atten_date, ' ', dari_jam) <= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' OR status='Approve' ) ORDER BY id DESC LIMIT 1`;
         } else {
           absenOffline = `SELECT emp_labor.atten_date,  emp_labor.status,emp_labor.dari_jam as signing_time,emp_labor.sampai_jam as signout_time,emp_labor.nomor_ajuan  FROM ${namaDatabaseDynamic}.emp_labor WHERE em_id='${em_id}' AND (CONCAT('${absensiNow[0].atten_date}', ' ', '${absensiNow[0].signin_time}') >= '${startDate} ${startTime}' AND NOW() >= '${startDate} ${startTime}')
-                      AND (CONCAT(atten_date, ' ', dari_jam) <= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' OR status='Approve' )  ORDER BY id DESC LIMIT 1`;
+                      AND (CONCAT(atten_date, ' ', dari_jam) <= '${endDate} ${endTime}'  AND NOW()<= '${endDate} ${endTime}' )   AND ajuan='5' AND status_transaksi='1' AND (status='Pending' )  ORDER BY id DESC LIMIT 1`;
         }
       } else {
         if (pola == "2" || pola == 2) {
@@ -1253,8 +1252,8 @@ console.log(script);
             status: true,
             message: "Berhasil ambil data!",
             data: [],
-            wfh: [],
-            offiline: [],
+            wfh: results[1],
+            offiline: results[2],
           });
         } else {
           return res.status(200).send({
@@ -1262,7 +1261,7 @@ console.log(script);
             message: "Berhasil ambil data!",
             data: results[0],
             wfh: results[1],
-            offiline:[],
+            offiline: results[2],
           });
         }
       } else {
@@ -1271,7 +1270,7 @@ console.log(script);
           message: "Berhasil ambil data!",
           data: results[0],
           wfh: results[1],
-          offiline: [],
+          offiline: results[2],
         });
       }
     } catch (e) {
@@ -1382,14 +1381,11 @@ console.log(script);
       (
         SELECT NAME AS cuti
         FROM (
-            SELECT NAME,date_selected, leave_status, ajuan FROM ${namaDatabaseDynamic}.emp_leave  JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
+            SELECT NAME,date_selected FROM ${namaDatabaseDynamic}.emp_leave  JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
             UNION
-            SELECT NAME ,date_selected, leave_status, ajuan FROM ${endPeriodeDynamic}.emp_leave JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
+            SELECT NAME ,date_selected FROM ${endPeriodeDynamic}.emp_leave JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
         ) AS combined
-       WHERE date_selected  LIKE CONCAT('%',DateRange.date,'%')
-       AND ajuan='1'  
-       AND leave_status = '${sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"}' 
-       LIMIT 1  ) as cuti ,
+       WHERE date_selected  LIKE CONCAT('%',DateRange.date,'%')  LIMIT 1  ) as cuti ,
       (SELECT b.name FROM ${namaDatabaseDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }'  LIMIT 1) AS sakit ,
@@ -1401,8 +1397,8 @@ console.log(script);
       }' LIMIT 1) AS dinas_luar ,
       (SELECT  IFNULL(off_date ,0) FROM ${namaDatabaseDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
       
-      IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:00:00')AS jam_kerja,
-      IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:00:00')AS jam_pulang,
+      IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
+      IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${namaDatabaseDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:01:00')AS jam_pulang,
       holiday.name  AS hari_libur,attendance.*
       FROM DateRange 
       LEFT JOIN ${namaDatabaseDynamic}.attendance ON attendance.atten_date=DateRange.date AND em_id='${em_id}'
@@ -1427,19 +1423,14 @@ console.log(script);
     (SELECT nomor_ajuan FROM ${endPeriodeDynamic}.emp_labor WHERE em_id='${em_id}' AND atten_date=DateRange.date AND ajuan='2' AND status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }' LIMIT 1) AS tugas_luar ,
-   
-(
-        SELECT NAME AS cuti
+      (
+        SELECT name AS cuti
         FROM (
-            SELECT NAME,date_selected, leave_status, ajuan FROM ${namaDatabaseDynamic}.emp_leave  JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
+            SELECT NAME,date_selected FROM ${namaDatabaseDynamic}.emp_leave  JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
             UNION
-            SELECT NAME ,date_selected, leave_status, ajuan FROM ${endPeriodeDynamic}.emp_leave JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
+            SELECT NAME ,date_selected FROM ${endPeriodeDynamic}.emp_leave JOIN net_hrm.leave_types b ON emp_leave.typeid=b.id WHERE em_id='${em_id}' 
         ) AS combined
-       WHERE date_selected  LIKE CONCAT('%',DateRange.date,'%') 
-       AND ajuan='1' 
-       AND leave_status = '${sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"}' 
-       LIMIT 1  ) as cuti ,
-
+       WHERE date_selected  LIKE CONCAT('%',DateRange.date,'%')  LIMIT 1  ) as cuti ,
     (SELECT b.name FROM ${endPeriodeDynamic}.emp_leave JOIN ${database}_hrm.leave_types b ON emp_leave.typeid=b.id  WHERE em_id='${em_id}' AND date_selected LIKE CONCAT('%',DateRange.date,'%') AND ajuan='2' AND leave_status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }' LIMIT 1) AS sakit ,
@@ -1450,7 +1441,7 @@ console.log(script);
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }' LIMIT 1) AS dinas_luar ,
     (SELECT  IFNULL(off_date ,0) FROM ${endPeriodeDynamic}.emp_shift WHERE em_id='${em_id}' AND atten_date LIKE DateRange.date) AS off_date,
-    IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:00:00')AS jam_kerja,
+    IFNULL((SELECT  IFNULL(work_schedule.time_in ,attendance.signin_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'08:31:00')AS jam_kerja,
     IFNULL((SELECT  IFNULL(work_schedule.time_out ,attendance.signout_time) FROM ${endPeriodeDynamic}.emp_shift LEFT JOIN ${database}_hrm.work_schedule ON emp_shift.work_id=work_schedule.id WHERE emp_shift.em_id='${em_id}' AND emp_shift.atten_date LIKE DateRange.date) ,'17:00:00')AS jam_pulang,
      
     holiday.name  AS hari_libur,attendance.*
@@ -1463,11 +1454,7 @@ console.log(script);
 
       
       `;
-
-
-      console.log('HISTORY ABSEN');
-      console.log('Query = ', query);
-      console.log('Query1 = ', query1);
+      console.log(query1)
 
       const [result] = await conn.query(query);
       let [result2] = await conn.query(query1);

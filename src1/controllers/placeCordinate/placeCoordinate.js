@@ -17,6 +17,23 @@ module.exports = {
 
     var date = [year, month, day].join("-");
 
+    var year = 2025;
+    var month = 8;
+    var day = 21;
+
+var date = [year, month, day].join("-"); // "2025-08-21"
+
+// Buat objek Date dari string
+var dateObj = new Date(date);
+
+// Tambah 1 hari
+dateObj.setDate(dateObj.getDate() - 1);
+
+// Format ke "YYYY-MM-DD"
+var nextDate = dateObj.toISOString().split('T')[0];
+
+    
+
     var em_id = req.query.id;
     console.log(req.body);
 
@@ -41,20 +58,39 @@ module.exports = {
       await conn.beginTransaction();
       const querySys = `SELECT name FROM sysdata WHERE kode='013'`;
       const [sysdata] = await conn.query(querySys);
+
+      console.log(nextDate)
       const queryTugasLuar = `
-                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}'  AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
+                 SELECT nomor_ajuan,atten_date FROM ${namaDatabaseDynamic}.emp_labor
+                 WHERE 
+                 (
+                  (
+                    dari_jam > sampai_jam AND 
+                    (atten_date = '${date}' OR  DATE_ADD(atten_date, INTERVAL 1 DAY) = '${date}')
+                  )
+                  OR
+                  (
+                    dari_jam <= sampai_jam AND 
+                    atten_date = '${date}'
+                  )
+                )
+                 
+                 AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }'
                  UNION ALL
-                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected LIKE '%${date}%' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='DL' ) AND leave_status='${
+                 SELECT nomor_ajuan,atten_date FROM ${namaDatabaseDynamic}.emp_leave WHERE date_selected LIKE '%${date}%' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='DL' ) AND leave_status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }'
                  `;
+
+
       const [tugasLuar] = await conn.query(queryTugasLuar);
       console.log(tugasLuar);
-      if (tugasLuar.length > 0) {
+      
 
-var queryResult = `SELECT places,dep_id FROM employee WHERE em_id='${em_id}'`;
+      if (tugasLuar.length > 0) {
+        var queryResult = `SELECT places,dep_id FROM employee WHERE em_id='${em_id}'`;
         const [results] = await conn.query(queryResult);
 
         var data = results[0].places.split(",");
@@ -73,8 +109,19 @@ var queryResult = `SELECT places,dep_id FROM employee WHERE em_id='${em_id}'`;
           message: "Data berhasil diambil",
           data: palceCoordinate,
         });
+        // const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(
+        //   0,
+        //   2
+        // )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
+        // const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+        // await conn.commit();
+        // return res.status(200).send({
+        //   status: true,
+        //   message: "Kombinasi email & password Anda Salah",
+        //   data: palceCoordinate,
+        // });
       } else {
-const [result] = await conn.query(
+        const [result] = await conn.query(
           `SELECT places,dep_id FROM employee WHERE em_id='${em_id}' `
         );
         var data = result[0].places.split(",");
@@ -89,10 +136,17 @@ const [result] = await conn.query(
           message: "Data berhasil diambil",
           data: palceCoordinate,
         });
-       
-
-
       }
+        // const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
+        // console.log(queryPlaceCoordinate);
+        // const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+        // await conn.commit();
+        // return res.status(200).send({
+        //   status: true,
+        //   message: "Kombinasi email & password Anda Salah",
+        //   data: palceCoordinate,
+        // });
+//}
     } catch (e) {
       if (conn) {
         await conn.rollback();
