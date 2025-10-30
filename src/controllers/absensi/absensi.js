@@ -1444,7 +1444,7 @@ LIMIT 1`;
 
       
       `;
-      console.log();
+      
       const [result] = await conn.query(query);
       let [result2] = await conn.query(query1);
       let resultFinal = [];
