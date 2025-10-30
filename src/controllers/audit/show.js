@@ -1,9 +1,230 @@
+// const models = require("../../utils/models");
+// const utility = require("../../utils/utility");
+
+// const ipServer = process.env.API_URL;
+// module.exports = {
+//   async show(req, res) {
+//     console.log("body", req.body);
+//     var database = req.query.database;
+//     var emId = req.body.em_id;
+//    // const getbulan = req.body.bulan;
+    
+//     var date = req.body.date;
+//     var limit = req.body.limit;
+//     var offset = req.body.offset;
+//     var allData = req.body.all_data;
+
+//     var status = req.body.status;
+//     var statusAudit = req.body.status_audit;
+//     var tipeForm = req.body.tipe_form;
+//     var branchId = req.body.branch_id;
+//     // var emId=req.query.em_id;
+//     var date=utility.dateNow2().split('-');
+//     const getbulan = date[0];
+
+//     const tahun = `${date[1]}`;
+//     const convertYear = tahun.substring(2, 4);
+//     // const convertBulan = getbulan;
+//     var convertBulan;
+//     if (getbulan.length == 1) {
+//       convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
+//     } else {
+//       convertBulan = getbulan;
+//     }
+
+//     var startPeriode =
+//       req.query.start_periode == undefined
+//         ? "2024-02-03"
+//         : req.query.start_periode;
+//     var endPeriode =
+//       req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
+//     var array1 = startPeriode.split("-");
+//     var array2 = endPeriode.split("-");
+
+//     const startPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+//     const endPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
+
+//     let date1 = new Date(startPeriode);
+//     let date2 = new Date(endPeriode);
+
+//     let queryFilterStatus = ``;
+//     console.log("status audit", statusAudit);
+//     if (statusAudit === "Draft") {
+//       queryFilterStatus = `AND status_audit =''`;
+//     } else {
+//       queryFilterStatus = `AND status_audit LIKE '%${statusAudit}%'`;
+//     }
+//     let queryAllData = ``;
+//     if (allData == false) {
+//       queryAllData = `LIMIT ${limit} OFFSET ${offset}`;
+//     } else {
+//       queryAllData = ``;
+//     }
+//     const montStart = date1.getMonth() + 1;
+//     const monthEnd = date2.getMonth() + 1;
+//     var query = `SELECT  
+//         JSON_OBJECT(
+//             'full_name', e1.full_name,
+//             'em_id', e1.em_id
+//         ) AS approve1,
+      
+//         JSON_OBJECT(
+//             'full_name', e2.full_name,
+//             'em_id', e2.em_id
+//         ) AS approve2,
+      
+//         JSON_OBJECT(
+//             'full_name', e3.full_name,
+//             'em_id', e3.em_id
+//         ) AS users,
+//     emp_labor.id, 
+//     employee.em_id,
+//     employee.branch_id, 
+//     nomor_ajuan AS nomor, 
+//     employee.full_name,
+//     designation.name AS jabatan,
+//     emp_labor.status, 
+//     emp_labor.atten_date AS atten_date, 
+//     emp_labor.uraian AS keterangan,
+//     emp_labor.audit_tipe_surat AS konsekuensi,
+//     emp_labor.audit_surat_name AS penerima_konsekuensi,
+//     emp_labor.alasan_audit AS pelanggaran,
+//     CASE  
+//        WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
+//        WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
+//        WHEN emp_labor.nomor_ajuan LIKE '%RQ%'THEN 'Pengajuan Absen'
+//        WHEN emp_labor.nomor_ajuan LIKE '%RO%'THEN 'Absen Offline'
+       
+//        ELSE NULL
+//       END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
+      
+//     FROM ${startPeriodeDynamic}.emp_labor 
+//     JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id 
+//     LEFT JOIN ${database}_hrm.employee e1 ON emp_labor.approve_id = e1.em_id
+//     LEFT JOIN ${database}_hrm.employee e2 ON emp_labor.approve2_id = e2.em_id
+//     LEFT JOIN ${database}_hrm.employee e3 ON emp_labor.em_id = e3.em_id
+//     LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
+    
+//     UNION ALL
+//     SELECT 
+//     JSON_OBJECT(
+//             'full_name', e1.full_name,
+//             'em_id', e1.em_id
+//         ) AS approve1,
+      
+//         JSON_OBJECT(
+//             'full_name', e2.full_name,
+//             'em_id', e2.em_id
+//         ) AS approve2,
+      
+//         JSON_OBJECT(
+//             'full_name', e3.full_name,
+//             'em_id', e3.em_id
+//         ) AS users,
+//     emp_leave.id, 
+//     employee.em_id, 
+//     employee.branch_id,
+//     nomor_ajuan AS nomor, 
+//     employee.full_name,
+//     designation.name AS jabatan, 
+//     emp_leave.leave_status, 
+//     emp_leave.atten_date AS atten_date, 
+//     emp_leave.reason AS keterangan,
+//     emp_leave.audit_tipe_surat AS konsekuensi,
+//     emp_leave.audit_surat_name AS penerima_konsekuensi,
+//     emp_leave.alasan_audit AS pelanggaran,
+
+//       CASE  
+//        WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
+//        WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
+//        WHEN emp_leave.nomor_ajuan LIKE '%SD%'THEN 'Sakit'
+//        WHEN emp_leave.nomor_ajuan LIKE '%DL%'THEN 'Dinas Luar'
+//        ELSE NULL
+//       END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
+//      FROM ${startPeriodeDynamic}.emp_leave  
+//      JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id 
+//      LEFT JOIN ${database}_hrm.employee e1 ON emp_leave.apply_id = e1.em_id
+//     LEFT JOIN ${database}_hrm.employee e2 ON emp_leave.apply2_id = e2.em_id
+//     LEFT JOIN ${database}_hrm.employee e3 ON emp_leave.em_id = e3.em_id
+//      LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
+
+//     `;
+
+//     if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
+//       query = ` nomor_ajuan AS nomor, SELECT employee.em_id, employee.branch_id, employee.full_name,designation.name AS jabatan, 
+//       nomor_ajuan ,emp_labor.status as stat, 
+//       CASE  
+//          WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
+//          WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
+//          WHEN emp_labor.nomor_ajuan LIKE '%RQ%'THEN 'Pengajuan Absen'
+//          WHEN emp_labor.nomor_ajuan LIKE '%RO%'THEN 'Absen Offline'
+         
+//          ELSE NULL
+//         END AS tipe_pengajuan,audit_status as status_audit
+        
+//       FROM ${startPeriodeDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id WHERE status_transaksi=1
+      
+//       UNION ALL
+//       SELECT nomor_ajuan AS nomor,  employee.em_id,   employee.branch_id, employee.full_name,designation.name AS jabatan, 'FULLDAY' AS 
+//       tipe_form ,emp_leave.leave_status as stat,
+//         CASE  
+//          WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
+//          WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
+//          WHEN emp_leave.nomor_ajuan LIKE '%SD%'THEN 'Sakit'
+//          WHEN emp_leave.nomor_ajuan LIKE '%DL%'THEN 'Dinas Luar'
+//          ELSE NULL
+//         END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
+//        FROM ${endPeriodeDynamic}.emp_leave  JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id WHERE status_transaksi=1
+//          `;
+//     }
+
+//     var fixquery = `SELECT * FROM  (${query}) AS TBL 
+//     WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
+//     AND status LIKE '%${status}%' 
+//     ${queryFilterStatus} 
+//     AND tipe_pengajuan LIKE '%${tipeForm}%'
+//     ${queryAllData}`;
+
+//     console.log(`data ${fixquery}`);
+
+//     // var query= `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`
+
+//     const connection = await models.createConnection1(startPeriodeDynamic);
+//     console.log(req.query);
+//     let conn;
+//     try {
+//       conn = await connection.getConnection();
+//       await conn.beginTransaction();
+//       const [results] = await conn.query(fixquery);
+//       await conn.commit();
+//       return res.status(200).send({
+//         status: true,
+//         message: "Data berhasil diambil",
+//         data: results,
+//       });
+//     } catch (e) {
+//       if (conn) {
+//         await conn.rollback();
+//       }
+//       console.error("Error:", e);
+//       return res.status(400).send({
+//         status: false,
+//         message: e.message,
+//         data: [],
+//       });
+//     } finally {
+//       if (conn) conn.release();
+//     }
+//   },
+// };
+
+
 const models = require("../../utils/models");
 const utility = require("../../utils/utility");
 
-const ipServer = process.env.API_URL;
 module.exports = {
   async show(req, res) {
+<<<<<<< HEAD
     console.log("body", req.body);
     var database = req.query.database;
     var emId = req.body.em_id;
@@ -28,173 +249,154 @@ module.exports = {
       convertBulan = getbulan <= 9 ? `0${getbulan}` : getbulan;
     } else {
       convertBulan = getbulan;
+=======
+    console.log("Request Body:", req.body);
+    console.log("Request Query:", req.query);
+
+    // 1. Ambil semua parameter dari request body dan query dengan rapi.
+    const {
+      tahun,
+      bulan,
+      em_id = '',
+      limit = 5,
+      offset = 0,
+      all_data = 'false',
+      status = '',
+      status_audit = '',
+      tipe_form = '',
+      branch_id = ''
+    } = req.body;
+
+    const database = req.query.database;
+
+    // 2. Validasi input penting.
+    if (!database || !tahun || !bulan) {
+      return res.status(400).send({
+        status: false,
+        message: "Parameter 'database', 'tahun', dan 'bulan' wajib diisi.",
+        data: [],
+      });
+>>>>>>> 1fbdbc07a756d4b75e5a43da559e642a7e37b460
     }
 
-    var startPeriode =
-      req.query.start_periode == undefined
-        ? "2024-02-03"
-        : req.query.start_periode;
-    var endPeriode =
-      req.query.end_periode == undefined ? "2024-02-03" : req.query.end_periode;
-    var array1 = startPeriode.split("-");
-    var array2 = endPeriode.split("-");
+    // 3. Buat nama database target secara konsisten.
+    const convertYear = String(tahun).substring(2, 4);
+    const convertBulan = String(bulan).padStart(2, '0');
+    const targetDatabase = `${database}_hrm${convertYear}${convertBulan}`;
+    console.log(`Mencoba terhubung dan query ke database: ${targetDatabase}`);
 
-    const startPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-    const endPeriodeDynamic = `${database}_hrm${convertYear}${convertBulan}`;
-
-    let date1 = new Date(startPeriode);
-    let date2 = new Date(endPeriode);
-
+    // 4. Siapkan filter berdasarkan status audit.
     let queryFilterStatus = ``;
-    console.log("status audit", statusAudit);
-    if (statusAudit === "Draft") {
-      queryFilterStatus = `AND status_audit =''`;
-    } else {
-      queryFilterStatus = `AND status_audit LIKE '%${statusAudit}%'`;
+    console.log("Status audit filter:", status_audit);
+    if (status_audit === "Draft") {
+      // Untuk draft, kita cari yang status auditnya masih kosong atau NULL
+      queryFilterStatus = `AND (TBL.status_audit = '' OR TBL.status_audit IS NULL)`;
+    } else if (status_audit) {
+      queryFilterStatus = `AND TBL.status_audit LIKE '%${status_audit}%'`;
     }
-    let queryAllData = ``;
-    if (allData == false) {
-      queryAllData = `LIMIT ${limit} OFFSET ${offset}`;
-    } else {
-      queryAllData = ``;
-    }
-    const montStart = date1.getMonth() + 1;
-    const monthEnd = date2.getMonth() + 1;
-    var query = `SELECT  
-        JSON_OBJECT(
-            'full_name', e1.full_name,
-            'em_id', e1.em_id
-        ) AS approve1,
-      
-        JSON_OBJECT(
-            'full_name', e2.full_name,
-            'em_id', e2.em_id
-        ) AS approve2,
-      
-        JSON_OBJECT(
-            'full_name', e3.full_name,
-            'em_id', e3.em_id
-        ) AS users,
-    emp_labor.id, 
-    employee.em_id,
-    employee.branch_id, 
-    nomor_ajuan AS nomor, 
-    employee.full_name,
-    designation.name AS jabatan,
-    emp_labor.status, 
-    emp_labor.atten_date AS atten_date, 
-    emp_labor.uraian AS keterangan,
-    emp_labor.audit_tipe_surat AS konsekuensi,
-    emp_labor.audit_surat_name AS penerima_konsekuensi,
-    emp_labor.alasan_audit AS pelanggaran,
-    CASE  
-       WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
-       WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
-       WHEN emp_labor.nomor_ajuan LIKE '%RQ%'THEN 'Pengajuan Absen'
-       WHEN emp_labor.nomor_ajuan LIKE '%RO%'THEN 'Absen Offline'
-       
-       ELSE NULL
-      END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
-      
-    FROM ${startPeriodeDynamic}.emp_labor 
-    JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id 
-    LEFT JOIN ${database}_hrm.employee e1 ON emp_labor.approve_id = e1.em_id
-    LEFT JOIN ${database}_hrm.employee e2 ON emp_labor.approve2_id = e2.em_id
-    LEFT JOIN ${database}_hrm.employee e3 ON emp_labor.em_id = e3.em_id
-    LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
+
+    // 5. Siapkan klausa LIMIT dan OFFSET.
+    const queryAllData = (all_data === true || all_data === 'true') ? '' : `LIMIT ${limit} OFFSET ${offset}`;
+
+    // 6. Query utama yang menggabungkan data.
+    let query = `
+      -- Query dari emp_labor
+      SELECT
+        JSON_OBJECT('full_name', e1.full_name, 'em_id', e1.em_id) AS approve1,
+        JSON_OBJECT('full_name', e2.full_name, 'em_id', e2.em_id) AS approve2,
+        JSON_OBJECT('full_name', e3.full_name, 'em_id', e3.em_id) AS users,
+        emp_labor.id,
+        employee.em_id,
+        employee.branch_id,
+        nomor_ajuan AS nomor,
+        employee.full_name,
+        designation.name AS jabatan,
+        emp_labor.status,
+        emp_labor.atten_date AS atten_date,
+        emp_labor.uraian AS keterangan,
+        -- Placeholder untuk kolom audit
+        NULL AS konsekuensi,
+        NULL AS penerima_konsekuensi,
+        NULL AS pelanggaran,
+        CASE
+          WHEN emp_labor.nomor_ajuan LIKE '%LB%' THEN 'Lembur'
+          WHEN emp_labor.nomor_ajuan LIKE '%TL%' THEN 'Tugas Luar'
+          WHEN emp_labor.nomor_ajuan LIKE '%RQ%' THEN 'Pengajuan Absen'
+          WHEN emp_labor.nomor_ajuan LIKE '%RO%' THEN 'Absen Offline'
+          ELSE NULL
+        END AS tipe_pengajuan,
+        NULL AS nama_audit,
+        NULL AS status_audit
+      FROM ${targetDatabase}.emp_labor
+      JOIN ${database}_hrm.employee ON employee.em_id = emp_labor.em_id
+      LEFT JOIN ${database}_hrm.employee e1 ON emp_labor.approve_id = e1.em_id
+      LEFT JOIN ${database}_hrm.employee e2 ON emp_labor.approve2_id = e2.em_id
+      LEFT JOIN ${database}_hrm.employee e3 ON emp_labor.em_id = e3.em_id
+      LEFT JOIN ${database}_hrm.designation ON designation.id = employee.des_id
+      WHERE status_transaksi = 1
+
+      UNION ALL
+
+      -- Query dari emp_leave
+      SELECT
+        JSON_OBJECT('full_name', e1.full_name, 'em_id', e1.em_id) AS approve1,
+        JSON_OBJECT('full_name', e2.full_name, 'em_id', e2.em_id) AS approve2,
+        JSON_OBJECT('full_name', e3.full_name, 'em_id', e3.em_id) AS users,
+        emp_leave.id,
+        employee.em_id,
+        employee.branch_id,
+        nomor_ajuan AS nomor,
+        employee.full_name,
+        designation.name AS jabatan,
+        emp_leave.leave_status AS status,
+        emp_leave.atten_date AS atten_date,
+        emp_leave.reason AS keterangan,
+        -- PERBAIKAN: Kolom audit ini juga tidak ada di emp_leave, jadi kita set sebagai NULL
+        NULL AS konsekuensi,
+        NULL AS penerima_konsekuensi,
+        NULL AS pelanggaran,
+        CASE
+          WHEN emp_leave.nomor_ajuan LIKE '%IZ%' THEN 'Izin'
+          WHEN emp_leave.nomor_ajuan LIKE '%CT%' THEN 'Cuti'
+          WHEN emp_leave.nomor_ajuan LIKE '%SD%' THEN 'Sakit'
+          WHEN emp_leave.nomor_ajuan LIKE '%DL%' THEN 'Dinas Luar'
+          ELSE NULL
+        END AS tipe_pengajuan,
+        -- PERBAIKAN: Kolom audit ini juga tidak ada di emp_leave
+        NULL AS nama_audit,
+        NULL AS status_audit
+      FROM ${targetDatabase}.emp_leave
+      JOIN ${database}_hrm.employee ON employee.em_id = emp_leave.em_id
+      LEFT JOIN ${database}_hrm.employee e1 ON emp_leave.apply_id = e1.em_id
+      LEFT JOIN ${database}_hrm.employee e2 ON emp_leave.apply2_id = e2.em_id
+      LEFT JOIN ${database}_hrm.employee e3 ON emp_leave.em_id = e3.em_id
+      LEFT JOIN ${database}_hrm.designation ON designation.id = employee.des_id
+      WHERE status_transaksi = 1
+    `;
     
-    UNION ALL
-    SELECT 
-    JSON_OBJECT(
-            'full_name', e1.full_name,
-            'em_id', e1.em_id
-        ) AS approve1,
-      
-        JSON_OBJECT(
-            'full_name', e2.full_name,
-            'em_id', e2.em_id
-        ) AS approve2,
-      
-        JSON_OBJECT(
-            'full_name', e3.full_name,
-            'em_id', e3.em_id
-        ) AS users,
-    emp_leave.id, 
-    employee.em_id, 
-    employee.branch_id,
-    nomor_ajuan AS nomor, 
-    employee.full_name,
-    designation.name AS jabatan, 
-    emp_leave.leave_status, 
-    emp_leave.atten_date AS atten_date, 
-    emp_leave.reason AS keterangan,
-    emp_leave.audit_tipe_surat AS konsekuensi,
-    emp_leave.audit_surat_name AS penerima_konsekuensi,
-    emp_leave.alasan_audit AS pelanggaran,
-
-      CASE  
-       WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
-       WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
-       WHEN emp_leave.nomor_ajuan LIKE '%SD%'THEN 'Sakit'
-       WHEN emp_leave.nomor_ajuan LIKE '%DL%'THEN 'Dinas Luar'
-       ELSE NULL
-      END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
-     FROM ${startPeriodeDynamic}.emp_leave  
-     JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id 
-     LEFT JOIN ${database}_hrm.employee e1 ON emp_leave.apply_id = e1.em_id
-    LEFT JOIN ${database}_hrm.employee e2 ON emp_leave.apply2_id = e2.em_id
-    LEFT JOIN ${database}_hrm.employee e3 ON emp_leave.em_id = e3.em_id
-     LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id
-
+    // 7. Query final yang menerapkan semua filter.
+    const fixquery = `
+      SELECT * FROM (${query}) AS TBL
+      WHERE TBL.em_id LIKE '%${em_id}%'
+      AND TBL.branch_id LIKE '%${branch_id}%'
+      AND TBL.status LIKE '%${status}%'
+      ${queryFilterStatus}
+      AND TBL.tipe_pengajuan LIKE '%${tipe_form}%'
+      ORDER BY TBL.atten_date DESC
+      ${queryAllData}
     `;
 
-    if (montStart < monthEnd || date1.getFullYear() < date2.getFullYear()) {
-      query = ` nomor_ajuan AS nomor, SELECT employee.em_id, employee.branch_id, employee.full_name,designation.name AS jabatan, 
-      nomor_ajuan ,emp_labor.status as stat, 
-      CASE  
-         WHEN emp_labor.nomor_ajuan LIKE '%LB%'THEN 'Lembur'
-         WHEN emp_labor.nomor_ajuan LIKE '%TL%'THEN 'Tugas Luar'
-         WHEN emp_labor.nomor_ajuan LIKE '%RQ%'THEN 'Pengajuan Absen'
-         WHEN emp_labor.nomor_ajuan LIKE '%RO%'THEN 'Absen Offline'
-         
-         ELSE NULL
-        END AS tipe_pengajuan,audit_status as status_audit
-        
-      FROM ${startPeriodeDynamic}.emp_labor JOIN ${database}_hrm.employee ON employee.em_id=emp_labor.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id WHERE status_transaksi=1
-      
-      UNION ALL
-      SELECT nomor_ajuan AS nomor,  employee.em_id,   employee.branch_id, employee.full_name,designation.name AS jabatan, 'FULLDAY' AS 
-      tipe_form ,emp_leave.leave_status as stat,
-        CASE  
-         WHEN emp_leave.nomor_ajuan LIKE '%IZ%'THEN 'Izin'
-         WHEN emp_leave.nomor_ajuan LIKE '%CT%'THEN 'Cuti'
-         WHEN emp_leave.nomor_ajuan LIKE '%SD%'THEN 'Sakit'
-         WHEN emp_leave.nomor_ajuan LIKE '%DL%'THEN 'Dinas Luar'
-         ELSE NULL
-        END AS tipe_pengajuan,audit_name as nama_audit,audit_status as status_audit
-       FROM ${endPeriodeDynamic}.emp_leave  JOIN ${database}_hrm.employee ON employee.em_id=emp_leave.em_id LEFT JOIN ${database}_hrm.designation ON designation.id=employee.des_id WHERE status_transaksi=1
-         `;
-    }
+    console.log(`Final Query: ${fixquery}`);
 
-    var fixquery = `SELECT * FROM  (${query}) AS TBL 
-    WHERE em_id LIKE '%${emId}%' AND branch_id LIKE '%${branchId}%' 
-    AND status LIKE '%${status}%' 
-    ${queryFilterStatus} 
-    AND tipe_pengajuan LIKE '%${tipeForm}%'
-    ${queryAllData}`;
-
-    console.log(`data ${fixquery}`);
-
-    // var query= `SELECT  emp_labor.*,m.place AS lokasi_masuk,k.place AS lokasi_keluar FROM emp_labor LEFT JOIN ${database}_hrm.places_coordinate m ON m.id=emp_labor.place_in LEFT JOIN  ${database}_hrm.places_coordinate k ON k.id=emp_labor.place_out   WHERE ajuan='3' AND em_id='${em_id}' AND status_transaksi=1 ORDER BY id DESC`
-
-    const connection = await models.createConnection1(startPeriodeDynamic);
-    console.log(req.query);
+    // 8. Eksekusi query ke database.
     let conn;
     try {
+      const connection = await models.createConnection1(targetDatabase);
       conn = await connection.getConnection();
       await conn.beginTransaction();
       const [results] = await conn.query(fixquery);
       await conn.commit();
+
       return res.status(200).send({
         status: true,
         message: "Data berhasil diambil",
@@ -204,10 +406,19 @@ module.exports = {
       if (conn) {
         await conn.rollback();
       }
-      console.error("Error:", e);
-      return res.status(400).send({
+      console.error("Database Error:", e);
+
+      if (e.code === 'ER_BAD_DB_ERROR') {
+        return res.status(404).send({
+            status: false,
+            message: `Database '${targetDatabase}' tidak ditemukan. Pastikan database untuk periode tersebut sudah ada.`,
+            data: [],
+        });
+      }
+
+      return res.status(500).send({
         status: false,
-        message: e.message,
+        message: "Terjadi kesalahan pada server: " + e.message,
         data: [],
       });
     } finally {
