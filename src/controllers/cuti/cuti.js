@@ -745,7 +745,7 @@ WHERE e.em_id = '${req.body.em_id}'
 
     var datesplits = dates.split(",");
 
-    query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
+    query = `SELECT * FROM leave_types WHERE (submission_period<='${durasi}' OR backdate=0) AND 
              status IN (1) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);

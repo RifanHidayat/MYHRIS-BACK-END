@@ -59,7 +59,8 @@ module.exports = {
       };
       var cutLeave = req.body.cut_leave;
       var jumlahCuti = req.body.total_cuti;
-      var array = req.body.start_date.split("-");
+     // var array = req.body.start_date.split("-");
+     var array = utility.dateNow2().split("-");
       var dates = req.body.date_selected.split(",");
       console.log("date ", dates[0]);
 
@@ -185,7 +186,7 @@ WHERE e.em_id = '${req.body.em_id}'
                         ? "Sakit"
                         : results[0].ajuan == 3
                         ? "Izin"
-                        : "Dinas Luar"
+                        :results[0].ajuan == 5?"Dayoff":  "Dinas Luar"
                     } dengan nomor ${
                       results[0].nomor_ajuan
                     }  pada tanggal ${d} status ${results[0].leave_status}`;
@@ -799,7 +800,7 @@ WHERE e.em_id = '${req.body.em_id}'
                             ? "Sakit"
                             : results[0].ajuan == 3
                             ? "Izin"
-                            : "Dinas Luar"
+                            :results[0].ajuan == 5?"Dayoff":  "Dinas Luar"
                         } dengan nomor ${
                           results[0].nomor_ajuan
                         }  pada tanggal ${d} status ${results[0].leave_status}`,
@@ -1292,6 +1293,7 @@ WHERE e.em_id = '${req.body.em_id}'
     var email = req.query.email;
     var periode = req.body.periode;
     var emId = req.query.em_id;
+console.log("tidak hadir")
 
     var dates =
       req.query.dates == undefined ? "2024-08,2024-09" : req.query.dates;
@@ -1368,7 +1370,10 @@ WHERE e.em_id = '${req.body.em_id}'
 
     var datesplits = dates.split(",");
 
-    query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
+    //query = `SELECT * FROM leave_types WHERE submission_period<='${durasi}' AND 
+      // status IN (2,3) `;
+
+   query = `SELECT * FROM leave_types WHERE  
        status IN (2,3) `;
     console.log(query);
     const connection = await model.createConnection1(`${database}_hrm`);

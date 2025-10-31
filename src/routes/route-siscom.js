@@ -75,7 +75,7 @@ router.post("/validasiGantiPassword", operasional.validasiGantiPassword);
 router.post("/new-password", operasional.newPasswordBaru);
 router.post("/load_aktifitas", auth.isAuth, operasional.load_aktifitas);
 router.post("/pencarian_aktifitas", operasional.pencarian_aktifitas);
-router.post("/load_approve_info", auth.isAuth, operasional.load_approve_info);
+router.post("/load_approve_info", auth.isAuth, operasional.load_approve_info_multi);
 router.post("/load_approve_info_multi", operasional.load_approve_info_multi);
 router.post(
   "/load_approve_history",
@@ -87,7 +87,7 @@ router.post(
   auth.isAuth,
   operasional.load_approve_history_multi
 );
-router.post("/spesifik_approval", operasional.spesifik_approval);
+router.post("/spesifik_approval", operasional.spesifik_approval_multi);
 router.post("/list_approve_payroll", operasional.listApprovalPayroll);
 router.post("/spesifik_approval_multi", operasional.spesifik_approval_multi);
 router.post("/load_notifikasi", auth.isAuth, operasional.load_notifikasi);
@@ -430,5 +430,18 @@ router.post('/shift/edit', shift.edit);
 router.get('/shift', shift.show);
 router.post('/shift/search_work_schedule', shift.searchWorkSchedule);
 router.post('/shift/approval', shift.approval);
+
+//day off
+router.post('/day-off', operasional.dayOffInsert);
+router.patch('/day-off/:id', operasional.dayOffUpdate);
+router.get('/day-off', operasional.dayoffIndex);
+router.delete('/day-off/:id', operasional.deleteDayOff);
+router.post("/day-off-approval", operasional.approvalTransaksiNew);
+
+router.get(
+  "/jadwal-kerja",
+  auth.isAuth,
+  operasional.jadwalKerja
+);
 
 module.exports = router;

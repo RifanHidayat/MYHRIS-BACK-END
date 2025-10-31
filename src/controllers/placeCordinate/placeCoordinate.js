@@ -42,7 +42,7 @@ module.exports = {
       const querySys = `SELECT name FROM sysdata WHERE kode='013'`;
       const [sysdata] = await conn.query(querySys);
       const queryTugasLuar = `
-                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}' AND typeid != '99' AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
+                 SELECT nomor_ajuan FROM ${namaDatabaseDynamic}.emp_labor WHERE atten_date='${date}'  AND em_id='${em_id}' AND (SUBSTRING(nomor_ajuan, 1, 2)='TL' ) AND status='${
         sysdata[0].name == "1" || sysdata[0].name == 1 ? "Approve" : "Approve2"
       }'
                  UNION ALL
@@ -53,27 +53,45 @@ module.exports = {
       const [tugasLuar] = await conn.query(queryTugasLuar);
       console.log(tugasLuar);
       if (tugasLuar.length > 0) {
-        const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE (trx ='${tugasLuar[0].nomor_ajuan.substring(
+
+var queryResult = `SELECT places,dep_id FROM employee WHERE em_id='${em_id}'`;
+        const [results] = await conn.query(queryResult);
+
+        var data = results[0].places.split(",");
+
+        var queryPlaceCoordinate = `SELECT * FROM places_coordinate WHERE trx ='${tugasLuar[0].nomor_ajuan.substring(
           0,
           2
-        )}' OR em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
-        const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+        )}' OR ID IN (?)   `;
+        const [palceCoordinate] = await conn.query(queryPlaceCoordinate, [
+          data,
+        ]);
+
         await conn.commit();
         return res.status(200).send({
           status: true,
-          message: "Kombinasi email & password Anda Salah",
+          message: "Data berhasil diambil",
           data: palceCoordinate,
         });
       } else {
-        const queryPlaceCoordinate = ` SELECT * FROM places_coordinate WHERE  (em_ids LIKE '%${em_id}%' OR em_ids IS NULL  OR trx='0') AND isActive= '1'`;
-        console.log(queryPlaceCoordinate);
-        const [palceCoordinate] = await conn.query(queryPlaceCoordinate);
+const [result] = await conn.query(
+          `SELECT places,dep_id FROM employee WHERE em_id='${em_id}' `
+        );
+        var data = result[0].places.split(",");
+        const [palceCoordinate] = await conn.query(
+          `SELECT * FROM places_coordinate WHERE ID IN (?) `,
+          [data]
+        );
+
         await conn.commit();
         return res.status(200).send({
           status: true,
-          message: "Kombinasi email & password Anda Salah",
+          message: "Data berhasil diambil",
           data: palceCoordinate,
         });
+       
+
+
       }
     } catch (e) {
       if (conn) {
